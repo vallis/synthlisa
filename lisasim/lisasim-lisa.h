@@ -116,6 +116,7 @@ class LISA {
     virtual void newretardtime(double t);
 
     virtual double retardedtime();
+    virtual double retardation();
 
     virtual void retard(int ret);
     virtual void retard(LISA *anotherlisa,int ret);

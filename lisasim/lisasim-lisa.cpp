@@ -6,8 +6,9 @@ using namespace std;
 
 // --- generic LISA class --------------------------------------------------------------
 
-// This is the generic version of "putn", which calls armlength
-// to return the correct retarded photon propagation vector
+/** Fills the Vector n with "arm" for reception at time t. The base
+    LISA version of putn uses delayed differences of putp; calls
+    armlength to get the right delay */
 
 void LISA::putn(Vector &n,int arms,double t) {
     int arm = abs(arms);
@@ -40,8 +41,9 @@ void LISA::putn(Vector &n,int arms,double t) {
         n[i] /= norm;
 }
 
-// This is the generic version of "armlength", which takes differences between positions
-// looking for a null photon propagation vector
+/** Generic version of armlength. Will use putp iteratively to
+    find the delay corresponding to a photon trajectory backward
+    from t along "arm" */
 
 double LISA::armlength(int arms, double t) {
     int arm = abs(arms);
@@ -112,6 +114,10 @@ void LISA::newretardtime(double t) {
     
 double LISA::retardedtime() {
     return rt;
+};
+
+double LISA::retardation() {
+    return trb + tra;
 };
 
 void LISA::retard(int ret) {
