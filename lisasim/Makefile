@@ -47,9 +47,19 @@ OFILES= $(foreach cfile,$(CFILES),$(BUILD)/$(cfile:.cpp=.o))
 # if you include lisasim.h (which includes all the headers), then you should depend on them
 lisasim.h: $(HFILES)
 
+GSL_DIR=../contrib-source/GSL-1.4
+GSL_INCLUDE=-I$(GSL_DIR)
+
+# what do we need from GSL?
+
+GSL_OFILES= $(BUILD)/rng.o $(BUILD)/ranlux.o $(BUILD)/mt.o
+
+$(GSL_OFILES):
+	make -C $(GSL_DIR) libs
+
 # basic compilation step
 $(BUILD)/%.o: %.cpp lisasim.h
-	g++ $(OPTIONS) -c $< -o $@
+	g++ $(OPTIONS) $(GSL_INCLUDE) -c $< -o $@
 
 # clean objects
 objects-clean:
@@ -81,11 +91,11 @@ NUMARRAY_INCLUDE=-I../numarray/$(PLATFORM)/include/$(shell ls ../numarray/$(PLAT
 # we are including arrayobject.h from the Numeric distribution
 # we are including lisasim.h from .
 $(BUILD)/lisasim-swig_wrap.o: $(BUILD)/lisasim-swig_wrap.cxx
-	g++ $(OPTIONS) -c $(BUILD)/lisasim-swig_wrap.cxx -I. $(NUMERIC_INCLUDE) $(PYTHON_INCLUDE) -o $(BUILD)/lisasim-swig_wrap.o
+	g++ $(OPTIONS) -c $(BUILD)/lisasim-swig_wrap.cxx -I. $(NUMERIC_INCLUDE) $(PYTHON_INCLUDE) $(GSL_INCLUDE) -o $(BUILD)/lisasim-swig_wrap.o
 
 # assemble everything in the lisaswig library
-$(LIBS)/_lisaswig$(PYTHON_SO): $(OFILES) $(BUILD)/lisasim-swig.o $(BUILD)/lisasim-swig_wrap.o
-	$(CXXSHARED) $(OFILES) $(BUILD)/lisasim-swig.o $(BUILD)/lisasim-swig_wrap.o $(IOBJS) $(PYTHON_DLNK) $(CPP_DLLIBS) -o $(LIBS)/_lisaswig$(PYTHON_SO)
+$(LIBS)/_lisaswig$(PYTHON_SO): $(OFILES) $(BUILD)/lisasim-swig.o $(BUILD)/lisasim-swig_wrap.o $(GSL_OFILES)
+	$(CXXSHARED) $(OFILES) $(GSL_OFILES) $(BUILD)/lisasim-swig.o $(BUILD)/lisasim-swig_wrap.o $(IOBJS) $(PYTHON_DLNK) $(CPP_DLLIBS) -o $(LIBS)/_lisaswig$(PYTHON_SO)
 
 lisaswig-clean:
 	-rm $(BUILD)/lisasim-swig_wrap.cxx
