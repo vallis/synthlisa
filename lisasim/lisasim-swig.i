@@ -1,70 +1,67 @@
 /* File : lisasim-swig.i */
+
 %module lisaswig
-//%include typemaps.i
 %{
 #include "lisasim.h"
-//#include "arrayobject.h"
-//#define ISCONTIGUOUS(m) ((m)->flags & CONTIGUOUS)
-//#define PyArray_CONTIGUOUS(m) (ISCONTIGUOUS(m) ? Py_INCREF(m), m : \
-//(PyArrayObject *)(PyArray_ContiguousFromObject((PyObject *)(m), (m)->descr->type_num, 0,0)))
 %}
 
 class LISA;
 
 class OriginalLISA : public LISA {
-    public:
+public:
+    
+    // accept the armlength in seconds
 
-        // accept the armlength in seconds
-
-	OriginalLISA(double arm1,double arm2,double arm3);
-        
-        virtual double armlength(int arm, double t);
+    OriginalLISA(double arm1,double arm2,double arm3);
+    
+    virtual double armlength(int arm, double t);
 };
 
 class ModifiedLISA : public OriginalLISA {
-    public:
+public:
 
-        // accept the armlength in seconds
+    // accept the armlength in seconds
     
-	ModifiedLISA(double arm1,double arm2,double arm3);
+    ModifiedLISA(double arm1,double arm2,double arm3);
         
-        double armlength(int arm, double t);
+    double armlength(int arm, double t);
 };
 
 class CircularRotating : public LISA {
-    public:
+public:
 	
-	// three arguments: eta0, xi0, 2<->3 switch (1.0 or -1.0) 
+    // three arguments: eta0, xi0, 2<->3 switch (1.0 or -1.0) 
     
-        CircularRotating(double eta0,double xi0,double sw);
-
-        double armlength(int arm, double t);
+    CircularRotating(double eta0,double xi0,double sw);
+    
+    double armlength(int arm, double t);
+    double genarmlength(int arms, double t);
 };
 
 class NoisyLISA : public LISA {
-    public:
-        NoisyLISA(LISA *clean,double starm,double sdarm);
-        ~NoisyLISA();
-
-        double armlength(int arm, double t);
+public:
+    NoisyLISA(LISA *clean,double starm,double sdarm);
+    ~NoisyLISA();
+	
+    double armlength(int arm, double t);
 };
 
 class InterpolateNoise {
-    public:
-        InterpolateNoise(double st, double pbt, double sd, double ex);
-        ~InterpolateNoise();
+public:
+    InterpolateNoise(double st, double pbt, double sd, double ex);
+    ~InterpolateNoise();
 
-        void reset();
+    void reset();
         
-        double inoise(double time);
+    double inoise(double time);
 };
 
 class ExpGaussNoise {
-    public:
+public:
     
     ExpGaussNoise(double samplinginterval, double lapseinterval, double foldingtime, double spectraldensity);
     ~ExpGaussNoise();
-
+    
     void reset();
 
     double enoise(double time);
@@ -73,82 +70,71 @@ class ExpGaussNoise {
 class Wave;
 
 class SimpleBinary : public Wave {
-    public:
-        SimpleBinary(double freq, double initphi, double inc, double amp, double d, double a, double p);
+public:
+    SimpleBinary(double freq, double initphi, double inc, double amp, double d, double a, double p);
 };
 
 class InterpolateMemory : public Wave {
-    public:
-        InterpolateMemory(double *hpa, double *hca, long samples, double samplingtime, double lookback, double d, double a, double p);
+public:
+    InterpolateMemory(double *hpa, double *hca, long samples, double samplingtime, double lookback, double d, double a, double p);
 };
 
 class TDI {
-    public:
-        TDI(LISA *mylisa, Wave *mywave);
-    
-        double X(double t);
-        double Y(double t);
-        double Z(double t);
-    
-        double alpha(double t);
-        double beta(double t);
-        double gamma(double t);
-    
-        double zeta(double t);
+public:
+    TDI() {};
+    virtual ~TDI() {};
 
-	double P(double t);
-	double E(double t);
-	double U(double t);
+    virtual void reset() {};
+
+    virtual double X(double t);
+    virtual double Y(double t);
+    virtual double Z(double t);
+    
+    virtual double alpha(double t);
+    virtual double beta(double t);
+    virtual double gamma(double t);
+    
+    virtual double zeta(double t);
+
+    virtual double P(double t);
+    virtual double E(double t);
+    virtual double U(double t);
+    
+    virtual double Xm(double t);
+
+    virtual double y(int send, int link, int recv, int ret1, int ret2, int ret3, double t);
+    virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, double t);
 };
 
-class TDInoise {
-    public:
+class TDInoise : public TDI {
+public:
+    TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser, double claser);
+    TDInoise(LISA *mylisa, LISA *physlisa, double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser, double claser);
+    ~TDInoise();
+    
+    void reset();
 
-        // claser is a correlation e-folding time
+    double y(int send, int link, int recv, int ret1, int ret2, int ret3, double t);
+    double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, double t);
+};
 
-        TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser, double claser);
-        
-        // the two lisa pointers indicate which LISA is used to determine the TDI times
-        // and which to determine the physical laser delays
-        
-        TDInoise(LISA *mylisa, LISA *physlisa, double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser, double claser);
-        
-        ~TDInoise();
-        
-        void reset();
-
-        // leave these here so we can show the cancellation of laser noise
-
-        double y(int send, int link, int recv, int ret1, int ret2, int ret3, double t);
-        double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, double t);
-
-        double X(double t);
-        double Y(double t);
-        double Z(double t);
-
-        double alpha(double t);
-        double beta(double t);
-        double gamma(double t);
-
-        double zeta(double t);
-
-        double P(double t);
-        
-        double E(double t);
-
-        double U(double t);
-
-        double Xm(double t);
+class TDIsignal : public TDI {
+public:
+    TDIsignal(LISA *mylisa, Wave *mywave);
+    TDIsignal(LISA *mylisa, LISA *physlisa, Wave *mywave);
+            
+    double y(int send, int link, int recv, int ret1, int ret2, int ret3, double t);
 };
 
 %newobject stdnoise;
 extern TDInoise *stdnoise(LISA *mylisa);
 
-extern void printnoise(char *filename,TDInoise *mynoise,int samples,double samplingtime,char *observables);
-extern void printsignal(char *filename,TDI *mysignal,int samples,double samplingtime,char *observables);
+%newobject stdlisa;
+extern LISA *stdlisa();
+
+extern void printtdi(char *filename,TDI *mytdi,int samples,double samplingtime,char *observables);
 
 %include numpy.i
 
 %apply double* IN_1D_DOUBLE { double *array };
-extern void setnoise(double *array, TDInoise *mynoise,int samples,double samplingtime,char *observables);
-extern void setsignal(double *array, TDI *mysignal,int samples,double samplingtime,char *observables);
+extern void settdi(double *array,TDI *mytdi,int samples,double samplingtime,char *observables);
