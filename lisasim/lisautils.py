@@ -6,9 +6,11 @@ from FFT import *
 # patches = 1 gives the triangle-windowed spectrum
 # patches > 1 gives the triangle-windowed, averaged over "patches" periods
 
+# overlap controls the use of overlapping or nonoverlapping averaging periods
+
 # detrend controls the subtraction of DC components
 
-def spect(series,sampling,patches=1,detrend=0):
+def spect(series,sampling,patches=1,detrend=0,overlap=1):
     nyquistf = 0.5 / sampling
 
     if patches==0:
@@ -16,7 +18,10 @@ def spect(series,sampling,patches=1,detrend=0):
     elif patches==1:
         period = wpdg(series,detrend)
     else:
-        period = opwpdg(series,patches,detrend)
+        if overlap==0:
+            period = nopwpdg(series,patches,detrend)
+        else:
+            period = opwpdg(series,patches,detrend)
 
     pdlen = shape(period)[0]-1
 
@@ -60,7 +65,7 @@ def pdg(series):
 
 def wpdg(series,detrend=0):
     samples = shape(series)[0]
-    pdlen = samples/2
+    pdlen = (samples-1)/2.0
 
     window = 1.0 - abs(arange(0,samples,typecode='d') - pdlen) / (pdlen)
     weight = samples * sum(window ** 2)
@@ -94,7 +99,25 @@ def opwpdg(series,patches,detrend=0):
     opwpdgram[:] /= (2.0*patches - 1.0)
 
     return opwpdgram
-    
+
+# nonoverlapping-averaged, triangle-windowed periodogram
+
+def nopwpdg(series,patches,detrend=0):
+    samples = shape(series)[0]
+    serlen = samples - (samples % (4*patches))
+
+    patlen = serlen/patches
+    pdlen = patlen/2
+
+    opwpdgram = zeros(pdlen+1,typecode='d')
+
+    for cnt in range(0,patches):
+        opwpdgram[:] += wpdg(series[cnt*patlen:(cnt+1)*patlen],detrend)
+
+    opwpdgram[:] /= 1.0*patches
+
+    return opwpdgram
+
 # make it so that "time" is an observable
 
 def time(t):
@@ -103,17 +126,17 @@ def time(t):
 # return a 1 or 2 dimensional Numeric array, according to whether
 # "observables" is a function or a list of functions
 
-def getobs(snum,stime,observables):
+def getobs(snum,stime,observables,zerotime=0.0):
     if len(shape(observables)) == 0:
         array = zeros(snum,typecode='d')
         for i in arange(0,snum):
-            array[i] = observables(i*stime)
+            array[i] = observables(zerotime+i*stime)
     else:
         obslen = shape(observables)[0]
         array = zeros((snum,obslen),typecode='d')
         for i in arange(0,snum):
             for j in range(0,obslen):
-                array[i,j] = observables[j](i*stime)
+                array[i,j] = observables[j](zerotime+i*stime)
     return array
 
 # used by getobsc (hoping time.time() will work on all platforms...)
@@ -142,7 +165,7 @@ def dotime(i,snum,inittime,lasttime):
 
 # the next version, getobsc, will display a countdown to completion
 
-def getobsc(snum,stime,observables):
+def getobsc(snum,stime,observables,zerotime=0.0):
     inittime = int(time())
     lasttime = 0
     
@@ -152,7 +175,7 @@ def getobsc(snum,stime,observables):
     if len(shape(observables)) == 0:
         array = zeros(snum,typecode='d')
         for i in arange(0,snum):
-            array[i] = observables(i*stime)
+            array[i] = observables(zerotime+i*stime)
             if i % 1024 == 0:
                 lasttime = dotime(i,snum,inittime,lasttime)
     else:
@@ -160,7 +183,7 @@ def getobsc(snum,stime,observables):
         array = zeros((snum,obslen),typecode='d')
         for i in arange(0,snum):
             for j in range(0,obslen):
-                array[i,j] = observables[j](i*stime)
+                array[i,j] = observables[j](zerotime+i*stime)
             if i % 1024 == 0:
                 lasttime = dotime(i,snum,inittime,lasttime)
 
@@ -183,6 +206,9 @@ def getobs2(snum,stime,observables):
 def writeobs(filename,snum,stime,observables):
     writearray(filename,getobs(snum,stime,observables))
 
+# should be able to convert from a sequence to an array,
+# if an array is not given
+
 def writearray(filename,a):
     file = open(filename, 'w')
     if len(a.shape) == 1:
@@ -195,6 +221,7 @@ def writearray(filename,a):
 
 # still not satisfactory; should get the length from the file,
 # not from the user, and should allocate its own buffer
+# can probably do it with append()
 
 def readarray(buffer,length,filename):
     file = open(filename, 'r')
