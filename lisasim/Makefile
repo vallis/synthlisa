@@ -17,7 +17,7 @@ OPTIONS = -Wall -O3
 CURDIR=$(shell pwd)
 
 # detect platform and setup directories
-PLATFORM=$(shell uname)
+PLATFORM=$(shell uname -s)-$(shell uname -r)
 
 BUILD=../build/$(PLATFORM)
 BINS=../bin/$(PLATFORM)
@@ -61,19 +61,20 @@ objects-clean:
 
 include ../swig/$(PLATFORM)/Makefile.python
 
-lisaswig: $(LIBS)/_lisaswig$(PYTHON_SO)
+lisaswig: $(BUILD) $(LIBS) $(LIBS)/_lisaswig$(PYTHON_SO)
 
 SWIG= ../swig/$(PLATFORM)/bin/swig
 
 # build the swig wrapper from the swig interface
 # this is really a multiple target operation; it also builds $(LIBS)/lisasim.py
 
-$(BUILD)/lisasim-swig_wrap.cxx $(LIBS)/lisasim.py: lisasim-swig.i $(LIBS)
+$(BUILD)/lisasim-swig_wrap.cxx $(LIBS)/lisasim.py: lisasim-swig.i lisasim-typemaps.i lisasim.h
 	$(SWIG) -c++ -python lisasim-swig.i
 	mv lisasim-swig_wrap.cxx $(BUILD)
 	mv lisaswig.py $(LIBS)
 
 NUMERIC_INCLUDE=-I../numeric/$(PLATFORM)/include/$(shell ls ../numeric/$(PLATFORM)/include | head -1)/Numeric
+NUMARRAY_INCLUDE=-I../numarray/$(PLATFORM)/include/$(shell ls ../numarray/$(PLATFORM)/include | head -1)/numarray
 
 # compile the swig wrapper in the build directory
 # need -Wno-long-double for OS X? It is found in CFLAGS within swig Makefile
@@ -87,6 +88,7 @@ $(LIBS)/_lisaswig$(PYTHON_SO): $(OFILES) $(BUILD)/lisasim-swig.o $(BUILD)/lisasi
 	$(CXXSHARED) $(OFILES) $(BUILD)/lisasim-swig.o $(BUILD)/lisasim-swig_wrap.o $(IOBJS) $(PYTHON_DLNK) $(CPP_DLLIBS) -o $(LIBS)/_lisaswig$(PYTHON_SO)
 
 lisaswig-clean:
+	-rm $(BUILD)/lisasim-swig_wrap.cxx
 	-rm $(BUILD)/lisasim-swig.o $(BUILD)/lisasim-swig_wrap.o
 	-rm $(LIBS)/lisaswig.py $(LIBS)/lisaswig.pyc $(LIBS)/_lisaswig$(PYTHON_SO)
 
