@@ -5,6 +5,8 @@
 #include "lisasim.h"
 %}
 
+%include numpy.i
+
 class LISA;
 
 class OriginalLISA : public LISA {
@@ -33,6 +35,7 @@ public:
     // three arguments: eta0, xi0, 2<->3 switch (1.0 or -1.0) 
     
     CircularRotating(double eta0,double xi0,double sw);
+    CircularRotating(double myL,double eta0,double xi0,double sw);
     
     double armlength(int arm, double t);
     
@@ -74,6 +77,9 @@ class SimpleBinary : public Wave {
 public:
     SimpleBinary(double freq, double initphi, double inc, double amp, double d, double a, double p);
 };
+
+%apply double* IN_1D_DOUBLE { double *hpa };
+%apply double* IN_1D_DOUBLE { double *hca };
 
 class InterpolateMemory : public Wave {
 public:
@@ -135,9 +141,16 @@ extern LISA *stdlisa();
 
 extern void printtdi(char *filename,TDI *mytdi,int samples,double samplingtime,char *observables);
 
-%include numpy.i
-
 %apply double* IN_1D_DOUBLE { double *array };
 extern void settdi(double *array,TDI *mytdi,int samples,double samplingtime,char *observables);
 
 extern void printn(CircularRotating *mylisa,int arm,double t);
+
+%apply double* IN_1D_DOUBLE { double *aa };
+%apply double* IN_1D_DOUBLE { double *ab };
+%apply double* IN_1D_DOUBLE { double *ag };
+extern void setabg(double *aa, double *ab, double *ag, TDI *mytdi,int samples,double samplingtime);
+
+%apply double* IN_1D_DOUBLE { double *ax };
+extern void setabgx(double *aa, double *ab, double *ag, double *ax, TDI *mytdi,int samples,double samplingtime);
+

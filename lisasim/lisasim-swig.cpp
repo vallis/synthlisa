@@ -194,3 +194,65 @@ void settdi(double *array, TDI *mytdi,int samples,double samplingtime,char *obse
     cout << "\rCompleted in " << floor(lapse/60.0) << "m" << floor(lapse-60.0*floor(lapse/60.0)) << "s [" << floor(speed) << " (multi)samples/s]                      " << endl;
 }
 
+void setabg(double *aa, double *ab, double *ag, TDI *mytdi,int samples,double samplingtime) {
+    mytdi->reset();
+    
+    struct timeval tv;
+    
+    gettimeofday(&tv,0);
+    double timebeg = 1.0 * tv.tv_sec + 1.0e-6 * tv.tv_usec;
+    
+    for(int i=0;i<samples;i++) {
+        double t = i * samplingtime;
+
+        if(i % 16384 == 0 && i != 0) {
+            gettimeofday(&tv,0);
+            double speed = (1.0*i) / (1.0 * tv.tv_sec + 1.0e-6 * tv.tv_usec - timebeg);
+            double sest = (samples - i) / speed;
+
+            if(speed > 0.0)
+                cout << "\rEstimating " << floor(sest/60.0) << "m" << floor(sest-60.0*floor(sest/60.0)) << "s to completion [" << floor(speed) << " (multi)samples/s]                    ";
+        }
+
+	aa[i] = mytdi->alpha(t);
+	ab[i] = mytdi->beta(t);
+	ag[i] = mytdi->gamma(t);
+    }
+
+    gettimeofday(&tv,0);
+    double lapse = (1.0 * tv.tv_sec + 1.0e-6 * tv.tv_usec - timebeg);
+    double speed = samples / lapse;
+    cout << "\rCompleted in " << floor(lapse/60.0) << "m" << floor(lapse-60.0*floor(lapse/60.0)) << "s [" << floor(speed) << " (multi)samples/s]                      " << endl;
+}
+
+void setabgx(double *aa, double *ab, double *ag, double *ax, TDI *mytdi,int samples,double samplingtime) {
+    mytdi->reset();
+    
+    struct timeval tv;
+    
+    gettimeofday(&tv,0);
+    double timebeg = 1.0 * tv.tv_sec + 1.0e-6 * tv.tv_usec;
+    
+    for(int i=0;i<samples;i++) {
+        double t = i * samplingtime;
+
+        if(i % 16384 == 0 && i != 0) {
+            gettimeofday(&tv,0);
+            double speed = (1.0*i) / (1.0 * tv.tv_sec + 1.0e-6 * tv.tv_usec - timebeg);
+            double sest = (samples - i) / speed;
+
+            if(speed > 0.0)
+                cout << "\rEstimating " << floor(sest/60.0) << "m" << floor(sest-60.0*floor(sest/60.0)) << "s to completion [" << floor(speed) << " (multi)samples/s]                    ";
+        }
+
+	aa[i] = mytdi->alpha(t);
+	ab[i] = mytdi->beta(t);
+	ag[i] = mytdi->gamma(t);
+	ax[i] = mytdi->X(t);
+    }
+
+    gettimeofday(&tv,0);
+    double lapse = (1.0 * tv.tv_sec + 1.0e-6 * tv.tv_usec - timebeg);
+    double speed = samples / lapse;
+    cout << "\rCompleted in " << floor(lapse/60.0) << "m" << floor(lapse-60.0*floor(lapse/60.0)) << "s [" << floor(speed) << " (multi)samples/s]                      " << endl;
+}
