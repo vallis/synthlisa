@@ -342,7 +342,9 @@ Noise *stdproofnoise(LISA *lisa,double stproof, double sdproof) {
     // create InterpolateNoise objects for proof-mass noises
     // we need quadruple retardations for the V's appearing in the z's (octuple for 2nd-gen TDI)
 
-    double pbtproof = 8.0 * lighttime(lisa);
+    // add two sampling times to allow linear interpolation for large
+    // sampling times
+    double pbtproof = 8.0 * lighttime(lisa) + 2.0*stproof;
 
     return new InterpolateNoise(stproof, pbtproof, sdproof, -2.0);
 }
@@ -351,7 +353,9 @@ Noise *stdopticalnoise(LISA *lisa,double stshot, double sdshot) {
     // create InterpolateNoise objects for optical-path noises
     // we need only triple retardations for the shot's appearing in the y's (septuple for 2nd-gen TDI)
 
-    double pbtshot = 7.0 * lighttime(lisa);
+    // add two sampling times to allow linear interpolation for large
+    // sampling times
+    double pbtshot = 7.0 * lighttime(lisa) + 2.0*stshot;
 
     return new InterpolateNoise(stshot, pbtshot, sdshot, 2.0);
 }
@@ -360,7 +364,9 @@ Noise *stdlasernoise(LISA *lisa,double stlaser, double sdlaser) {
     // create laser noise objects
     // quadruple retardations are needed for the C's (octuple for 2nd-gen TDI)
 
-    double pbtlaser = 8.0 * lighttime(lisa);
+    // add two sampling times to allow linear interpolation for large
+    // sampling times
+    double pbtlaser = 8.0 * lighttime(lisa) + 2.0*stlaser;
 
     return new InterpolateNoise(stlaser, pbtlaser, sdlaser, 0.0);
 }
