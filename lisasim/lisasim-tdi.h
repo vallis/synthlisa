@@ -31,11 +31,11 @@ class TDI {
 
 	virtual double X1(double t);
 
-        virtual double y(int send, int link, int recv, int ret1, int ret2, int ret3, double t);
-        virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, double t);
+        virtual double y(int send, int link, int recv, int ret1, int ret2, int ret3, double t) {return 0.0;};
+        virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, double t) {return 0.0;};
 
-	virtual double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t);
-	virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
+	virtual double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t) {return 0.0;};
+	virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t) {return 0.0;};
 
 };
 

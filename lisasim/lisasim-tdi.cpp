@@ -1,21 +1,5 @@
 #include "lisasim-tdi.h"
 
-inline double TDI::y(int send, int link, int recv, int ret1, int ret2, int ret3, double t) {
-    return 0.0;
-}
-
-inline double TDI::z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, double t) {
-    return 0.0;
-}
-
-inline double TDI::y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t) {
-    return 0.0;
-}
-
-inline double TDI::z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t) {
-    return 0.0;
-}
-
 double TDI::X(double t) {
     return( y(1, 3, 2, 3, 2, 2, t) -
             y(1, 2, 3, 2, 3, 3, t) +

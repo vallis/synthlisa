@@ -340,11 +340,11 @@ double CircularRotating::armlength(int arm, double t) {
     }
 }
 
-inline double CircularRotating::armlengthbaseline(int arm, double t) {
+double CircularRotating::armlengthbaseline(int arm, double t) {
     return L;
 }
 
-inline double CircularRotating::armlengthaccurate(int arm, double t) {
+double CircularRotating::armlengthaccurate(int arm, double t) {
     if(arm > 0) {
 	return delmodamp * sin(Omega*t - delmodph[arm]);
     } else {
