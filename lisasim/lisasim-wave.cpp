@@ -5,9 +5,14 @@ Wave::Wave(double d, double a, double p) {
     asc = a;
     pol = p;
 
-    k[0] = -cos(asc)*cos(dec);
-    k[1] = -sin(asc)*cos(dec);
-    k[2] = -sin(dec);
+    kArray[0] = -cos(asc)*cos(dec);
+    kArray[1] = -sin(asc)*cos(dec);
+    kArray[2] = -sin(dec);
+
+    k[0] = kArray[0];
+    k[1] = kArray[1];
+    k[2] = kArray[2];
+
 
     Tensor stdpp, stdpc;
     
@@ -28,6 +33,14 @@ Wave::Wave(double d, double a, double p) {
     
     tmp.setproduct(stdpc,At);
     pc.setproduct(A,tmp);      
+
+
+    for(int i=0;i<3;i++) {
+      for(int j=0;j<3;j++) {
+	ppArray[3*i+j] = pp[i][j];
+	pcArray[3*i+j] = pc[i][j];
+      }
+    }
 }
 
 void Wave::putwave(Tensor &h, double t) {
@@ -46,12 +59,13 @@ void Wave::putwave(Tensor &h, double t) {
 void Wave::putwave(double **h, double t) {
   double hp_temp;
   double hc_temp; 
+  int i,j;
   hp_temp = hp(t);
   hc_temp = hc(t);
   
-  for(int i=0;i<3;i++) {
-    for(int j=0;j<3;j++) {
-      h[i][j] = hp_temp * pp[i][j] + hc_temp * pc[i][j];
+  for(i=0;i<3;i++) {
+    for(j=0;j<3;j++) {
+      h[i][j] = hp_temp * ppArray[3*i+j] + hc_temp * pcArray[3*i+j];
     }        
   }
 }

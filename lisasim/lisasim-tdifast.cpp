@@ -57,14 +57,15 @@ double TDIfast::retard(int craft, double t) {
     return(-lisap.dotproduct(wave->k));
 } */
 
-double TDIfast::retardfast(int craft, int tIndex) {
-    Vector lisap;
+inline double TDIfast::retardfast(int craft, int tIndex) {
+  //    Vector lisap;
 #ifdef DEBUG    
     Check(Checkputp[craft]);
 #endif
-    lisap = Storedputp[craft][tIndex];
+    //lisap = Storedputp[craft][tIndex];
     
-    return(-lisap.dotproduct(wave->k));
+    //return(-lisap.dotproduct(wave->k));
+    return(-(Storedputp[craft][tIndex][0]*wave->kArray[0] + Storedputp[craft][tIndex][1]*wave->kArray[1] + Storedputp[craft][tIndex][2]*wave->kArray[2]));
 }
 
 
@@ -85,13 +86,13 @@ TDIfast::TDIfast(LISA *mylisa, Wave *mywave, double mysrate, long mysamples):TDI
     Checkarmlength[i] = 0;
   }
 
-  Storedputn = new Vector*[4];
+  Storedputn = new double**[4];
   Checkputn = new bool[4];
   for (int i = 0; i < 4; i++) {
     Checkputn[i] = 0;
   }  
 
-  Storedputp = new Vector*[4];
+  Storedputp = new double**[4];
   Checkputp = new bool[4];
   for (int i = 0; i < 4; i++) {
     Checkputp[i] = 0;
@@ -137,24 +138,29 @@ inline int SRTI(int i, int j, int k) {
 }
 
 inline int SPNRI(int i, int j, int k, int l, int d) {
-  return(d + 2*l+ 2*4*k + 2*4*4*j + 2*4*4*4*i);
+  //  return(d + 2*l+ 2*4*k + 2*4*4*j + 2*4*4*4*i);
+  return(d + 2*l+ 8*k + 32*j + 128*i);
 }
 
 
 
 TDIfast::~TDIfast() {
   
-  
   for (int i = 0; i < 4; i++) {
     if (Checkarmlength[i]) {
       delete [] Storedarmlength[i];
     }
+    delete [] cwave[i];
   }
   delete [] Storedarmlength;
   delete [] Checkarmlength;
+  delete [] cwave;
 
   for (int i = 0; i < 4; i++) {
     if (Checkputn[i]) {
+      for(int j=0; j < samples; j++) {
+       delete [] Storedputn[i][j];
+      }
       delete [] Storedputn[i];
     }
   }
@@ -163,6 +169,9 @@ TDIfast::~TDIfast() {
 
   for (int i = 0; i < 4; i++) {
     if (Checkputp[i]) {
+      for(int j=0; j < samples; j++) {
+	delete [] Storedputp[i][j];
+      }
       delete [] Storedputp[i];
     }
   }
@@ -275,8 +284,9 @@ int TDIfast::yc(int send, int link, int recv, int ret1, int ret2, int ret3) {
   }
   
   if (!Checkputn[link]) {
-    Storedputn[link] = new Vector[samples];
+    Storedputn[link] = new double*[samples];
     for (int j = 0; j < samples; j++) {
+      Storedputn[link][j] = new double[3];
       lisa->putn(Storedputn[link][j],link,j*srate);
     }
     Checkputn[link] = 1;
@@ -285,8 +295,9 @@ int TDIfast::yc(int send, int link, int recv, int ret1, int ret2, int ret3) {
   
   for (int i=0; i< 3; i++) {
     if (!Checkputp[putpArray[i]]) {
-      Storedputp[putpArray[i]] = new Vector[samples];
+      Storedputp[putpArray[i]] = new double*[samples];
       for (int j = 0; j < samples; j++) {
+	Storedputp[putpArray[i]][j] = new double[3];
 	lisa->putp(Storedputp[putpArray[i]][j],putpArray[i],j*srate);
       }
       Checkputp[putpArray[i]] = 1;
@@ -322,11 +333,12 @@ double TDIfast::y(int send, int link, int recv, int ret1, int ret2, int ret3, in
 #ifdef DEBUG    
   Check(Checkputn[link]);
 #endif
-  Vector linkn;
-  linkn = Storedputn[link][tIndex];
+  //  Vector linkn;
+  // linkn = Storedputn[link][tIndex];
   //    lisa->putn(linkn,link,t);  
     
-  double denom = linkn.dotproduct(wave->k);
+  //  double denom = linkn.dotproduct(wave->k);
+  double denom = wave->k[0]*Storedputn[link][tIndex][0] + wave->k[1]*Storedputn[link][tIndex][1] + wave->k[2]*Storedputn[link][tIndex][2];
   if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2))
     denom = 1.0 - denom;
   else

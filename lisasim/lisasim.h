@@ -33,10 +33,12 @@ class Wave {
         // k vector
 
         Vector k;
+	double kArray[3];
 
         // polarization tensors
     
         Tensor pp, pc;
+	double ppArray[9], pcArray[9];
 
         // default constructor
 
@@ -273,9 +275,9 @@ class TDIfast : public TDI {
 	
 	double **Storedarmlength;
 	bool *Checkarmlength;
-	Vector **Storedputn;
+	double  ***Storedputn;
 	bool *Checkputn;
-	Vector **Storedputp;
+	double ***Storedputp;
 	bool *Checkputp;
 	
 	double **StoredRetardedTime;
