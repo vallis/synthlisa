@@ -1,7 +1,12 @@
 /* File : lisasim-swig.i */
 %module lisaswig
+//%include typemaps.i
 %{
 #include "lisasim.h"
+//#include "arrayobject.h"
+//#define ISCONTIGUOUS(m) ((m)->flags & CONTIGUOUS)
+//#define PyArray_CONTIGUOUS(m) (ISCONTIGUOUS(m) ? Py_INCREF(m), m : \
+//(PyArrayObject *)(PyArray_ContiguousFromObject((PyObject *)(m), (m)->descr->type_num, 0,0)))
 %}
 
 class LISA;
@@ -72,6 +77,11 @@ class SimpleBinary : public Wave {
         SimpleBinary(double freq, double initphi, double inc, double amp, double d, double a, double p);
 };
 
+class InterpolateMemory : public Wave {
+    public:
+        InterpolateMemory(double *hpa, double *hca, long samples, double samplingtime, double lookback, double d, double a, double p);
+};
+
 class TDI {
     public:
         TDI(LISA *mylisa, Wave *mywave);
@@ -131,9 +141,14 @@ class TDInoise {
         double Xm(double t);
 };
 
-extern void printnoise(char *filename,TDInoise *mynoise,int samples,double samplingtime,char *observables);
-extern void printsignal(char *filename,TDI *mysignal,int samples,double samplingtime,char *observables);
-
 %newobject stdnoise;
 extern TDInoise *stdnoise(LISA *mylisa);
 
+extern void printnoise(char *filename,TDInoise *mynoise,int samples,double samplingtime,char *observables);
+extern void printsignal(char *filename,TDI *mysignal,int samples,double samplingtime,char *observables);
+
+%include numpy.i
+
+%apply double* IN_1D_DOUBLE { double *array };
+extern void setnoise(double *array, TDInoise *mynoise,int samples,double samplingtime,char *observables);
+extern void setsignal(double *array, TDI *mysignal,int samples,double samplingtime,char *observables);
