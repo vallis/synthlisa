@@ -1,7 +1,7 @@
 #include "lisasim-tdisignal.h"
 
 TDIsignal::TDIsignal(LISA *mylisa, Wave *mywave) {
-    phlisa = mylisa->thislisa();
+    phlisa = mylisa->physlisa();
     lisa = mylisa;
 
     wave = mywave;

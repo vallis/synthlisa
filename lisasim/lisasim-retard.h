@@ -58,7 +58,7 @@ class CacheLISA : public LISA {
  public:
     /// Default constructor. Sets caches and counters to zero.
     CacheLISA(LISA *l) : basiclisa(l) {
-	for(int i=0;i<buflength;i++) {
+	for(unsigned int i=0;i<buflength;i++) {
 	    keys[i] = 0;
 	    its[i] = 0.0; rtis[i] = 0.0; trbs[i] = 0.0; tras[i] = 0.0;
 	}
@@ -69,7 +69,7 @@ class CacheLISA : public LISA {
     /// Reset function. Sets caches and counters to zero, and calls
     /// reset for basiclisa.
     void reset() {
-	for(int i=0;i<buflength;i++) {
+	for(unsigned int i=0;i<buflength;i++) {
 	    keys[i] = 0;
 	    its[i] = 0.0; rtis[i] = 0.0; trbs[i] = 0.0; tras[i] = 0.0;
 	}
@@ -82,8 +82,8 @@ class CacheLISA : public LISA {
     // The following is all standard for "encapsulating" LISA objects.
 
     /// Returns underlying PHYSICAL LISA object.
-    LISA *thislisa() {
-	return basiclisa->thislisa();
+    LISA *physlisa() {
+	return basiclisa->physlisa();
     }
 
     /// Calls underlying LISA for armlength
@@ -189,7 +189,7 @@ class CacheLISA : public LISA {
     }
 
     /** Computes a retardation with a different LISA geometry
-	[generally it will be basiclisa->thislisa()]. Note that
+	[generally it will be basiclisa->physlisa()]. Note that
 	calling this form of retard will (probably) make the cache
 	state undefined, so we should never do it unless it's the last
 	retard call */

@@ -5,7 +5,7 @@
 // this version takes the parameters of the basic noises and lets us allocate objects as needed
 
 TDInoise::TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser) {
-    phlisa = mylisa->thislisa();
+    phlisa = mylisa->physlisa();
     lisa = mylisa;
 
     // allocate noise objects
@@ -34,7 +34,7 @@ TDInoise::TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, 
 // and lets us allocate objects as needed
 
 TDInoise::TDInoise(LISA *mylisa, double *stproof, double *sdproof, double *stshot, double *sdshot, double *stlaser, double *sdlaser) {
-    phlisa = mylisa->thislisa();
+    phlisa = mylisa->physlisa();
     lisa = mylisa;
 
     // allocate noise objects
@@ -67,7 +67,7 @@ TDInoise::TDInoise(LISA *mylisa, double *stproof, double *sdproof, double *stsho
 // this version takes pointers to noise objects, allowing for user-specified noises on different objects
 
 TDInoise::TDInoise(LISA *mylisa, Noise *proofnoise[6],Noise *shotnoise[6],Noise *lasernoise[6]) {
-    phlisa = mylisa->thislisa();
+    phlisa = mylisa->physlisa();
     lisa = mylisa;
 
     // set noise objects
