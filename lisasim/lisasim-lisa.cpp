@@ -216,21 +216,15 @@ double ModifiedLISA::genarmlength(int arm, double t) {
 // measure everything in seconds
 // if the last argument is negative, switch 2 and 3; needed for coherence with the Montana simulator
 
-CircularRotating::CircularRotating(double myL, double e0, double x0, double sw) {
-    // set custom armlength (s)
+CircularRotating::CircularRotating(double myL, double e0, double x0, double sw, double t0)
+    : L(myL), toffset(t0) {
+	initialize(e0,x0,sw);
+    }
 
-    L = myL;
-
-    initialize(e0,x0,sw);
-}
-
-CircularRotating::CircularRotating(double e0, double x0, double sw) {
-    // set standard armlength (s)
-
-    L = Lstd;
-
-    initialize(e0,x0,sw);
-}
+CircularRotating::CircularRotating(double e0, double x0, double sw, double t0)
+    : L(Lstd), toffset(t0) {
+	initialize(e0,x0,sw);
+    }
 
 void CircularRotating::initialize(double e0, double x0, double sw) {
     // set distance from the Sun (s)
@@ -301,12 +295,12 @@ void CircularRotating::settime(double t) {
     // {psi -> xi, asc -> eta, dec -> zeta}
     // time is measured in seconds
     
-    rotation.seteuler(zeta,Omega*t+eta0,-Omega*t+xi0);
+    rotation.seteuler(zeta,Omega*(t+toffset)+eta0,-Omega*(t+toffset)+xi0);
     
     // R{Cos[Omega t + eta0], Sin[Omega t + eta0], 0}; leave center[2] = 0.0
     
-    center[0] = R * cos(Omega*t+eta0);
-    center[1] = R * sin(Omega*t+eta0);
+    center[0] = R * cos(Omega*(t+toffset)+eta0);
+    center[1] = R * sin(Omega*(t+toffset)+eta0);
 }
 
 // Return the position of "craft" at time t in vector p
@@ -328,9 +322,9 @@ void CircularRotating::putp(Vector &p,int craft,double t) {
 
 double CircularRotating::armlength(int arm, double t) {
     if(arm > 0) {
-	return L + delmodamp * sin(Omega*t - delmodph[arm]);
+	return L + delmodamp * sin(Omega*(t+toffset) - delmodph[arm]);
     } else {
-	return L - delmodamp * sin(Omega*t - delmodph[-arm]);
+	return L - delmodamp * sin(Omega*(t+toffset) - delmodph[-arm]);
     }
 }
 
@@ -340,9 +334,9 @@ double CircularRotating::armlengthbaseline(int arm, double t) {
 
 double CircularRotating::armlengthaccurate(int arm, double t) {
     if(arm > 0) {
-	return delmodamp * sin(Omega*t - delmodph[arm]);
+	return delmodamp * sin(Omega*(t+toffset) - delmodph[arm]);
     } else {
-	return -delmodamp * sin(Omega*t - delmodph[-arm]);
+	return -delmodamp * sin(Omega*(t+toffset) - delmodph[-arm]);
     }
 }
 
@@ -368,8 +362,9 @@ void CircularRotating::oldputn(Vector &n,int arm,double t) {
 
 // --- EccentricInclined LISA class -----------------------------------------------------
 
-EccentricInclined::EccentricInclined(double eta0,double xi0,double sw) {
+EccentricInclined::EccentricInclined(double eta0,double xi0,double sw,double t0) {
     L = Lstd;
+    toffset = t0;
 
     // since we do not define armlength, we must initialize guessL
     // to the initial guess for the length of arms
@@ -403,7 +398,7 @@ void EccentricInclined::settime(int craft, double t) {
     const double sqecc = ecc*ecc;
     const double sqrt3 = sqrt(3.0);
 
-    double alpha = Omega*t + kappa;
+    double alpha = Omega*(t + toffset) + kappa;
 
     double beta;
 
@@ -446,11 +441,11 @@ void EccentricInclined::putp(Vector &p, int craft, double t) {
 
 double EccentricInclined::armlength(int arm, double t) {
     if(arm > 0) {
-	return L + pdelmod * sin(Omega*t - delmodph[arm]) 
-	    + delmod3 * sin(Omega3*t - delmodph2);
+	return L + pdelmod * sin(Omega*(t+toffset) - delmodph[arm]) 
+	    + delmod3 * sin(Omega3*(t+toffset) - delmodph2);
     } else {
-	return L + mdelmod * sin(Omega*t - delmodph[-arm])
-	    + delmod3 * sin(Omega3*t - delmodph2);
+	return L + mdelmod * sin(Omega*(t+toffset) - delmodph[-arm])
+	    + delmod3 * sin(Omega3*(t+toffset) - delmodph2);
     }
 }
 
@@ -460,11 +455,11 @@ double EccentricInclined::armlengthbaseline(int arm, double t) {
 
 double EccentricInclined::armlengthaccurate(int arm, double t) {
     if(arm > 0) {
-	return pdelmod * sin(Omega*t - delmodph[arm]) 
-	    + delmod3 * sin(Omega3*t - delmodph2);
+	return pdelmod * sin(Omega*(t+toffset) - delmodph[arm]) 
+	    + delmod3 * sin(Omega3*(t+toffset) - delmodph2);
     } else {
-	return mdelmod * sin(Omega*t - delmodph[-arm])
-	    + delmod3 * sin(Omega3*t - delmodph2);
+	return mdelmod * sin(Omega*(t+toffset) - delmodph[-arm])
+	    + delmod3 * sin(Omega3*(t+toffset) - delmodph2);
     }
 }
 

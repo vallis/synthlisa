@@ -155,6 +155,8 @@ class CircularRotating : public LISA {
         double R;
         double L;
 
+	double toffset;
+
         double eta0;
         double xi0;
 
@@ -175,8 +177,8 @@ class CircularRotating : public LISA {
 	void initialize(double e0, double x0, double sw);
 
     public:
-        CircularRotating(double eta0 = 0.0,double xi0 = 0.0,double sw = 1.0);
-	CircularRotating(double myL, double e0, double x0, double sw);
+        CircularRotating(double eta0 = 0.0,double xi0 = 0.0,double sw = 1.0,double t0 = 0.0);
+	CircularRotating(double myL,double e0,double x0,double sw,double t0);
 
         // CircularRotating defines a computed (fitted) version of armlength
         // use genarmlength to get the exact armlength,
@@ -205,6 +207,8 @@ class EccentricInclined : public LISA {
         // and initial orientation of the spacecraft
 	// used internally, but computed from eta0 and xi0
 
+	double toffset;
+
         double kappa; 
         double lambda;
 	double swi;
@@ -223,7 +227,7 @@ class EccentricInclined : public LISA {
         void settime(int craft,double t);
         
     public:
-        EccentricInclined(double eta0 = 0.0,double xi0 = 0.0,double sw = 1.0);
+        EccentricInclined(double eta0 = 0.0,double xi0 = 0.0,double sw = 1.0,double t0 = 0.0);
 
         void putp(Vector &p,int craft,double t);
 
