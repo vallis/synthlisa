@@ -164,7 +164,7 @@ InterpolateNoise::InterpolateNoise(double st, double pbt, double sd, double ex, 
 
     getnoise = new WhiteNoise();
 
-    thenoise = new MakeNoise(getnoise,thefilter,buffersize);
+    thenoise = new FilterMakeNoise(getnoise,thefilter,buffersize);
 }
 
 // constructor based on SampledNoise. Need to pass:
@@ -195,7 +195,7 @@ InterpolateNoise::InterpolateNoise(double *nb,long sl,double st,double pbt,doubl
     getnoise = new SampledNoise(nb,sl);
 
     long &buffersize = sl;
-    thenoise = new MakeNoise(getnoise,thefilter,buffersize);
+    thenoise = new FilterMakeNoise(getnoise,thefilter,buffersize);
 }
 
 InterpolateNoise::~InterpolateNoise() {
@@ -285,7 +285,7 @@ double InterpolateNoise::operator[](double time) {
         abort();
     } else if (lasttime - time > timewindow) {
 	cout << "InterpolateNoise::[]: time requested (" << time <<
-	    ") too old, last was " << lasttime << endl;
+	    ") too old, last was " << lasttime << ", pbt is " << prebuffertime << endl;
 	abort();
     } else {
 	if (time > lasttime) {
@@ -310,7 +310,9 @@ double InterpolateNoise::noise(double timebase,double timecorr) {
         cout << "InterpolateNoise::[]: time requested (" << time << ") too large" << endl;
         abort();
     } else if (lasttime - time > timewindow) {
-	cout << "InterpolateNoise::[]: time requested (" << time << ") too old" << endl;
+	cout << "InterpolateNoise::[]: time requested (" << time << 
+	    ") too old, last was " << lasttime << ", pbt is " << prebuffertime << endl;
+
 	abort();
     } else {
 	if (time > lasttime) {

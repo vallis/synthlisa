@@ -166,6 +166,13 @@ class DiffFilter : public Filter {
 // the main fixed-timestep noise class
 
 class MakeNoise {
+ public:
+    virtual void reset() = 0;
+
+    virtual double operator[](long pos) = 0;
+};
+
+class FilterMakeNoise : public MakeNoise {
  private:
     BufferNoise *x, *y;
     long maxbuffer;
@@ -175,13 +182,13 @@ class MakeNoise {
     Filter *filter;
 
  public:
-    MakeNoise(GetNoise *g,Filter *f,long l)
+    FilterMakeNoise(GetNoise *g,Filter *f,long l)
 	: maxbuffer(l), earliest(-1), latest(-1), get(g), filter(f) {
 	x = new BufferNoise(maxbuffer);
 	y = new BufferNoise(maxbuffer);
     };
 
-    ~MakeNoise() {
+    virtual ~FilterMakeNoise() {
 	delete y;
 	delete x;
     }
@@ -198,7 +205,7 @@ class MakeNoise {
 
     double operator[](long pos) {
 	if(pos < earliest) {
-	    cout << "MakeNoise::[]: trying to access noise element (" << pos << ") before oldest kept." << endl;
+	    cout << "FilterMakeNoise::[]: trying to access noise element (" << pos << ") before oldest kept." << endl;
 	    abort();
 	} else if (pos > latest) {
 	    for(int i=latest+1;i<=pos;i++) {
@@ -295,18 +302,19 @@ class InterpolateNoise : public Noise {
 
     double timewindow;
     double lasttime;
-
-    double normalize;
   
     GetNoise *getnoise;
     Filter *thefilter;
 
-    MakeNoise *thenoise;
     Interpolator *interp;
 
     void setfilter(double ex);
     void setnorm(double sd, double ex);
     void setnormsampled(double sd, double ex);
+
+ protected:
+    MakeNoise *thenoise;
+    double normalize;
 
  public:
     InterpolateNoise(double sampletime,double prebuffer,double density,double exponent, int swindow = 1);
