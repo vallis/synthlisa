@@ -6,58 +6,68 @@
 #include "lisasim-noise.h"
 
 class TDInoise : public TDI {
-    private:
-        LISA *lisa, *phlisa;
+ protected:
+    LISA *lisa, *phlisa;
 
-        Noise *pm[4], *pms[4];
+    Noise *pm[4], *pms[4];
         
-        // I label shot noises by sending and receiving spacecraft, not by link and receiving
+    // I label shot noises by sending and receiving spacecraft, not by link and receiving
         
-        Noise *shot[4][4];
+    Noise *shot[4][4];
 
-        Noise *c[4], *cs[4];
+    Noise *c[4], *cs[4];
 
-	// set this to one if we are allocating noise objects
+    // set this to one if we are allocating noise objects
 
-	int allocated;
+    int allocated;
+    
+ public:
+    // standard noises for everybody, same levels
 
-    public:
-        // standard noises for everybody, same levels
+    TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser);
 
-        TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser);
+    // provide arrays of noise parameters
+    // the convention is {1, 1*, 2, 2*, 3, 3*}, and {12,21,23,32,31,13} (sending and receiving)
 
-	// provide arrays of noise parameters
-	// the convention is {1, 1*, 2, 2*, 3, 3*}, and {12,21,23,32,31,13} (sending and receiving)
+    TDInoise(LISA *mylisa, double *stproof, double *sdproof, double *stshot, double *sdshot, double *stlaser, double *sdlaser);
 
-        TDInoise(LISA *mylisa, double *stproof, double *sdproof, double *stshot, double *sdshot, double *stlaser, double *sdlaser);
+    // provide arrays of pointers to noise objects
 
-	// provide arrays of pointers to noise objects
+    TDInoise(LISA *mylisa, Noise *proofnoise[6],Noise *shotnoise[6],Noise *lasernoise[6]);
 
-	TDInoise(LISA *mylisa, Noise *proofnoise[6],Noise *shotnoise[6],Noise *lasernoise[6]);
+    // the destructor will delete all the noise objects only if they were created by the constructor
 
-	// the destructor will delete all the noise objects only if they were created by the constructor
+    virtual ~TDInoise();
 
-        ~TDInoise();
+    // change the physical LISA
 
-	// change the physical LISA
+    void setphlisa(LISA *mylisa);
 
-	void setphlisa(LISA *mylisa);
+    // lock all the laser noises to one of them; use negative "master" for starred lasers
 
-	// lock all the laser noises to one of them; use negative "master" for starred lasers
+    void lock(int master);
 
-	void lock(int master);
+    // reset all noises
 
-	// reset all noises
+    void reset();
 
-        void reset();
+    // basic TDI observables
 
-	// basic TDI observables
+    double y(int send, int link, int recv, int ret1, int ret2, int ret3, double t);
+    double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, double t);
 
-        double y(int send, int link, int recv, int ret1, int ret2, int ret3, double t);
-        double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, double t);
+    virtual double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t);
+    virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
+};
 
-	double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t);
-	double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
+class TDIaccurate : public TDInoise {
+ public:
+    TDIaccurate(LISA *mylisa, Noise *proofnoise[6],Noise *shotnoise[6],Noise *lasernoise[6]) : TDInoise(mylisa,proofnoise,shotnoise,lasernoise) {};
+    
+    ~TDIaccurate() {};
+
+    double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t);
+    double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
 };
 
 // return approx lighttime, for estimation of noise buffer size

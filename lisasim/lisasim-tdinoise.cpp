@@ -368,3 +368,69 @@ Noise *stdlasernoise(LISA *lisa,double stlaser, double sdlaser) {
 TDInoise *stdnoise(LISA *mylisa) {
     return new TDInoise(mylisa,1.0,2.5e-48,1.0,1.8e-37,1.0,1.1e-26);
 }
+
+double TDIaccurate::y(int send, int slink, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t) {
+    int link = abs(slink);
+
+    // this recursive retardation procedure assumes smart TDI...
+
+    lisa->newretardtime(t);
+
+    lisa->retard(ret7); lisa->retard(ret6); lisa->retard(ret5);
+    lisa->retard(ret4); lisa->retard(ret3); lisa->retard(ret2); lisa->retard(ret1);
+
+    double retardation = -lisa->retardation();
+
+    if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2)) {
+        // cyclic combination
+        // if introducing error in the determination of the armlengths, it should not enter
+        // the following (physical) retardation of the laser noise, so we use the phlisa object
+
+	lisa->retard(phlisa,link);
+	double retardlaser = -lisa->retardation();
+
+        return( cs[send]->noise(t,retardlaser)
+		- 2.0 * pm[recv]->noise(t,retardation) 
+		- c[recv]->noise(t,retardation)
+		+ shot[send][recv]->noise(t,retardation) );
+    } else {
+        // anticyclic combination
+        // ditto here
+
+	lisa->retard(phlisa,-link);
+	double retardlaser = -lisa->retardation();
+
+        return( c[send]->noise(t,retardlaser)
+		+ 2.0 * pms[recv]->noise(t,retardation)
+		- cs[recv]->noise(t,retardation)
+		+ shot[send][recv]->noise(t,retardation) );
+    }
+}
+
+double TDIaccurate::z(int send, int slink, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t) {
+    int link = abs(slink);
+
+    // this recursive retardation procedure assumes smart TDI...
+    // (and the correct order in the retardation expressions)
+
+    lisa->newretardtime(t);
+
+    lisa->retard(ret8); lisa->retard(ret7); lisa->retard(ret6); lisa->retard(ret5);
+    lisa->retard(ret4); lisa->retard(ret3); lisa->retard(ret2); lisa->retard(ret1);
+
+    double retardation = -lisa->retardation();
+
+    if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2)) {
+        // cyclic combination
+
+        return( cs[recv]->noise(t,retardation)
+		- 2.0 * pms[recv]->noise(t,retardation)
+		- c[recv]->noise(t,retardation) );
+    } else {
+        // anticyclic combination
+
+        return( c[recv]->noise(t,retardation)
+		+ 2.0 * pm[recv]->noise(t,retardation)
+		- cs[recv]->noise(t,retardation) );
+    }
+}
