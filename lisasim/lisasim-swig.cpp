@@ -1,8 +1,9 @@
-#include <iostream.h>
+#include <iostream>
 
 #include "lisasim.h"
 
 #include <time.h>
+#include <sys/time.h>
 #include <math.h>
 
 void printn(CircularRotating *mylisa,int arm,double t) {
