@@ -525,7 +525,7 @@ NoisyLISA::NoisyLISA(LISA *clean,double starm,double sdarm) {
     // create InterpolateNoise objects for the arm determination noises
     // we need triple retardations (septuple for 2nd-generation TDI)
 
-    double pbtarm = 8.0 * lighttime;
+    double pbtarm = 8.0 * lighttime + 2.0 * starm;
 
     // we use plain uncorrelated white noise, for the moment
 
@@ -576,12 +576,15 @@ NominalLISA::NominalLISA(double eta0,double xi0,double sw,double t0) {
     swi = sw;
 
     // these are the correct values of the user-set parameters
+    // they won't be changed by setparameters, which works directly
+    // on dL, toffset, pdelmod, mdelmod, delmod3
 
+    Lnom = L;
     cmod = Omega * Rgc * L;
     emod = ecc * L;
     toff = t0;
 
-    setparameters(cmod,emod,toff);
+    setparameters(Lnom,cmod,emod,toff);
 
     // we make these exact for the moment
 
@@ -592,13 +595,32 @@ NominalLISA::NominalLISA(double eta0,double xi0,double sw,double t0) {
     delmodph2 = 3.0*xi0;
 }
 
-void NominalLISA::setparameters(double cm,double em,double toff) {
-    toffset = toff;
+void NominalLISA::setparameters(double l,double cm,double em,double to) {
+    dL = l - L;
+
+    toffset = to;
     
     pdelmod = (swi > 0.0 ? 1.0 : -1.0) * cm - (15.0/32.0) * em;
     mdelmod = (swi > 0.0 ? -1.0 : 1.0) * cm - (15.0/32.0) * em;
 
     delmod3 = (1.0/32.0) * em;
+}
+
+void NominalLISA::setparameters(double cm,double em,double to) {
+    // setting cmod, emod, toff
+
+    setparameters(Lnom,cm,em,to);
+}
+
+void NominalLISA::setparameters3(double p1,double p2,double p3) {
+    // setting l, em, to
+    setparameters(p1,cmod,p2,p3);
+
+    // setting l, cm, to
+    // setparameters(p1,p2,emod,p3);
+
+    // setting l, cm, em
+    // setparameters(p1,p2,p3,toff);
 }
 
 NominalLISA::~NominalLISA() {
@@ -607,10 +629,10 @@ NominalLISA::~NominalLISA() {
 
 double NominalLISA::armlength(int arm, double t) {
     if(arm > 0) {
-	return L + pdelmod * sin(Omega*(t+toffset) - delmodph[arm]) 
+	return L + dL + pdelmod * sin(Omega*(t+toffset) - delmodph[arm]) 
 	    + delmod3 * sin(Omega3*(t+toffset) - delmodph2);
     } else {
-	return L + mdelmod * sin(Omega*(t+toffset) - delmodph[-arm])
+	return L + dL + mdelmod * sin(Omega*(t+toffset) - delmodph[-arm])
 	    + delmod3 * sin(Omega3*(t+toffset) - delmodph2);
     }
 }
@@ -621,11 +643,66 @@ double NominalLISA::armlengthbaseline(int arm, double t) {
 
 double NominalLISA::armlengthaccurate(int arm, double t) {
     if(arm > 0) {
-	return pdelmod * sin(Omega*(t+toffset) - delmodph[arm]) 
+	return dL + pdelmod * sin(Omega*(t+toffset) - delmodph[arm]) 
 	    + delmod3 * sin(Omega3*(t+toffset) - delmodph2);
     } else {
-	return mdelmod * sin(Omega*(t+toffset) - delmodph[-arm])
+	return dL + mdelmod * sin(Omega*(t+toffset) - delmodph[-arm])
 	    + delmod3 * sin(Omega3*(t+toffset) - delmodph2);
+    }
+}
+
+// --- LinearLISA class ---------------------------------------------------
+
+LinearLISA::LinearLISA(double eta0,double xi0,double sw,double t0) {
+    reallisa = new EccentricInclined(eta0,xi0,sw,t0);
+
+    L = Lstd;
+
+    for(int i=0;i<6;i++) {
+	dL[i] = 0.0;
+	dLdt[i] = 0.0;
+    }
+}
+
+LinearLISA::~LinearLISA() {
+    delete reallisa;
+}
+
+void LinearLISA::settimeoffset(double toff) {
+    toffset = toff;
+}
+
+void LinearLISA::setparameters(double dl[6],double dldt[6]) {
+    for(int i=0;i<6;i++) {
+	dL[i] = dl[i];
+	dLdt[i] = dldt[i];
+    }
+}
+
+double LinearLISA::armlengtherror(int arm, double t) {
+    return armlength(arm,t) - reallisa->armlength(arm,t);
+}
+
+// arm = 1 -> 0, 2 -> 1, 3 -> 2
+// arm =-1 -> 3,-2 -> 4,-3 -> 5
+
+double LinearLISA::armlength(int arm, double t) {
+    if(arm > 0) {
+	return L + dL[arm-1] + dLdt[arm-1]*(t-toffset);
+    } else {
+	return L + dL[2-arm] + dLdt[2-arm]*(t-toffset);
+    }
+}
+
+double LinearLISA::armlengthbaseline(int arm, double t) {
+    return L;
+}
+
+double LinearLISA::armlengthaccurate(int arm, double t) {
+    if(arm > 0) {
+	return dL[arm-1] + dLdt[arm-1]*(t-toffset);
+    } else {
+	return dL[2-arm] + dLdt[2-arm]*(t-toffset);
     }
 }
 
