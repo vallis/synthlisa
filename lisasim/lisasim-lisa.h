@@ -33,23 +33,7 @@ static const double Lstd = 16.6782;
 
 static const double ecc = 0.00964838;
 
-// ... almost deprecated ...
-
-// for CircularRotating
-// fit parameter for annual modulation of armlengths (1/sec, from armlength.nb)
-// this might need fine tuning
-
-const double delmodconst = 0.17647;
-
-// for EccentricInclined
-// fit parameters for annual modulation of armlengths (from secondgeneration.nb)
-
-const double pdelmodamp = -0.0770879;
-const double mdelmodamp = -0.0737721;
-
 const double Omega3 = 3.0 * Omega;
-
-const double delmodamp2 = -0.00502877;
 
 // generic LISA class
 
@@ -211,8 +195,6 @@ class CircularRotating : public LISA {
         double genarmlength(int arm, double t);
 };
 
-// all the static constants below should have file scope and be used throughout
-
 class EccentricInclined : public LISA {
     private:
         // LISA armlength 
@@ -220,49 +202,8 @@ class EccentricInclined : public LISA {
         double L;
 
         // initial azimuthal position of the guiding center
-    
-        double kappa;
-        
-        // initial orientation of the spacecraft
-        
-        double lambda;
-
-	// constants needed in the approximation to the armlength
-
-	double delmodph[4];
-	double delmodph2;
-        
-        // caching the positions of spacecraft
-        
-        Vector cachep[4];
-        double cachetime[4];
-        
-        void settime(int craft,double t);
-        
-    public:
-        EccentricInclined(double kappa0 = 0.0,double lambda0 = 0.0);
-
-        void putp(Vector &p,int craft,double t);
-
-        // EccentricInclined defines a computed (fitted) version of armlength
-        // use genarmlength to get the exact armlength
-
-	double armlength(int arm, double t);
-
-	double armlengthbaseline(int arm, double t);
-	double armlengthaccurate(int arm, double t);
-
-        double genarmlength(int arm, double t);
-};
-
-class EccentricInclined2 : public LISA {
-    private:
-        // LISA armlength 
-
-        double L;
-
-        // initial azimuthal position of the guiding center
         // and initial orientation of the spacecraft
+	// used internally, but computed from eta0 and xi0
 
         double kappa; 
         double lambda;
@@ -282,11 +223,11 @@ class EccentricInclined2 : public LISA {
         void settime(int craft,double t);
         
     public:
-        EccentricInclined2(double eta0 = 0.0,double xi0 = 0.0,double sw = 1.0);
+        EccentricInclined(double eta0 = 0.0,double xi0 = 0.0,double sw = 1.0);
 
         void putp(Vector &p,int craft,double t);
 
-        // EccentricInclined defines a computed (fitted) version of armlength
+        // EccentricInclined defines a computed (leading order) version of armlength
         // use genarmlength to get the exact armlength
 
 	double armlength(int arm, double t);
