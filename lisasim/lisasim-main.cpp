@@ -32,17 +32,20 @@ double unwind(double a, double b, int index) {
 int main(int argc, char **argv) {
     double fsec = 1E-3;
     double dec = 0.0, asc = 0.0, beta = 0.0, lambda = 0.0, phi0 = 0.0, psi = 0.0, inc = M_PI/2.0;
-    long samples = 1024;
+    int samples = 1024;
     double srate = 1.0;
-    int diff = 0, mono = 0, equat = 0, eclip = 0;
+    int diff = 0, mono = 0, equat = 0, eclip = 0, fast=0, SkipCalc=0;
     double deltat = 0.0;
     char *filename = "tdi.txt";
+    TDI *mytdi=0;
+    TDIfast *mytdifast=0;
+    
 
     opterr = 0;
 
     int c;
     
-    while ((c = getopt(argc, argv, "+f:d:a:b:l:0:p:i:g:#:r:MBPh")) != -1)
+    while ((c = getopt(argc, argv, "+f:d:a:b:l:0:p:i:g:#:r:MBPFhS")) != -1)
         switch (c) {
             case 'f':	// frequency of source
                 fsec = atof(optarg);
@@ -91,10 +94,31 @@ int main(int argc, char **argv) {
             case 'B':	// toggle binary
                 mono = 0;
                 break;
+	    case 'F': // Use TDIfast
+	        fast = 1;
+		break;
+	    case 'S': // Skip Calculation (Setup only.)
+	        SkipCalc = 1;
+		break;
             case 'h':	// help
-                fprintf(stderr, "Usage: %s [-f freq(Hz) -d eqdec(rad) -a eqrasc(rad) -b eclat -l eclon -0 phi0(rad) -p psi(rad) -i inc(rad) -g gamma(rad) -# nsamples -# samplerate(sec)] [outputfile]\n       default behavior is to print X, Y, Z; -P will toggle printing amplitude/phase pairs.\n       default source is simple binary; -M will toggle simple monochromatic.\n",argv[0]);
+	      fprintf(stderr, "Usage: %s [options] [outputfile]\n", argv[0]);
+		fprintf(stderr, "where options are:\n");
+		fprintf(stderr, "\t-f freq(Hz)\n");
+		fprintf(stderr, "\t[-d eqdec(rad) -a eqrasc(rad) | -b eclat -l eclon]\n");
+		fprintf(stderr, "\t-0 phi0(rad)\n");
+		fprintf(stderr, "\t-p psi(rad)\n");
+		fprintf(stderr, "\t-i inc(rad)\n");
+		fprintf(stderr, "\t-g gamma(rad)\n");
+		fprintf(stderr, "\t-# nsamples\n");
+		fprintf(stderr, "\t-r samplerate(sec)");
+		fprintf(stderr, "The following flags effect processing and output:\n");
+		fprintf(stderr, "\t-P\tThe default behavior is to print X, Y, Z.  This option will print amplitude/phase pairs instead.\n");
+		fprintf(stderr, "\t-M\tChange the source from simple binary to simple monochromatic.\n");
+		fprintf(stderr, "\t-F\tUse TDIfast caching of orbits.  (Note that -P is not supported with this option.)\n");
+		fprintf(stderr, "\t-S\tSkip actual calculation -- Setup only\n");
             case '?':	// unrecognized option
                 fprintf(stderr, "Unknown option `-%c'.\n", optopt);
+		fprintf(stderr, "Use -h to see available options.");
                 return 1;
                 break;
             default:
@@ -139,8 +163,16 @@ int main(int argc, char **argv) {
     cout << "; phi0 = " << phi0 << "; psi = " << psi << "; inc/gamma = " << inc << endl;
     cout << "  computing " << samples << " samples with a " << srate << " s sampling interval" << endl;
 
-    if (diff == 1)
+
+    if (diff == 1) {
+      if (fast == 1) {
+	cout << "Finite-difference amplitude and phase (-P) is not supported with orbit caching (-F). Aborting." << endl;
+	return(1);
+      } else {
         cout << "  doing finite-difference amplitude and phase" << endl;
+      }
+    }
+
     if (mono == 1)
         cout << "  using simple monochromatic source" << endl;
 
@@ -153,37 +185,55 @@ int main(int argc, char **argv) {
     else
         mywave = new SimpleBinary(fsec, phi0, inc, 1.0, beta, lambda, psi);
 
+    //    CircularRotating mylisa(0.0,0.0);
     CircularRotating mylisa(1.50*M_PI,0.0,1.0);
 
-    TDI mytdi(&mylisa,mywave);
-    
-    ofstream fout(filename);
-
-    for(int i=0;i<samples;i++) {
-        double time = i * srate;
-
-        if (diff==1) {
-            double x = mytdi.X(time);
-            double y = mytdi.Y(time);
-            double z = mytdi.Z(time);
-            
-            double dx = (mytdi.X(time+deltat) - x) / deltat / (2*M_PI*fsec);
-            double dy = (mytdi.Y(time+deltat) - y) / deltat / (2*M_PI*fsec);
-            double dz = (mytdi.Z(time+deltat) - z) / deltat / (2*M_PI*fsec);            
-            
-            double cphase = 2*M_PI*fsec*time;
-
-            fout << time << " " <<
-                sqrt(x*x + dx*dx) << " " << unwind(atan2(-dx,x),cphase,0) << " " <<
-                sqrt(y*y + dy*dy) << " " << unwind(atan2(-dy,y),cphase,1) << " " <<
-                sqrt(z*z + dz*dz) << " " << unwind(atan2(-dz,z),cphase,2) << " " <<  endl;
-        } else {
-            fout << time << " " << mytdi.X(time) << " " << mytdi.Y(time) << " " << mytdi.Z(time) << endl;        
-        }
+    if (fast == 0) {
+      mytdi = new TDI(&mylisa,mywave);
+    } else {
+      mytdifast = new TDIfast(&mylisa,mywave, srate, samples);
+      mytdifast->CacheX();
+      mytdifast->CacheY();
+      mytdifast->CacheZ();
+      
+      cout << "X, Y, Z initialized" << endl;
     }
-    
-    cout << "  done!" << endl;
 
+    if (!SkipCalc) {
+      ofstream fout(filename);
+      
+      for(int i=0;i<samples;i++) {
+	double time = i * srate;
+	
+	if (diff==1) {
+	  double x = mytdi->X(time);
+	  double y = mytdi->Y(time);
+	  double z = mytdi->Z(time);
+	  
+	  double dx = (mytdi->X(time+deltat) - x) / deltat / (2*M_PI*fsec);
+	  double dy = (mytdi->Y(time+deltat) - y) / deltat / (2*M_PI*fsec);
+	  double dz = (mytdi->Z(time+deltat) - z) / deltat / (2*M_PI*fsec);            
+	  
+	  double cphase = 2*M_PI*fsec*time;
+	  
+	  fout << time << " " <<
+	    sqrt(x*x + dx*dx) << " " << unwind(atan2(-dx,x),cphase,0) << " " <<
+	    sqrt(y*y + dy*dy) << " " << unwind(atan2(-dy,y),cphase,1) << " " <<
+	    sqrt(z*z + dz*dz) << " " << unwind(atan2(-dz,z),cphase,2) << " " <<  endl;
+	} else { 
+	  if (fast == 1){
+	    fout << time << " " << mytdifast->Xfast(i) << " " << mytdifast->Yfast(i) << " " << mytdifast->Zfast(i) << endl;        
+	  } else {
+	    fout << time << " " << mytdi->X(time) << " " << mytdi->Y(time) << " " << mytdi->Z(time) << endl;        
+	  }
+	}  
+      }
+    }
+    cout << "  done!" << endl;
+    
     delete mywave;
+    delete mytdi;
+    delete mytdifast;
+    
 }
 

@@ -6,7 +6,7 @@ double TDI::psi(int arm, double t, double twave) {
     lisa->putn(lisan,arm,t);
     
     Tensor cwave;
-    wave->putwave(cwave,t,twave);
+    wave->putwave(cwave,twave);
     
     Vector tmp;
     tmp.setproduct(cwave,lisan);
@@ -153,3 +153,4 @@ double TDI::zeta(double time) {
             y(3, 2, 1, 1, 0, 0, t) -
             y(3, 1, 2, 2, 0, 0, t)  );
 }
+
