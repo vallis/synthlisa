@@ -6,40 +6,39 @@
 
 #include <math.h>
 
+/* Documentation rules: in the header, describe only objects that are
+   actually defined, not just declared. A single line will become a
+   Doxygen short description; otherwise, the first dot+space will
+   separate the short from the long description. */
+
 // ---- define file-wide numerical constants
 
-// seconds per year; this is just 60x60x24x365 (it differs from the LISA Simulator)
-
+/// Seconds per year. This is just 60x60x24x365 (it differs from the LISA Simulator).
 const double secondsperyear = 31536000.0;
 const double yearspersecond = 3.1709791983764586e-8;
 
-// using 365.25 days
-// const double secondsperyear = 31557600.0;
-// const double yearspersecond = 3.168808781402895e-8;
+/* Using 365.25 days, we'd have
+   const double secondsperyear = 31557600.0;
+   const double yearspersecond = 3.168808781402895e-8; */
 
-// LISA's angular velocity
-
+/// Angular velocity of the LISA array orbit.
 const double Omega = 2.0 * M_PI * yearspersecond;
-
-// orbital radius of the guiding center (yrs)
-// LISA simulator has Rgc = 1.49597870660e11 m = 499.005 s
- 
-static const double Rgc = 499.004;
-
-// mean arm length of the LISA detector (yrs)
-// LISA simulator has L = 5.0e9 m = 16.6782 s;
-
-static const double Lstd = 16.6782;
-
-// eccentricity of the LISA spacecraft orbits (for EccentricInclined)
-// LISA simulator has L/(2.0*sqrt(3.0)*Rgc)
-// with L = 5.0e9, equal to 0.00964838
-
-static const double ecc = 0.00964838;
-
 const double Omega3 = 3.0 * Omega;
 
-// generic LISA class
+/** Orbital radius of the guiding center (yrs).
+    The LISA simulator has Rgc = 1.49597870660e11 m = 499.005 s. */
+static const double Rgc = 499.004;
+
+/** Mean arm length of the LISA detector (yrs).
+    The LISA simulator has L = 5.0e9 m = 16.6782 s. */
+static const double Lstd = 16.6782;
+
+/** Eccentricity of the LISA spacecraft orbits (used by
+    EccentricInclined). LISA simulator has L/(2.0*sqrt(3.0)*Rgc);
+    with L = 5.0e9, e = 0.00964838. */
+static const double ecc = 0.00964838;
+
+/// Base LISA geometry class.
 
 class LISA {
  private:
@@ -47,10 +46,9 @@ class LISA {
     double trb, tra;
 
  protected:
-    // guessL is needed by the generic version of armlength()
-    // it needs to be initialized by the constructor of all the derived
-    // LISA classes that do not define armlength
-    
+    /** Initial armlength guess for the generic version of
+	armlength(). It should be initialized by the constructor of
+	all the derived LISA classes that do not define armlength. */    
     double guessL[4];
 	
  public:
@@ -58,42 +56,42 @@ class LISA {
 
     virtual ~LISA() {};
 
+    /// Resets LISA classes that have something to reset.
     virtual void reset() {};
 
-    // will return pointer to itself; overridden by NoisyLISA, which returns the basic LISA
+    /** Returns a pointer to the TDI (nominal) LISA. Unless
+	overridden, returns just "this". */
+    virtual LISA *physlisa() { return this; }
 
-    virtual LISA *thislisa() {
-	return this;
-    }
-
-    // generic version of putn; uses (delayed) differences of putp, calling
-    // armlength to get the right delay
-
+    /*  Fills n with the photon direction vector along "arm" for
+	reception at time t. */
     virtual void putn(Vector &n, int arm, double t);
 
-    // putp should never be called for base LISA
-
+    /** Fill p with the position of "craft" at time t. It is not
+	defined for base LISA, which has no geometry, and thus becomes
+	an abstract class. */
     virtual void putp(Vector &p, int craft, double t) = 0;
 
-    // generic version of armlength: will use putp iteratively to find
-    // the delay corresponding to a photon trajectory backward from t
-    // along "arm"
-
+    /* Generic light propagation time along "arm" for reception at
+       time t. */
     virtual double armlength(int arm, double t);
 
-    // if we don't have anything better, return just armlength
-
+    /** Baseline value of the armlength (used to enhance precision in
+	chain retardations). If we don't make a distinction between
+	baseline and correction ("accurate"), return just the armlength. */
     virtual double armlengthbaseline(int arm, double t) {
 	return armlength(arm,t);
     }
 
+    /** Correction to the baseline armlength (used to enhance
+	precision in chain retardations). If we don't make a
+	distinction between baseline and correction ("accurate"),
+	return 0. */
     virtual double armlengthaccurate(int arm, double t) {
 	return 0.0;
     }
 
-    // these extra methods are needed to load arrays (not Vector objects)
-    // with the spacecraft positions and links
-
+    /// Load an array rather than a vector with n (was used in LISAfast).
     virtual void putn(double n[], int arm, double t) {
 	Vector temp;
             
@@ -104,6 +102,7 @@ class LISA {
 	n[2] = temp[2];
     }
         
+    /// Load an array rather than a vector with p (was used in LISAfast).
     virtual void putp(double p[], int craft, double t) {
 	Vector temp;
             
@@ -122,27 +121,35 @@ class LISA {
     virtual void retard(LISA *anotherlisa,int ret);
 };
 
-class OriginalLISA : public LISA {
-    protected:
-        double L[4];
-        
-        Vector initn[4];
-        Vector initp[4];
-        
-    public:
-        // accept the armlength in seconds
-    
-        OriginalLISA(double arm1,double arm2,double arm3);
 
-        // OriginalLISA defines optimized (look-up) versions of putn and armlength
+/// stationary LISA geometry
+
+class OriginalLISA : public LISA {
+ protected:
+    /// Hold the three LISA armlengths in L[1]-L[3]
     
-        virtual void putn(Vector &n, int arm, double t);
-        virtual void putp(Vector &p, int craft, double t);
+    double L[4];
+        
+    /// Hold the three LISA arms
+    Vector initn[4];
     
-        virtual double armlength(int arm, double t);
+    /// Hold the three LISA spacecraft positions
+    Vector initp[4];
+        
+ public:
+    // accept the armlength in seconds
+    
+    OriginalLISA(double arm1,double arm2,double arm3);
+
+    // OriginalLISA defines optimized (look-up) versions of putn and armlength
+    
+    virtual void putn(Vector &n, int arm, double t);
+    virtual void putp(Vector &p, int craft, double t);
+	
+    virtual double armlength(int arm, double t);
 };
 
-// for the moment, use the following class only for TDInoise
+/// rotating LISA geometry
 
 class ModifiedLISA : public OriginalLISA {
     private:
@@ -163,7 +170,7 @@ class ModifiedLISA : public OriginalLISA {
         double genarmlength(int arm, double t);
 };
 
-// The following classes model the geometry of LISA and can be used also for "signal" TDI
+/// Rigidly rotating, orbiting LISA.
 
 class CircularRotating : public LISA {
     private:
@@ -213,7 +220,8 @@ class CircularRotating : public LISA {
         double genarmlength(int arm, double t);
 };
 
-// for the future: it would be nice to have the eccentricity as a parameter
+/** Orbiting LISA with eccentric orbits. In the future it would be
+    nice to have the eccentricity as a parameter */
 
 class EccentricInclined : public LISA {
     private:
@@ -260,6 +268,7 @@ class EccentricInclined : public LISA {
         double genarmlength(int arm, double t);
 };
 
+/// Takes any LISA and adds noise to the TDI (nominal) armlengths.
 
 class NoisyLISA : public LISA {
     private:
@@ -273,7 +282,7 @@ class NoisyLISA : public LISA {
         
         void reset();
 
-       	LISA *thislisa() {
+       	LISA *physlisa() {
 	    return cleanlisa;
 	}
 
@@ -299,6 +308,9 @@ class NoisyLISA : public LISA {
 	}
 };
 
+/** Takes any LISA for putp, putn, and physical armlengths, but uses a
+    parametrized model similar to EccentricInclined for the TDI
+    (nominal) armlengths. */
 
 class NominalLISA : public LISA {
     private:
@@ -319,7 +331,7 @@ class NominalLISA : public LISA {
 
 	void setparameters(double cm,double em,double toff);
 
-       	LISA *thislisa() {
+       	LISA *physlisa() {
 	    return reallisa;
 	}
 
