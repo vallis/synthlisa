@@ -51,7 +51,7 @@ OFILES= $(foreach cfile,$(CFILES),$(BUILD)/$(cfile:.cpp=.o))
 
 # basic compilation step
 $(BUILD)/%.o: %.cpp $(HFILES)
-	g++ $(OPTIONS) $(GSL_INCLUDE) -c $< -o $@
+	g++ $(OPTIONS) $(GSL_INCLUDE) $(PYTHON_INCLUDE) -c $< -o $@
 
 # make the directories if they are not there
 $(BUILD):
