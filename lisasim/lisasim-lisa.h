@@ -39,18 +39,31 @@ const double delmodconst = 0.17647;
 // generic LISA class
 
 class LISA {
+    protected:
+        // guessL is needed by the generic version of armlength()
+        // it needs to be initialized by the constructor of all the derived
+        // LISA classes that do not define armlength
+    
+        double guessL[4];
+
     public:
-
         LISA() {};
-
-        // default destructor: do I need this?
-
         virtual ~LISA() {};
 
         virtual void reset() {};
 
-        virtual void putn(Vector &n, int arm, double t) = 0;
+        // generic version of putn; uses (delayed) differences of putp, calling
+        // armlength to get the right delay
+
+        virtual void putn(Vector &n, int arm, double t);
+
+        // putp should never be called for base LISA
+
         virtual void putp(Vector &p, int craft, double t) = 0;
+
+        // generic version of armlength: will use putp iteratively to find
+        // the delay corresponding to a photon trajectory backward from t
+        // along "arm"
 
         virtual double armlength(int arm, double t);
 
@@ -89,6 +102,8 @@ class OriginalLISA : public LISA {
         // accept the armlength in seconds
     
         OriginalLISA(double arm1,double arm2,double arm3);
+
+        // OriginalLISA defines optimized (look-up) versions of putn and armlength
     
         virtual void putn(Vector &n, int arm, double t);
         virtual void putp(Vector &p, int craft, double t);
@@ -107,8 +122,10 @@ class ModifiedLISA : public OriginalLISA {
         // accept the armlength in seconds
     
         ModifiedLISA(double arm1,double arm2,double arm3);
+
+        // OriginalLISA defines a computed version of armlength
+        // however, it uses the base putn
     
-        void putn(Vector &n, int arm, double t);
         void putp(Vector &p, int craft, double t);
     
         double armlength(int arm, double t);
@@ -141,12 +158,18 @@ class CircularRotating : public LISA {
 
     public:
         CircularRotating(double eta0 = 0.0,double xi0 = 0.0,double sw = 1.0);
-        
-        void putn(Vector &n,int arm,double t);
+
+        // CircularRotating defines a computed (fitted) version of armlength
+        // however, putn defaults to the base version
+        // use genarmlength to get the base (exact) armlength,
+        // use oldputn to get the nondelayed (rotated-only) n's
+
         void putp(Vector &p,int craft,double t);
         
         double armlength(int arm, double t);
-        double genarmlength(int arms, double t);
+
+        void oldputn(Vector &n,int arm,  double t);
+        double genarmlength(int arm, double t);
 };
 
 // all the static constants below should have file scope and be used throughout
@@ -174,8 +197,9 @@ class MontanaEccentric : public LISA {
         
     public:
         MontanaEccentric(double kappa0 = 0.0,double lambda0 = 0.0);
-        
-        void putn(Vector &n,int arm,double t);
+
+        // MontanaEccentric defaults to the base versions of putn and armlength
+
         void putp(Vector &p,int craft,double t);
 };
 
@@ -190,7 +214,9 @@ class NoisyLISA : public LISA {
         ~NoisyLISA();
         
         void reset();
-    
+
+        // NoisyLISA returns
+
         double armlength(int arm, double t);
 
         void putn(Vector &n, int arm, double t) {

@@ -2,13 +2,19 @@
 
 TDIsignal::TDIsignal(LISA *mylisa, Wave *mywave) {
     lisa = mylisa;
+    phlisa = mylisa;
+    
     wave = mywave;
 }
 
-double TDIsignal::psi(int arm, double t, double twave) {
-    Vector lisan;
-    lisa->putn(lisan,arm,t);
-    
+TDIsignal::TDIsignal(LISA *mylisa, LISA *physlisa, Wave *mywave) {
+    lisa = mylisa;
+    phlisa = physlisa;
+
+    wave = mywave;
+}
+
+double TDIsignal::psi(Vector &lisan, double t, double twave) {
     Tensor cwave;
     wave->putwave(cwave,twave);
     
@@ -25,28 +31,45 @@ double TDIsignal::retard(int craft, double t) {
     return(-lisap.dotproduct(wave->k));
 }
 
+// the y as computed below should now be fully covariant
+// the time of evaluation (reception) is retarded according to the nominal lisa
+// then the time of emission is retarded according to physical lisa
+// the wave retardation for the emitting link is taken at the correct retarded time
+
+// note that the call to putn is already computing the armlength that we request later
+// we could make putn return the corresponding armlength
+
 double TDIsignal::y(int send, int slink, int recv, int ret1, int ret2, int ret3, double t) {
     int link = abs(slink);
 
     double retardedtime = t;
 
-    // this scheme needs to be updated in accordance with lisasim-tdinoise.cpp
-    
-    if(ret1) retardedtime -= lisa->armlength(ret1,t);
-    if(ret2) retardedtime -= lisa->armlength(ret2,t);
-    if(ret3) retardedtime -= lisa->armlength(ret3,t);
+    if(ret3 != 0) retardedtime -= lisa->armlength(ret3,retardedtime);
+    if(ret2 != 0) retardedtime -= lisa->armlength(ret2,retardedtime);    
+    if(ret1 != 0) retardedtime -= lisa->armlength(ret1,retardedtime);
 
     Vector linkn;
-    lisa->putn(linkn,link,t);
-    
-    double denom = linkn.dotproduct(wave->k);
-    if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2))
-        denom = 1.0 - denom;
-    else
-        denom = 1.0 + denom;
+    double denom, retardsignal;
 
-    return (( psi(link, retardedtime - lisa->armlength(link,t), retardedtime + retard(send, t) - lisa->armlength(link,t)) -
-              psi(link, retardedtime, retardedtime + retard(recv, t)) ) / denom );
+    // for the moment, let's not trust the sign of slink, and recompute it
+    // however, the linkn returned by the "modern" versions of putn is oriented,
+    // therefore the sign in denom should be the same (-) for both cases
+    // there's no problem in psi, because n is dotted twice into h
+ 
+    if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2)) {
+        lisa->putn(linkn,link,retardedtime);    
+        denom = 1.0 - linkn.dotproduct(wave->k);
+
+        retardsignal = retardedtime - phlisa->armlength(link,retardedtime);
+    } else {
+        lisa->putn(linkn,-link,retardedtime);    
+        denom = 1.0 - linkn.dotproduct(wave->k);
+
+        retardsignal = retardedtime - phlisa->armlength(-link,retardedtime);
+    }
+
+    return (( psi(linkn, retardsignal, retardsignal + retard(send, retardsignal)) -
+              psi(linkn, retardedtime, retardedtime + retard(recv, retardedtime)) ) / denom);
 }
 
 // the next three names are not standard!

@@ -35,6 +35,7 @@ public:
     CircularRotating(double eta0,double xi0,double sw);
     
     double armlength(int arm, double t);
+    
     double genarmlength(int arms, double t);
 };
 
@@ -138,3 +139,5 @@ extern void printtdi(char *filename,TDI *mytdi,int samples,double samplingtime,c
 
 %apply double* IN_1D_DOUBLE { double *array };
 extern void settdi(double *array,TDI *mytdi,int samples,double samplingtime,char *observables);
+
+extern void printn(CircularRotating *mylisa,int arm,double t);

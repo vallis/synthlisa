@@ -3,29 +3,100 @@
 
 // --- generic LISA class --------------------------------------------------------------
 
-// This is the generic version of "armlength", which takes differences between positions
-// generalized to take negative arguments, but it will still give the same answer
+// This is the generic version of "putn", which calls armlength
+// to return the correct retarded photon propagation vector
 
-double LISA::armlength(int arm, double t) {
-    Vector arm1, arm2;
-    
-    switch(abs(arm)) {
-        case 1:
-            putp(arm1,2,t); putp(arm2,3,t);
-            break;
-        case 2:
-            putp(arm1,3,t); putp(arm2,1,t);
-            break;
-        case 3:
-            putp(arm1,1,t); putp(arm2,2,t);
-            break;            
+void LISA::putn(Vector &n,int arms,double t) {
+    int arm = abs(arms);
+
+    int crafta = (arm + 1 < 4) ? (arm + 1) : (arm - 2);
+    int craftb = (arm + 2 < 4) ? (arm + 2) : (arm - 1);
+
+    if(arms < 0) {
+        int swap = crafta;
+        crafta = craftb;
+        craftb = swap;
     }
-    
-    Vector diff;
+
+    // this is consistent with pa(t) = pb(t-L(t;b->a)) + L(t;b->a) n
+    // for instance, p_1 = p_2 + n_3
+
+    Vector pa, pb;
+
+    putp(pa,crafta,t);
+    putp(pb,craftb,t-armlength(arms,t));
+
     for(int i=0;i<3;i++)
-        diff[i] = arm1[i] - arm2[i];
+        n[i] = pa[i] - pb[i];
+    
+    // normalize to a unit vector
+
+    double norm = sqrt(n[0]*n[0] + n[1]*n[1] + n[2]*n[2]);    
+                
+    for(int i=0;i<3;i++)
+        n[i] /= norm;
+}
+
+// This is the generic version of "armlength", which takes differences between positions
+// looking for a null photon propagation vector
+
+double LISA::armlength(int arms, double t) {
+    int arm = abs(arms);
+
+    int crafta = (arm + 1 < 4) ? (arm + 1) : (arm - 2);
+    int craftb = (arm + 2 < 4) ? (arm + 2) : (arm - 1);
+
+    if(arms < 0) {
+        int swap = crafta;
+        crafta = craftb;
+        craftb = swap;
+    }
+
+    // this is consistent with pa(t) = pb(t-L(t;b->a)) + L(t;b->a) n
+    // for instance, p_1 = p_2 + n_3
+
+    Vector pa, pb, n;
+
+    putp(pa,crafta,t);
+
+    // implement a simple bisection search for the correct armlength
+    // use a 10% initial bracket
+
+    double newguess = guessL[arm];
+    double hi = 1.10 * newguess, lo = 0.90 * newguess;
+
+    double guess;
+    
+    const double tol = 1e-6;
+
+    do {
+        guess = newguess;
+    
+        putp(pb,craftb,t-guess);
+
+        for(int i=0;i<3;i++)
+            n[i] = pa[i] - pb[i];
+
+        // compute the invariant relativistic distance between the events
+        // of emission and reception
+
+        double norm = sqrt(-guess*guess + n[0]*n[0] + n[1]*n[1] + n[2]*n[2]);
+
+        if(norm >= 0) {
+            // distance is spacelike; increase delay
+
+            lo = guess;
+        } else {
+            // distance is timelike; reduce delay
         
-    return(sqrt(diff.dotproduct(diff)));
+            hi = guess;
+        }
+        
+        newguess = 0.5 * (hi + lo);
+        
+    } while( fabs(newguess - guess) > tol );
+
+    return newguess;
 }
 
 // --- OriginalLISA LISA class ---------------------------------------------------------
@@ -34,7 +105,7 @@ OriginalLISA::OriginalLISA(double L1,double L2,double L3) {
     // take armlengths in seconds (do not convert to years)
 
     L[1] = L1; L[2] = L2; L[3] = L3;
-    
+        
     // construct the p vectors with the required lengths;
                 
     double dL = sqrt(2.0 * (L[2]*L[2] + L[3]*L[3]) - L[1]*L[1]);
@@ -75,9 +146,11 @@ OriginalLISA::OriginalLISA(double L1,double L2,double L3) {
     }
 }
 
+// OriginalLISA does not move; hence no distinction between positive and negative arm
+
 void OriginalLISA::putn(Vector &n,int arm,double t) {
     for(int i=0;i<3;i++)
-        n[i] = initn[arm][i];
+        n[i] = initn[abs(arm)][i];
 }
 
 void OriginalLISA::putp(Vector &p,int craft,double t) {
@@ -108,41 +181,6 @@ ModifiedLISA::ModifiedLISA(double arm1,double arm2,double arm3) : OriginalLISA(a
         Lc[i]  = L[i] + sagnac[i];
         Lac[i] = L[i] - sagnac[i];
     }
-}
-
-// this does not have to be so general, because the arm vectors are static up to a rotation.
-// Still, ModifiedLISA should not need the n's often, and this putn can probably be adapted
-// for a generic LISA
-
-void ModifiedLISA::putn(Vector &n,int arms,double t) {
-    int arm = abs(arms);
-
-    int crafta = (arm + 1 < 4) ? (arm + 1) : (arm - 2);
-    int craftb = (arm + 2 < 4) ? (arm + 2) : (arm - 1);
-
-    if(arms < 0) {
-        int swap = crafta;
-        crafta = craftb;
-        craftb = swap;
-    }
-
-    // this is consistent with pa(t) = pb(t-L(t;b->a)) + L(t;b->a) n
-    // for instance, p_1 = p_2 + n_3
-
-    Vector pa, pb;
-
-    putp(pa,crafta,t);
-    putp(pb,craftb,t-armlength(arms,t));
-
-    for(int i=0;i<3;i++)
-        n[i] = pa[i] - pb[i];
-    
-    // normalize to a unit vector
-
-    double norm = sqrt(n[0]*n[0] + n[1]*n[1] + n[2]*n[2]);    
-                
-    for(int i=0;i<3;i++)
-        n[i] /= norm;
 }
 
 // implement simple LISA rotation in xy plane with period of a year
@@ -176,6 +214,11 @@ CircularRotating::CircularRotating(double e0, double x0, double sw) {
 
     L = Lstd;
     scriptl = L / sqrt(3.0);
+
+    // define guessL, in case we wish to call the base-LISA armlength()
+    // for comparison with our fitted expressions
+
+    guessL[1] = L; guessL[2] = L; guessL[3] = L;
 
     // set initial phases
 
@@ -251,16 +294,6 @@ void CircularRotating::settime(double t) {
     center[1] = R * sin(Omega*t+eta0);
 }
 
-// Return the unit vector along "arm" at time t in vector n
-// does so by multiplying the initial vectors
-// by a rotation matrix computed at the current time (if it is not already cached)
-
-void CircularRotating::putn(Vector &n,int arm,double t) {
-    if (t != rotationtime) settime(t);
-
-    n.setproduct(rotation, initn[arm]);
-}
-
 // Return the position of "craft" at time t in vector p
 // does so by multiplying the initial position of the craft (with respect to the guiding center)
 // by a rotation matrix computed at the current time (if it is not already cached)
@@ -286,63 +319,24 @@ double CircularRotating::armlength(int arm, double t) {
     }
 }
 
-double CircularRotating::genarmlength(int arms, double t) {
-    int arm = abs(arms);
+// call the generic version
 
-    int crafta = (arm + 1 < 4) ? (arm + 1) : (arm - 2);
-    int craftb = (arm + 2 < 4) ? (arm + 2) : (arm - 1);
+double CircularRotating::genarmlength(int arm, double t) {
+    return LISA::armlength(arm,t);
+}
 
-    if(arms < 0) {
-        int swap = crafta;
-        crafta = craftb;
-        craftb = swap;
+// call the old putn, but change the sign of n if arm is negative
+
+void CircularRotating::oldputn(Vector &n,int arm,double t) {
+    if (t != rotationtime) settime(t);
+
+    n.setproduct(rotation, initn[abs(arm)]);
+
+    if (arm < 0) {
+        n[0] = -n[0];
+        n[1] = -n[1];
+        n[2] = -n[2];
     }
-
-    // this is consistent with pa(t) = pb(t-L(t;b->a)) + L(t;b->a) n
-    // for instance, p_1 = p_2 + n_3
-
-    Vector pa, pb, n;
-
-    putp(pa,crafta,t);
-
-    // implement a simple bisection search for the correct armlength
-    // use a 10% initial bracket
-
-    double newguess = L;
-    double hi = 1.10 * newguess, lo = 0.90 * newguess;
-
-    double guess;
-    
-    const double tol = 1e-6;
-
-    do {
-        guess = newguess;
-    
-        putp(pb,craftb,t-guess);
-
-        for(int i=0;i<3;i++)
-            n[i] = pa[i] - pb[i];
-
-        // compute the invariant relativistic distance between the events
-        // of emission and reception
-
-        double norm = sqrt(-guess*guess + n[0]*n[0] + n[1]*n[1] + n[2]*n[2]);
-
-        if(norm >= 0) {
-            // distance is spacelike; increase delay
-
-            lo = guess;
-        } else {
-            // distance is timelike; reduce delay
-        
-            hi = guess;
-        }
-        
-        newguess = 0.5 * (hi + lo);
-        
-    } while( fabs(newguess - guess) > tol );
-
-    return newguess;
 }
 
 // --- MontanaEccentric LISA class -----------------------------------------------------
@@ -353,42 +347,17 @@ double CircularRotating::genarmlength(int arms, double t) {
 MontanaEccentric::MontanaEccentric(double k0, double l0) {
     L = Lstd;
 
+    // since we do not define armlength, we must initialize guessL
+    // to the initial guess for the length of arms
+
+    guessL[1] = L; guessL[2] = L; guessL[3] = L;
+
     kappa = k0;
     lambda = l0;
 
     // Initialize the position cache
 
     settime(1,0.0); settime(2,0.0); settime(3,0.0);
-}
-
-// arm vectors as differences of position vectors; this sign convention
-// is consistent with the one used for CircularRotating
-
-void MontanaEccentric::putn(Vector &n, int arm, double t) {
-    Vector arm1, arm2;
-    
-    switch(arm) {
-        case 1:
-            putp(arm1,2,t); putp(arm2,3,t);
-            break;
-        case 2:
-            putp(arm1,3,t); putp(arm2,1,t);
-            break;
-        case 3:
-            putp(arm1,1,t); putp(arm2,2,t);
-            break;            
-    }
-    
-    Vector diff;
-    for(int i=0;i<3;i++)
-        diff[i] = arm1[i] - arm2[i];
-
-    // normalize
-
-    double norm = 1.0/sqrt(diff.dotproduct(diff));
-    
-    for(int i=0;i<3;i++)
-        n[i] = norm * diff[i];
 }
 
 // positions of spacecraft according to the LISA simulator

@@ -7,15 +7,16 @@
 
 class TDIsignal : public TDI {
     private:
-        LISA *lisa;
+        LISA *lisa, *phlisa;
         Wave *wave;
         
-	double psi(int arm, double t, double twave);
+	double psi(Vector &lisan, double t, double twave);
         
         double retard(int craft, double t);
         
     public:
         TDIsignal(LISA *mylisa, Wave *mywave);
+        TDIsignal(LISA *mylisa, LISA *physlisa, Wave *mywave);
 
         double M(double t);
         double N(double t);

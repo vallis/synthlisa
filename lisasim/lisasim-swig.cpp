@@ -5,6 +5,16 @@
 #include <time.h>
 #include <math.h>
 
+void printn(CircularRotating *mylisa,int arm,double t) {
+    Vector nnew, nold;
+    
+    mylisa->putn(nnew,arm,t);
+    mylisa->oldputn(nold,arm,t);
+    
+    cout << " " << nnew[0] << " " << nnew[1] << " " << nnew[2];
+    cout << " " << nold[0] << " " << nold[1] << " " << nold[2];
+}
+
 LISA *stdlisa() {
   return new OriginalLISA(Lstd,Lstd,Lstd);
 }
