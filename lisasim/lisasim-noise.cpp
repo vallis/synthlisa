@@ -253,8 +253,10 @@ void InterpolateNoise::setinterp(int window) {
     if (interp != 0)
 	delete interp;
 
-    if (window < 1) {
+    if (window == 0) {
 	interp = new NearestInterpolator();
+    } else if (window == -1) {
+	interp = new LinearExtrapolator();
     } else if (window == 1) {
 	interp = new LinearInterpolator();
     } else {
@@ -265,6 +267,9 @@ void InterpolateNoise::setinterp(int window) {
     // accessible going back from the last requested time.  We need to
     // be careful if we're changing the interpolation scheme
     // dynamically.
+
+    // Intuitively, the -1 extrapolator should be equivalent to a 2 interpolator
+    if (window == -1) window = 2;
 
     double tw = prebuffertime - 2.0 * window * samplingtime;
 
@@ -281,11 +286,12 @@ void InterpolateNoise::setinterp(int window) {
 double InterpolateNoise::operator[](double time) {
     if (time > maxtime) {
         cout << "InterpolateNoise::[]: time requested (" << time <<
-	    ") too large" << endl;
+	    ") too large [" << __FILE__ << ":" << __LINE__ << "]" << endl;
         abort();
     } else if (lasttime - time > timewindow) {
 	cout << "InterpolateNoise::[]: time requested (" << time <<
-	    ") too old, last was " << lasttime << ", pbt is " << prebuffertime << endl;
+	    ") too old, last was " << lasttime << ", pbt is " << prebuffertime <<
+	    "[" << __FILE__ << ":" << __LINE__ << "]" << endl;
 	abort();
     } else {
 	if (time > lasttime) {
@@ -307,12 +313,13 @@ double InterpolateNoise::noise(double timebase,double timecorr) {
     double time = timebase + timecorr;
 
     if (time > maxtime) {
-        cout << "InterpolateNoise::[]: time requested (" << time << ") too large" << endl;
+        cout << "InterpolateNoise::[]: time requested (" << time << ") too large" <<
+	    "[" << __FILE__ << ":" << __LINE__ << "]" << endl;
         abort();
     } else if (lasttime - time > timewindow) {
 	cout << "InterpolateNoise::[]: time requested (" << time << 
-	    ") too old, last was " << lasttime << ", pbt is " << prebuffertime << endl;
-
+	    ") too old, last was " << lasttime << ", pbt is " << prebuffertime <<
+	    "[" << __FILE__ << ":" << __LINE__ << "]" << endl;
 	abort();
     } else {
 	if (time > lasttime) {
@@ -331,10 +338,6 @@ double InterpolateNoise::noise(double timebase,double timecorr) {
 	// the floor is to make sure we can handle negative indices
 	// correctly
 	long ind = long(floor(rind));
-
-	/* debug: cout << " rb " << rindbase << " db " << dindbase
-	     << " rc " << rindcorr << " dc " << dindcorr
-	     << " r  " << rind << " d " << dind << " i " << ind << endl; */
 
 	return normalize * (*interp)(*thenoise,ind,dind);
     }
