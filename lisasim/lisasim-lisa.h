@@ -25,16 +25,27 @@ static const double Rgc = 499.004;
 
 static const double Lstd = 16.6782;
 
-// eccentricity of the LISA spacecraft orbits (for MontanaEccentric)
+// eccentricity of the LISA spacecraft orbits (for EccentricInclined)
 // LISA simulator has L/(2.0*sqrt(3.0)*Rgc)
 // with L = 5.0e9, equal to 0.00964838
 
 static const double ecc = 0.00964838;
 
+// for CircularRotating
 // fit parameter for annual modulation of armlengths (1/sec, from armlength.nb)
 // this might need fine tuning
 
 const double delmodconst = 0.17647;
+
+// for EccentricInclined
+// fit parameters for annual modulation of armlengths (from secondgeneration.nb)
+
+const double pdelmodamp = -0.0770879;
+const double mdelmodamp = -0.0737721;
+
+const double Omega3 = 3.0 * Omega;
+
+const double delmodamp2 = -0.00502877;
 
 // generic LISA class
 
@@ -72,6 +83,16 @@ class LISA {
         // along "arm"
 
         virtual double armlength(int arm, double t);
+
+	// if we don't have anything better, return just armlength
+
+	virtual double armlengthbaseline(int arm, double t) {
+	    return armlength(arm,t);
+	}
+
+	virtual double armlengthaccurate(int arm, double t) {
+	    return 0.0;
+	}
 
         // these extra methods are needed to load arrays (not Vector objects)
         // with the spacecraft positions and links
@@ -135,6 +156,7 @@ class ModifiedLISA : public OriginalLISA {
         void putp(Vector &p, int craft, double t);
     
         double armlength(int arm, double t);
+        double genarmlength(int arm, double t);
 };
 
 // The following classes model the geometry of LISA and can be used also for "signal" TDI
@@ -169,13 +191,17 @@ class CircularRotating : public LISA {
 	CircularRotating(double myL, double e0, double x0, double sw);
 
         // CircularRotating defines a computed (fitted) version of armlength
-        // however, putn defaults to the base version
-        // use genarmlength to get the base (exact) armlength,
+        // use genarmlength to get the exact armlength,
         // use oldputn to get the nondelayed (rotated-only) n's
+
+        // however, putn defaults to its base version
 
         void putp(Vector &p,int craft,double t);
         
         double armlength(int arm, double t);
+
+	double armlengthbaseline(int arm, double t);
+	double armlengthaccurate(int arm, double t);
 
         void oldputn(Vector &n,int arm,  double t);
         double genarmlength(int arm, double t);
@@ -183,7 +209,7 @@ class CircularRotating : public LISA {
 
 // all the static constants below should have file scope and be used throughout
 
-class MontanaEccentric : public LISA {
+class EccentricInclined : public LISA {
     private:
         // LISA armlength 
 
@@ -196,6 +222,11 @@ class MontanaEccentric : public LISA {
         // initial orientation of the spacecraft
         
         double lambda;
+
+	// constants needed in the approximation to the armlength
+
+	double delmodph[4];
+	double delmodph2;
         
         // caching the positions of spacecraft
         
@@ -205,11 +236,19 @@ class MontanaEccentric : public LISA {
         void settime(int craft,double t);
         
     public:
-        MontanaEccentric(double kappa0 = 0.0,double lambda0 = 0.0);
-
-        // MontanaEccentric defaults to the base versions of putn and armlength
+        EccentricInclined(double kappa0 = 0.0,double lambda0 = 0.0);
 
         void putp(Vector &p,int craft,double t);
+
+        // EccentricInclined defines a computed (fitted) version of armlength
+        // use genarmlength to get the exact armlength
+
+	double armlength(int arm, double t);
+
+	double armlengthbaseline(int arm, double t);
+	double armlengthaccurate(int arm, double t);
+
+        double genarmlength(int arm, double t);
 };
 
 class NoisyLISA : public LISA {

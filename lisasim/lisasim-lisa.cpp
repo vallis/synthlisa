@@ -67,7 +67,7 @@ double LISA::armlength(int arms, double t) {
 
     double guess;
     
-    const double tol = 1e-6;
+    const double tol = 1e-14;
 
     do {
         guess = newguess;
@@ -192,11 +192,17 @@ void ModifiedLISA::putp(Vector &p,int craft,double t) {
     p[2] = initp[craft][2];
 }
 
+// positive arms are corotating (have longer arms), negative arms are counterrotating (shorter arms)
+
 double ModifiedLISA::armlength(int arm, double t) {
     if(arm > 0)
         return(Lc[arm]);
     else
         return(Lac[-arm]);
+}
+
+double ModifiedLISA::genarmlength(int arm, double t) {
+    return LISA::armlength(arm,t);
 }
 
 // --- CircularRotating LISA class -----------------------------------------------------
@@ -328,9 +334,21 @@ void CircularRotating::putp(Vector &p,int craft,double t) {
 
 double CircularRotating::armlength(int arm, double t) {
     if(arm > 0) {
-        return L + delmodamp * sin(Omega*t - delmodph[arm]);
+	return L + delmodamp * sin(Omega*t - delmodph[arm]);
     } else {
-        return L - delmodamp * sin(Omega*t - delmodph[-arm]);
+	return L - delmodamp * sin(Omega*t - delmodph[-arm]);
+    }
+}
+
+inline double CircularRotating::armlengthbaseline(int arm, double t) {
+    return L;
+}
+
+inline double CircularRotating::armlengthaccurate(int arm, double t) {
+    if(arm > 0) {
+	return delmodamp * sin(Omega*t - delmodph[arm]);
+    } else {
+	return -delmodamp * sin(Omega*t - delmodph[-arm]);
     }
 }
 
@@ -354,12 +372,12 @@ void CircularRotating::oldputn(Vector &n,int arm,double t) {
     }
 }
 
-// --- MontanaEccentric LISA class -----------------------------------------------------
+// --- EccentricInclined LISA class -----------------------------------------------------
 
 // full constructor
 // define the LISA Simulator kappa and lambda constants
 
-MontanaEccentric::MontanaEccentric(double k0, double l0) {
+EccentricInclined::EccentricInclined(double k0, double l0) {
     L = Lstd;
 
     // since we do not define armlength, we must initialize guessL
@@ -370,6 +388,14 @@ MontanaEccentric::MontanaEccentric(double k0, double l0) {
     kappa = k0;
     lambda = l0;
 
+    // initialize constants for approximation to armlength
+
+    delmodph[1] = k0 - l0;
+    delmodph[2] = k0 - l0 + 4.*M_PI/3.0;
+    delmodph[3] = k0 - l0 + 2.*M_PI/3.0;
+
+    delmodph2 = 3.0*k0 - 3.0*l0;
+
     // Initialize the position cache
 
     settime(1,0.0); settime(2,0.0); settime(3,0.0);
@@ -377,7 +403,7 @@ MontanaEccentric::MontanaEccentric(double k0, double l0) {
 
 // positions of spacecraft according to the LISA simulator
 
-void MontanaEccentric::settime(int craft, double t) {
+void EccentricInclined::settime(int craft, double t) {
     const double sqecc = ecc*ecc;
     const double sqrt3 = sqrt(3.0);
 
@@ -401,12 +427,41 @@ void MontanaEccentric::settime(int craft, double t) {
     cachetime[craft] = t;
 }
 
-void MontanaEccentric::putp(Vector &p, int craft, double t) {
+void EccentricInclined::putp(Vector &p, int craft, double t) {
     if (t != cachetime[craft]) settime(craft,t);
 
     for(int i=0;i<3;i++)
         p[i] = cachep[craft][i];
 }
+
+double EccentricInclined::armlength(int arm, double t) {
+    if(arm > 0) {
+	return L + pdelmodamp * cos(Omega*t + delmodph[arm]) 
+	    + delmodamp2 * cos(Omega3*t + delmodph2);
+    } else {
+	return L + mdelmodamp * cos(Omega*t + delmodph[-arm])
+	    + delmodamp2 * cos(Omega3*t + delmodph2);
+    }
+}
+
+double EccentricInclined::armlengthbaseline(int arm, double t) {
+    return L;
+}
+
+double EccentricInclined::armlengthaccurate(int arm, double t) {
+    if(arm > 0) {
+	return (arm == 2  ? -pdelmodamp : pdelmodamp) * cos(Omega*t + delmodph[arm]) 
+	    + delmodamp2 * cos(Omega3*t + delmodph2);
+    } else {
+	return (arm == -2 ? -mdelmodamp : mdelmodamp) * cos(Omega*t + delmodph[-arm])
+	    + delmodamp2 * cos(Omega3*t + delmodph2);
+    }
+}
+
+double EccentricInclined::genarmlength(int arm, double t) {
+    return LISA::armlength(arm,t);
+}
+
 
 // --- NoisyLISA class -----------------------------------------------------
 
@@ -427,9 +482,9 @@ NoisyLISA::NoisyLISA(LISA *clean,double starm,double sdarm) {
     double lighttime = 1.10 * maxarm;
 
     // create InterpolateNoise objects for the arm determination noises
-    // we need triple retardations
+    // we need triple retardations (septuple for 2nd-generation TDI)
 
-    double pbtarm = 3.0 * lighttime;
+    double pbtarm = 7.0 * lighttime;
 
     // we use plain uncorrelated white noise, for the moment
 
