@@ -122,7 +122,7 @@ TDInoise::~TDInoise() {
 	    }
 	}
 	
-	// remove laser-noise ExpGaussNoise objects
+	// remove laser-noise InterpolateNoise objects
 
 	for(int craft = 1; craft <= 3; craft++) {
 	    if(c[craft])  {delete c[craft]; c[craft]=0;}
@@ -132,12 +132,6 @@ TDInoise::~TDInoise() {
 }
 
 void TDInoise::reset() {
-    // initialize random-number-generator seed
-    // here we're actually passing a long (on PPC); should work as long
-    // as "long" is the same as "int"
-
-    idum = -time(0);
-
     for(int craft = 1; craft <= 3; craft++) {
         pm[craft]->reset();
         pms[craft]->reset();
