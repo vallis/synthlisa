@@ -23,8 +23,8 @@ TDInoise::TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, 
     }
 
     for(int craft = 1; craft <= 3; craft++) {
-        c[craft] = stdlasernoise(lisa,stlaser,claser,sdlaser);
-        cs[craft] = stdlasernoise(lisa,stlaser,claser,sdlaser);
+        c[craft] = stdlasernoise(lisa,stlaser,sdlaser,claser);
+        cs[craft] = stdlasernoise(lisa,stlaser,sdlaser,claser);
     }
 
     allocated = 1;
@@ -41,24 +41,24 @@ TDInoise::TDInoise(LISA *mylisa, double *stproof, double *sdproof, double *stsho
     // the convention is {1,1*,2,2*,3,3*}, and {12,21,23,32,31,13}
 
     for(int craft = 1; craft <= 3; craft++) {
-        pm[craft] = stdproofnoise(lisa,stproof[2*(craft-1)],sdproof[2*(craft-1)]);
-        pms[craft] = stdproofnoise(lisa,stproof[2*(craft-1)+1],sdproof[2*(craft-1)]);
+        pm[craft]  = stdproofnoise(lisa,stproof[2*(craft-1)],  sdproof[2*(craft-1)]);
+        pms[craft] = stdproofnoise(lisa,stproof[2*(craft-1)+1],sdproof[2*(craft-1)+1]);
     }
         
     for(int craft1 = 1; craft1 <= 3; craft1++) {
         for(int craft2 = 1; craft2 <= 3; craft2++) {
             if(craft1 != craft2) {
 		if( (craft1 == 1 && craft2 == 2) || (craft1 == 2 && craft2 == 3) || (craft1 == 3 && craft2 == 1) )
-		    shot[craft1][craft2] = stdopticalnoise(lisa,stshot[2*(craft1-1)],sdshot[2*(craft1-1)]);
+		    shot[craft1][craft2] = stdopticalnoise(lisa,stshot[2*(craft1-1)],  sdshot[2*(craft1-1)]);
 		else
-		    shot[craft1][craft2] = stdopticalnoise(lisa,stshot[2*(craft2-1)],sdshot[2*(craft2-1)]);
+		    shot[craft1][craft2] = stdopticalnoise(lisa,stshot[2*(craft2-1)+1],sdshot[2*(craft2-1)+1]);
 	    }
         }
     }
 
     for(int craft = 1; craft <= 3; craft++) {
-        c[craft] = stdlasernoise(lisa,stlaser[2*(craft-1)],claser[2*(craft-1)],sdlaser[2*(craft-1)]);
-        cs[craft] = stdlasernoise(lisa,stlaser[2*(craft-1)],claser[2*(craft-1)],sdlaser[2*(craft-1)]);
+        c[craft]  = stdlasernoise(lisa,stlaser[2*(craft-1)],  sdlaser[2*(craft-1)],  claser[2*(craft-1)]);
+        cs[craft] = stdlasernoise(lisa,stlaser[2*(craft-1)+1],sdlaser[2*(craft-1)+1],claser[2*(craft-1)+1]);
     }
 
     allocated = 1;
@@ -66,7 +66,7 @@ TDInoise::TDInoise(LISA *mylisa, double *stproof, double *sdproof, double *stsho
 
 // this version takes pointers to noise objects, allowing for user-specified noises on different objects
 
-TDInoise::TDInoise(LISA *mylisa, Noise **proofnoise,Noise **shotnoise,Noise **lasernoise) {
+TDInoise::TDInoise(LISA *mylisa, Noise *proofnoise[6],Noise *shotnoise[6],Noise *lasernoise[6]) {
     lisa = mylisa->thislisa();
     phlisa = mylisa;
 
@@ -84,7 +84,7 @@ TDInoise::TDInoise(LISA *mylisa, Noise **proofnoise,Noise **shotnoise,Noise **la
 		if( (craft1 == 1 && craft2 == 2) || (craft1 == 2 && craft2 == 3) || (craft1 == 3 && craft2 == 1) )
 		    shot[craft1][craft2] = shotnoise[2*(craft1-1)];
 		else
-		    shot[craft1][craft2] = shotnoise[2*(craft2-1)];
+		    shot[craft1][craft2] = shotnoise[2*(craft2-1)+1];
 	    }
         }
     }

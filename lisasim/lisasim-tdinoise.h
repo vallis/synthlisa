@@ -33,7 +33,7 @@ class TDInoise : public TDI {
 
 	// provide arrays of pointers to noise objects
 
-	TDInoise(LISA *mylisa, Noise **proofnoise,Noise **shotnoise,Noise **lasernoise);
+	TDInoise(LISA *mylisa, Noise *proofnoise[6],Noise *shotnoise[6],Noise *lasernoise[6]);
 
 	// the destructor will delete all the noise objects only if they were created by the constructor
 

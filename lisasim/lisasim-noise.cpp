@@ -186,20 +186,20 @@ double IntNoise::filter(long pos) {
 // constructor based on SampledNoise: need pointer to noise buffer, number of samples, sampling time,
 // requested prebuffer time (probably a multiple of some nominal armlength), and the one-sided power spectral density
 
-InterpolateNoise::InterpolateNoise(double *noisebuf,long samples,double st,double pbt,double sd) {
+InterpolateNoise::InterpolateNoise(double *noisebuf,long samples,double st,double pbt,double norm) {
     samplingtime = st;
     nyquistf = 1.00 / (2*st);
 
     // compute the prebuffer offset
 
-    prebuffertime = long(floor(pbt / samplingtime)) + 1;
+    prebuffertime = long(floor(1e-10 + pbt / samplingtime));
 
     // the corresponding maximum sample time that can be accessed is
     
     maxitime = samples - prebuffertime - 1;    
 
     buffernoise = new SampledNoise(noisebuf,samples);
-    normalize = sqrt(sd) * sqrt(nyquistf);
+    normalize = norm;
 }
 
 // constructor based on RingNoise: need to pass the sampling time (in secs), the requested prebuffer time
@@ -213,7 +213,7 @@ InterpolateNoise::InterpolateNoise(double st, double pbt, double sd, double ex) 
 
     // compute the prebuffer offset
 
-    prebuffertime = long(floor(pbt / samplingtime)) + 1;
+    prebuffertime = long(floor(1e-10 + pbt / samplingtime));
 
     // the corresponding maximum sample time that can be accessed is
     
@@ -283,7 +283,7 @@ ExpGaussNoise::ExpGaussNoise(double samplinginterval, double lapseinterval, doub
     // the buffersize should be set from the sampling time and the number
     // of in-between samples needed in TDI; say 32?
 
-    buffersize = 32 * long(floor(lapsetime / samplingtime) + 1);
+    buffersize = 32 * long(floor(1e-10 + lapsetime / samplingtime));
 
     // lambda = -1 / e-folding time
 

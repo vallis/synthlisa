@@ -99,7 +99,7 @@ class InterpolateNoise : public Noise {
 
     public:
         InterpolateNoise(double sampletime,double prebuffer,double density,double exponent);
-	InterpolateNoise(double *noisebuf,long samples,double sampletime,double prebuffer,double density);
+	InterpolateNoise(double *noisebuf,long samples,double sampletime,double prebuffer,double norm);
         ~InterpolateNoise();
 
         void reset();
