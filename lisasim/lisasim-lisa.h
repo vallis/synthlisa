@@ -52,6 +52,12 @@ class LISA {
 
         virtual void reset() {};
 
+	// will return pointer to itself; overridden by NoisyLISA, which returns the basic LISA
+
+	virtual LISA *thislisa() {
+	    return this;
+	}
+
         // generic version of putn; uses (delayed) differences of putp, calling
         // armlength to get the right delay
 
@@ -218,7 +224,9 @@ class NoisyLISA : public LISA {
         
         void reset();
 
-        // NoisyLISA returns
+       	LISA *thislisa() {
+	    return cleanlisa;
+	}
 
         double armlength(int arm, double t);
 
