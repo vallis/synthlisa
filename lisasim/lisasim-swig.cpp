@@ -1,4 +1,6 @@
 #include <iostream>
+#include <fstream>
+using namespace std;
 
 #include "lisasim.h"
 
@@ -128,7 +130,7 @@ void printtdi(char *filename,TDI *mytdi,int samples,double samplingtime,char *ob
             double sest = (samples - i) / speed;
 
             if(speed > 0.0)
-                cout << "\rEstimating " << floor(sest/60.0) << "m" << floor(sest-60.0*floor(sest/60.0)) << "s to completion [" << floor(speed) << " (multi)samples/s]                    ";
+                cout << "\rEstimating " << floor(sest/60.0) << "m" << floor(sest-60.0*floor(sest/60.0)) << "s to completion [" << floor(speed) << " (multi)samples/s]                    " << flush;
         }
 
         char *obs = observables;
@@ -164,7 +166,7 @@ void settdi(double *array, TDI *mytdi,int samples,double samplingtime,char *obse
             double sest = (samples - i) / speed;
 
             if(speed > 0.0)
-                cout << "\rEstimating " << floor(sest/60.0) << "m" << floor(sest-60.0*floor(sest/60.0)) << "s to completion [" << floor(speed) << " (multi)samples/s]                    ";
+                cout << "\rEstimating " << floor(sest/60.0) << "m" << floor(sest-60.0*floor(sest/60.0)) << "s to completion [" << floor(speed) << " (multi)samples/s]                    " << flush;
         }
 
         char *obs = observables;
@@ -197,7 +199,7 @@ void setabg(double *aa, double *ab, double *ag, TDI *mytdi,int samples,double sa
             double sest = (samples - i) / speed;
 
             if(speed > 0.0)
-                cout << "\rEstimating " << floor(sest/60.0) << "m" << floor(sest-60.0*floor(sest/60.0)) << "s to completion [" << floor(speed) << " (multi)samples/s]                    ";
+                cout << "\rEstimating " << floor(sest/60.0) << "m" << floor(sest-60.0*floor(sest/60.0)) << "s to completion [" << floor(speed) << " (multi)samples/s]                    " << flush;
         }
 
 	aa[i] = mytdi->alpha(t);
@@ -228,7 +230,7 @@ void setabgx(double *aa, double *ab, double *ag, double *ax, TDI *mytdi,int samp
             double sest = (samples - i) / speed;
 
             if(speed > 0.0)
-                cout << "\rEstimating " << floor(sest/60.0) << "m" << floor(sest-60.0*floor(sest/60.0)) << "s to completion [" << floor(speed) << " (multi)samples/s]                    ";
+                cout << "\rEstimating " << floor(sest/60.0) << "m" << floor(sest-60.0*floor(sest/60.0)) << "s to completion [" << floor(speed) << " (multi)samples/s]                    " << flush;
         }
 
 	aa[i] = mytdi->alpha(t);
