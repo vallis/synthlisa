@@ -366,8 +366,7 @@ EccentricInclined::EccentricInclined(double eta0,double xi0,double sw,double t0)
     L = Lstd;
     toffset = t0;
 
-    // since we do not define armlength, we must initialize guessL
-    // to the initial guess for the length of arms
+    // initialize guessL to the initial guess for the length of arms
 
     guessL[1] = L; guessL[2] = L; guessL[3] = L;
 
@@ -515,10 +514,85 @@ void NoisyLISA::reset() {
 
 double NoisyLISA::armlength(int arm, double t) {
     if(arm > 0)
-        return(cleanlisa->armlength(arm,t) + (*uperror[arm])[t]);
+        return cleanlisa->armlength(arm,t) + (*uperror[arm])[t];
     else
-        return(cleanlisa->armlength(arm,t) + (*downerror[-arm])[t]);
+        return cleanlisa->armlength(arm,t) + (*downerror[-arm])[t];
 }
+
+double NoisyLISA::armlengthbaseline(int arm, double t) {
+    return cleanlisa->armlengthbaseline(arm,t);
+}
+
+double NoisyLISA::armlengthaccurate(int arm, double t)  {
+    if(arm > 0)
+        return cleanlisa->armlengthaccurate(arm,t) + (*uperror[arm])[t];
+    else
+        return cleanlisa->armlengthaccurate(arm,t) + (*downerror[-arm])[t];
+}
+
+// --- NominalLISA class ---------------------------------------------------
+
+NominalLISA::NominalLISA(double eta0,double xi0,double sw,double t0) {
+    reallisa = new EccentricInclined(eta0,xi0,sw,t0);
+
+    L = Lstd;
+    swi = sw;
+
+    // these are the correct values of the user-set parameters
+
+    cmod = Omega * Rgc * L;
+    emod = ecc * L;
+    toff = t0;
+
+    setparameters(cmod,emod,toff);
+
+    // we make these exact for the moment
+
+    delmodph[1] = xi0;
+    delmodph[2] = (swi > 0.0) ? 4.*M_PI/3.0 + xi0 : 2.*M_PI/3.0 + xi0;
+    delmodph[3] = (swi > 0.0) ? 2.*M_PI/3.0 + xi0 : 4.*M_PI/3.0 + xi0;
+
+    delmodph2 = 3.0*xi0;
+}
+
+void NominalLISA::setparameters(double cm,double em,double toff) {
+    toffset = toff;
+    
+    pdelmod = (swi > 0.0 ? 1.0 : -1.0) * cm - (15.0/32.0) * em;
+    mdelmod = (swi > 0.0 ? -1.0 : 1.0) * cm - (15.0/32.0) * em;
+
+    delmod3 = (1.0/32.0) * em;
+}
+
+NominalLISA::~NominalLISA() {
+    delete reallisa;
+}
+
+double NominalLISA::armlength(int arm, double t) {
+    if(arm > 0) {
+	return L + pdelmod * sin(Omega*(t+toffset) - delmodph[arm]) 
+	    + delmod3 * sin(Omega3*(t+toffset) - delmodph2);
+    } else {
+	return L + mdelmod * sin(Omega*(t+toffset) - delmodph[-arm])
+	    + delmod3 * sin(Omega3*(t+toffset) - delmodph2);
+    }
+}
+
+double NominalLISA::armlengthbaseline(int arm, double t) {
+    return L;
+}
+
+double NominalLISA::armlengthaccurate(int arm, double t) {
+    if(arm > 0) {
+	return pdelmod * sin(Omega*(t+toffset) - delmodph[arm]) 
+	    + delmod3 * sin(Omega3*(t+toffset) - delmodph2);
+    } else {
+	return mdelmod * sin(Omega*(t+toffset) - delmodph[-arm])
+	    + delmod3 * sin(Omega3*(t+toffset) - delmodph2);
+    }
+}
+
+// --- stdlisa function ---------------------------------------------------
 
 LISA *stdlisa() {
   return new OriginalLISA(Lstd,Lstd,Lstd);

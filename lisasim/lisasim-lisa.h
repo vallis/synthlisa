@@ -13,6 +13,10 @@
 const double secondsperyear = 31536000.0;
 const double yearspersecond = 3.1709791983764586e-8;
 
+// using 365.25 days
+// const double secondsperyear = 31557600.0;
+// const double yearspersecond = 3.168808781402895e-8;
+
 // LISA's angular velocity
 
 const double Omega = 2.0 * M_PI * yearspersecond;
@@ -197,6 +201,8 @@ class CircularRotating : public LISA {
         double genarmlength(int arm, double t);
 };
 
+// for the future: it would be nice to have the eccentricity as a parameter
+
 class EccentricInclined : public LISA {
     private:
         // LISA armlength 
@@ -261,6 +267,9 @@ class NoisyLISA : public LISA {
 
         double armlength(int arm, double t);
 
+	double armlengthbaseline(int arm, double t);
+	double armlengthaccurate(int arm, double t);
+
         void putn(Vector &n, int arm, double t) {
             cleanlisa->putn(n,arm,t);
         }
@@ -275,6 +284,52 @@ class NoisyLISA : public LISA {
         
         void putp(double p[], int craft, double t) {
             cleanlisa->putp(p,craft,t);
+	}
+};
+
+
+class NominalLISA : public LISA {
+    private:
+        LISA *reallisa;
+
+	double L;
+	double swi;
+
+	double pdelmod, mdelmod, delmod3;
+	double delmodph[4], delmodph2;
+	double toffset;
+
+    public:
+	double emod, cmod, toff;
+
+	NominalLISA(double eta0,double xi0,double sw,double t0);
+	~NominalLISA();
+
+	void setparameters(double cm,double em,double toff);
+
+       	LISA *thislisa() {
+	    return reallisa;
+	}
+
+        double armlength(int arm, double t);
+
+	double armlengthbaseline(int arm, double t);
+	double armlengthaccurate(int arm, double t);
+
+        void putn(Vector &n, int arm, double t) {
+            reallisa->putn(n,arm,t);
+        }
+        
+        void putp(Vector &p, int craft, double t) {
+            reallisa->putp(p,craft,t);
+        }
+
+        void putn(double n[], int arm, double t) {
+            reallisa->putn(n,arm,t);
+        }
+        
+        void putp(double p[], int craft, double t) {
+            reallisa->putp(p,craft,t);
 	}
 };
 
