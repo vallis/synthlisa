@@ -188,7 +188,12 @@ def getobsc(snum,stime,observables,zerotime=0.0):
                 lasttime = dotime(i,snum,inittime,lasttime)
 
     currenttime = int(time()) - inittime
-    print "\r...completed in %d s.                                                 " % currenttime
+
+    if currenttime > 0:
+        vel = ((1.0*snum)/currenttime)
+        print "\r...completed in %d s [%d (multi)samples/s].                           " % (currenttime,vel)  
+    else:
+        print "\r...completed.                                                         "
     
     return array
 
