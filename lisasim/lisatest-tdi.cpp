@@ -2,6 +2,9 @@
 #include <math.h>
 #include <unistd.h>
 #include <fstream>
+
+using namespace std;
+
 #include "lisasim.h"
 #include "lisatest.h"
 

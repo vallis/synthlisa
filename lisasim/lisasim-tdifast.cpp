@@ -1,5 +1,8 @@
-#include "lisasim-tdifast.h"
 #include <iostream>
+
+using namespace std;
+
+#include "lisasim-tdifast.h"
 
 #define Check(value) (CheckError((value), (__FILE__), (__LINE__)))
 //#define Check(value) 1
