@@ -5,7 +5,7 @@
 #include "lisasim.h"
 %}
 
-%include numpy.i
+%include lisasim-typemaps.i
 
 class LISA;
 
@@ -50,7 +50,9 @@ public:
     double armlength(int arm, double t);
 };
 
-class InterpolateNoise {
+class Noise;
+
+class InterpolateNoise : public Noise {
 public:
     InterpolateNoise(double st, double pbt, double sd, double ex);
     ~InterpolateNoise();
@@ -60,7 +62,7 @@ public:
     double inoise(double time);
 };
 
-class ExpGaussNoise {
+class ExpGaussNoise : public Noise {
 public:
     
     ExpGaussNoise(double samplinginterval, double lapseinterval, double foldingtime, double spectraldensity);
@@ -116,8 +118,15 @@ public:
 class TDInoise : public TDI {
 public:
     TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser, double claser);
-    TDInoise(LISA *mylisa, LISA *physlisa, double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser, double claser);
+
+%apply double* IN_1D_DOUBLE { double *aa };
+
+    TDInoise(LISA *mylisa, double stproof[6], double sdproof[6], double stshot[6], double sdshot[6], double stlaser[6], double sdlaser[6], double claser[6]);
+
+    TDInoise(LISA *mylisa, Noise *proofnoise[6],Noise *shotnoise[6],Noise *lasernoise[6]);
     ~TDInoise();
+
+    void setphlisa(LISA *mylisa);
     
     void reset();
 
@@ -144,8 +153,6 @@ extern void printtdi(char *filename,TDI *mytdi,int samples,double samplingtime,c
 %apply double* IN_1D_DOUBLE { double *array };
 extern void settdi(double *array,TDI *mytdi,int samples,double samplingtime,char *observables);
 
-extern void printn(CircularRotating *mylisa,int arm,double t);
-
 %apply double* IN_1D_DOUBLE { double *aa };
 %apply double* IN_1D_DOUBLE { double *ab };
 %apply double* IN_1D_DOUBLE { double *ag };
@@ -154,3 +161,11 @@ extern void setabg(double *aa, double *ab, double *ag, TDI *mytdi,int samples,do
 %apply double* IN_1D_DOUBLE { double *ax };
 extern void setabgx(double *aa, double *ab, double *ag, double *ax, TDI *mytdi,int samples,double samplingtime);
 
+%newobject stdproofnoise;
+extern Noise *stdproofnoise(LISA *lisa,double stproof,double sdproof);
+
+%newobject stdopticalnoise;
+extern Noise *stdopticalnoise(LISA *lisa,double stshot,double sdshot);
+
+%newobject stdlasernoise;
+extern Noise *stdlasernoise(LISA *lisa,double stlaser,double sdlaser,double claser);
