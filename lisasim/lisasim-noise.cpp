@@ -218,3 +218,162 @@ double InterpolateNoise::inoise(double time) {
 double InterpolateNoise::operator[](double time) {
     return inoise(time);
 }
+
+// --- correlated-Gaussian classes ------------------------------------------------
+
+ExpGaussNoise::ExpGaussNoise(double samplinginterval, double lapseinterval, double foldingtime, double spectraldensity) {
+    if (idum == 0) idum = -1;
+
+    samplingtime = samplinginterval;
+    lapsetime = lapseinterval;
+
+    // the buffersize should be set from the sampling time and the number
+    // of in-between samples needed in TDI; say 32?
+
+    buffersize = 32 * long(floor(lapsetime / samplingtime) + 1);
+
+    // e-folding time
+
+    lambda = -1.00 * foldingtime;
+
+    // need a sqrt of the Nyquist frequency here? probably yes
+
+    normalize = sqrt(spectraldensity) *  sqrt(1.00 / (2*samplingtime));
+
+    // now allocate the buffer of pointers
+
+    ptbuffer = new (GaussSample *)[buffersize];
+    
+    for(int i=0;i<buffersize;i++)
+        ptbuffer[i] = new GaussSample;
+        
+    bufferlevel = buffersize - 1;
+    
+    // need to create first and last sample, at -lapsetime
+    
+    first = ptbuffer[bufferlevel];
+    bufferlevel = bufferlevel - 1;
+    last = first;
+    
+    first->time = -lapsetime;
+    first->value = gasdev();
+    
+    first->prev = 0;
+    first->next = 0;
+}
+
+ExpGaussNoise::~ExpGaussNoise() {
+    // ah, need to be careful here; first release the buffer, then the list
+
+    GaussSample *nextone;
+
+    while(first) {
+        nextone = first->next;
+        delete first;
+        first = nextone;
+    }
+
+    while(bufferlevel >= 0) {
+        delete ptbuffer[bufferlevel];
+        bufferlevel = bufferlevel - 1;
+    }
+        
+    delete ptbuffer;
+}
+
+double ExpGaussNoise::operator[](double time) {
+    GaussSample *current = first;
+
+    while(current->time <= time) {
+        if(current->time == time) {
+            // we already have the sample
+    
+            return(normalize * current->value);
+        }
+        
+        current = current->next;
+        if(!current) break;
+    };
+    
+    // we'll need a new sample
+    
+    GaussSample *newone = ptbuffer[bufferlevel];
+    ptbuffer[bufferlevel] = 0;
+    
+    bufferlevel = bufferlevel - 1;
+    if(bufferlevel < 0) {
+        cout << "ExpGaussNoise::out of GaussSample instances in buffer" << endl;
+        abort();  
+    }
+    
+    // now, let's check if we're at the end of the chain, at the beginning, or between samples
+    
+    if(!current) {
+        // we're at the end of the chain!
+        // create a new sample using the "last" rule
+        // remember that lambda is negative
+
+        double r = exp(lambda * (time - last->time));
+
+        newone->time = time;  
+        newone->value = sqrt(1 - r*r) * gasdev() + r * (last->value);
+    
+        // adjust the links in the chain
+    
+        newone->prev = last;
+        newone->next = 0;
+        
+        last->next = newone;
+        last = newone;
+        
+        // since we added at the end, purge from the beginning
+
+        while(time - first->time > lapsetime) {
+            bufferlevel = bufferlevel + 1;
+            ptbuffer[bufferlevel] = first;
+            
+            first = first->next;
+            first->prev = 0;
+        }
+    } else {
+        GaussSample *previous = current->prev;
+
+        if(!previous) {
+            // we're at the beginning of the chain!
+
+            double r = exp(lambda * (current->time - time));
+
+            newone->time = time;  
+            newone->value = sqrt(1 - r*r) * gasdev() + r * (current->value);
+
+            newone->prev = 0;
+            newone->next = last;
+
+            first->prev = newone;
+            first = newone;
+        } else {
+            // we're in between! "current" holds the larger time, "previous" the smaller
+            // create a new sample using the "bridge" rule
+            // remember that lambda is negative
+        
+            double r1 = exp(lambda * (time - previous->time));
+            double r2 = exp(lambda * (current->time - time));
+
+            newone->time = time;
+            newone->value = sqrt( (1 - r1*r1) * (1 - r2*r2) / (1 - r1*r1*r2*r2) ) * gasdev() + 
+                                  (1 - r2*r2) * r1 * (previous->value) / (1 - r1*r1*r2*r2) +
+                                  (1 - r1*r1) * r2 * (current->value)  / (1 - r1*r1*r2*r2);
+
+            // adjust the links in the chain
+
+            newone->prev = previous;
+            newone->next = current;
+        
+            previous->next = newone;
+            current->prev = newone;
+        }
+    }
+    
+    return(normalize * newone->value);
+}
+

@@ -67,3 +67,37 @@ class InterpolateNoise {
         double inoise(double time);
         double operator[](double time);
 };
+
+// correlated-Gaussian class
+
+class GaussSample {
+    public:
+
+    GaussSample *prev, *next;
+    
+    double time;
+    double value;
+};
+
+class ExpGaussNoise {
+    private:
+
+    GaussSample **ptbuffer;
+    int buffersize;
+    int bufferlevel;
+
+    GaussSample *first, *last;
+    
+    double samplingtime;
+    double lapsetime;
+    
+    double lambda;
+    double normalize;
+
+    public:
+    
+    ExpGaussNoise(double samplinginterval, double lapseinterval, double foldingtime, double spectraldensity);
+    ~ExpGaussNoise();
+
+    double operator[](double time);
+};
