@@ -8,6 +8,26 @@ using namespace std;
 #include <sys/time.h>
 #include <math.h>
 
+/* TDI interface (defined in lisasim-swig.cpp) */
+
+/* extern void printtdi(char *filename,TDI *mytdi,int samples,double samplingtime,char *observables);
+
+%apply double *NUMPY_ARRAY_DOUBLE { double *array };
+extern void settdi(double *array,TDI *mytdi,int samples,double samplingtime,char *observables);
+
+%apply double *NUMPY_ARRAY_DOUBLE { double *aa };
+%apply double *NUMPY_ARRAY_DOUBLE { double *ab };
+%apply double *NUMPY_ARRAY_DOUBLE { double *ag };
+%apply double *NUMPY_ARRAY_DOUBLE { double *ax };
+extern void setabg(double *aa, double *ab, double *ag, TDI *mytdi,int samples,double samplingtime);
+extern void setabgx(double *aa, double *ab, double *ag, double *ax, TDI *mytdi,int samples,double samplingtime);
+
+extern void printp(LISA *lisa,double t);
+extern void printn(LISA *lisa,double t);
+
+extern void printw(Wave *wave,double t); */
+
+
 void printp(LISA *lisa,double t)
 {
     Vector p;
@@ -42,26 +62,6 @@ void printw(Wave *wave,double t)
 
     wave->putwave(h,t);
     printf("(%f): %f %f %f %f %f %f %f %f %f\n",t,h[0][0],h[0][1],h[0][2],h[1][0],h[1][1],h[1][2],h[2][0],h[2][1],h[2][2]);
-}
-
-extern void retardone(LISA *lisa,int ret,double t,double *retardedtime,double *totalretardbaseline,double *totalretardaccurate);
-
-double retardation(LISA *lisa,int ret1,int ret2,int ret3,int ret4,int ret5,int ret6,int ret7,int ret8,double t) {
-    double retardedtime = t;
-
-    double totalretardbaseline = 0.0;
-    double totalretardaccurate = 0.0;
-
-    if(ret8 != 0) retardone(lisa,ret8,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
-    if(ret7 != 0) retardone(lisa,ret7,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
-    if(ret6 != 0) retardone(lisa,ret6,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
-    if(ret5 != 0) retardone(lisa,ret5,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
-    if(ret4 != 0) retardone(lisa,ret4,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
-    if(ret3 != 0) retardone(lisa,ret3,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
-    if(ret2 != 0) retardone(lisa,ret2,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
-    if(ret1 != 0) retardone(lisa,ret1,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
-
-    return totalretardbaseline + totalretardaccurate;
 }
 
 double observable(TDI *mytdi,char **obs,double t) {
@@ -287,3 +287,4 @@ void setabgx(double *aa, double *ab, double *ag, double *ax, TDI *mytdi,int samp
     double speed = samples / lapse;
     cout << "\rCompleted in " << floor(lapse/60.0) << "m" << floor(lapse-60.0*floor(lapse/60.0)) << "s [" << floor(speed) << " (multi)samples/s]                      " << endl;
 }
+
