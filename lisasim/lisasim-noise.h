@@ -108,6 +108,7 @@ class ExpGaussNoise {
 
     void reset();
 
+    double enoise(double time);
     double operator[](double time);
 };
 

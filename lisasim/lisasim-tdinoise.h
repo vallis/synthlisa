@@ -50,6 +50,8 @@ class TDInoise {
         
         double E(double t);
 
+        double U(double t);
+
         double Xm(double t);
 };
 

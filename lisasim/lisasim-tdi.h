@@ -14,7 +14,6 @@ class TDI {
             wave = mywave;
         }
 
-
         double M(double t);
         double N(double t);
         double O(double t);
@@ -28,6 +27,10 @@ class TDI {
         double gamma(double t);
     
         double zeta(double t);
+
+	double P(double t);
+	double E(double t);
+	double U(double t);
 
     private:
 	double psi(int arm, double t, double twave);

@@ -14,7 +14,7 @@
 #define Gpc 3.0856675807e25
 
 // Power of 2 that gives the total number of sample data points
-#define nsource 20
+#define nsource 6.0
 
 // All of these taken from the standard Montana NewtonianParameters.h
 

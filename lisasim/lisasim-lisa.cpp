@@ -350,7 +350,14 @@ NoisyLISA::NoisyLISA(LISA *clean,double starm,double sdarm) {
     // and add 10%; need to convert from years to seconds (we use the factor from lisasim-tdi.cpp)
     // ah, this might not work for OriginalLISA and strange geometries
 
-    double lighttime = 1.10 * (cleanlisa->armlength(1,0.0) / 3.17098E-8);
+    double arm1 = cleanlisa->armlength(1,0.0);
+    double arm2 = cleanlisa->armlength(2,0.0);
+    double arm3 = cleanlisa->armlength(3,0.0);
+
+    double maxarm = arm1 > arm2 ? arm1 : arm2;
+    maxarm = maxarm > arm3 ? maxarm : arm3;
+
+    double lighttime = 1.10 * (maxarm / 3.17098E-8);
 
     // create InterpolateNoise objects for the arm determination noises
     // we need triple retardations

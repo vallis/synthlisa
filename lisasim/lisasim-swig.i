@@ -12,6 +12,8 @@ class OriginalLISA : public LISA {
         // accept the armlength in seconds
 
 	OriginalLISA(double arm1,double arm2,double arm3);
+        
+        virtual double armlength(int arm, double t);
 };
 
 class ModifiedLISA : public OriginalLISA {
@@ -20,6 +22,8 @@ class ModifiedLISA : public OriginalLISA {
         // accept the armlength in seconds
     
 	ModifiedLISA(double arm1,double arm2,double arm3);
+        
+        double armlength(int arm, double t);
 };
 
 class CircularRotating : public LISA {
@@ -28,12 +32,63 @@ class CircularRotating : public LISA {
 	// three arguments: eta0, xi0, 2<->3 switch (1.0 or -1.0) 
     
         CircularRotating(double eta0,double xi0,double sw);
+
+        double armlength(int arm, double t);
 };
 
 class NoisyLISA : public LISA {
     public:
         NoisyLISA(LISA *clean,double starm,double sdarm);
         ~NoisyLISA();
+
+        double armlength(int arm, double t);
+};
+
+class InterpolateNoise {
+    public:
+        InterpolateNoise(double st, double pbt, double sd, double ex);
+        ~InterpolateNoise();
+
+        void reset();
+        
+        double inoise(double time);
+};
+
+class ExpGaussNoise {
+    public:
+    
+    ExpGaussNoise(double samplinginterval, double lapseinterval, double foldingtime, double spectraldensity);
+    ~ExpGaussNoise();
+
+    void reset();
+
+    double enoise(double time);
+};
+
+class Wave;
+
+class SimpleBinary : public Wave {
+    public:
+        SimpleBinary(double freq, double initphi, double inc, double amp, double d, double a, double p);
+};
+
+class TDI {
+    public:
+        TDI(LISA *mylisa, Wave *mywave);
+    
+        double X(double t);
+        double Y(double t);
+        double Z(double t);
+    
+        double alpha(double t);
+        double beta(double t);
+        double gamma(double t);
+    
+        double zeta(double t);
+
+	double P(double t);
+	double E(double t);
+	double U(double t);
 };
 
 class TDInoise {
@@ -71,12 +126,14 @@ class TDInoise {
         
         double E(double t);
 
+        double U(double t);
+
         double Xm(double t);
 };
 
 extern void printnoise(char *filename,TDInoise *mynoise,int samples,double samplingtime,char *observables);
+extern void printsignal(char *filename,TDI *mysignal,int samples,double samplingtime,char *observables);
 
-// The "%new" syntax here does not seem to be working. thisown is set to 0.
-
-%new extern TDInoise *stdnoise(LISA *mylisa);
+%newobject stdnoise;
+extern TDInoise *stdnoise(LISA *mylisa);
 

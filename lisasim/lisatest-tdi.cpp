@@ -8,6 +8,10 @@
 // as computed by the LISA Simulator and by Synthetic LISA
 
 int main(int argc, char **argv) {
+    TDI *prova = new TDI(new CircularRotating(0.0,3.0*M_PI/2.0,-1.0),new SimpleBinary(0.00194545,0,1.60238,1.88392e-22,0.000796327,0,0));
+    
+    cout << prova->X(0) << endl;
+
     // --- definition of the waveform
 
     // find orbital separation
@@ -23,6 +27,8 @@ int main(int argc, char **argv) {
     // need to adjust my frequency for the different definition of year in the Montana and JPL codes
     // need to convert my ecliptic latitude to the Montana latitude (which is Pi/2 - ...)
     // need to use minus my polarization angle
+    
+    cout << fgw*1.000702365550482 << " " << phase << " " << (M_PI-inc) << " " << A << " " << 0.5*M_PI - theta << " " << phi << " " << -psi << endl;
     
     SimpleBinary mybinary(fgw*1.000702365550482, phase, (M_PI-inc), A, 0.5*M_PI - theta, phi, -psi);
  
@@ -45,7 +51,7 @@ int main(int argc, char **argv) {
 
     // use this to write fewer samples at the same sampling rate
 
-    long Ntot = samples/32;    
+    long Ntot = samples;    
     // long Ntot = samples/8;
 
     // compute and write the TDI signals
@@ -58,8 +64,7 @@ int main(int argc, char **argv) {
     for(int i=0;i<Ntot;i++) {
         double time = 0.9992978747981357*(i*Dt);
         
-        // myout << mytdi.X(time) << " " << mytdi.Y(time) << " " << mytdi.Z(time) << endl;
-        myout << mytdi.M(time) << " " << mytdi.N(time) << " " << mytdi.O(time) << endl;
+        myout << mytdi.X(time) << " " << mytdi.Y(time) << " " << mytdi.Z(time) << endl;
                 
         if (i == (int)floor(Ntot/5.))    printf("  20 percent done\n");
         if (i == (int)floor(2.*Ntot/5.)) printf("  40 percent done\n");
