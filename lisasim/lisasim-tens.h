@@ -1,29 +1,63 @@
 #ifndef _LISASIM_TENS_H_
 #define _LISASIM_TENS_H_
 
-#include "nr.h"
-#include "nrutil.h"
+class Tensor;
 
-class Tensor : public Mat_IO_DP {
-    public:
+class Vector {
+ private:
+    friend class Tensor;
+    double c[3];
 
-    Tensor();
-    
-    void seteuler(double d, double a, double p);
-    
-    void setproduct(Tensor &fac1, Tensor &fac2);
-                                
-    void settranspose();
+ public:
+    Vector() {};
+
+    double& operator[](int i) {
+	return c[i];
+    };
+
+    Vector& operator=(const Vector &vec) {
+	c[0] = vec.c[0]; c[1] = vec.c[1]; c[2] = vec.c[2];
+	return *this;
+    };
+
+    Vector& setsum(const Vector &add1,const Vector &add2);
+    Vector& setdifference(const Vector &add1,const Vector &add2);
+
+    Vector& setproduct(const double fac);
+    Vector& setproduct(const Tensor &mat, const Vector &vec);
+
+    double dotproduct();
+    double dotproduct(const Vector &vec);
+    friend double dotproduct(const Vector &vec1,const Vector &vec2);
+
+    Vector& setnormalized();
 };
 
-class Vector : public Vec_IO_DP {
-    public:
+class Tensor {
+ private:
+    friend class Vector;
+    double c[9];
     
-    Vector();
+ public:
+    Tensor() {};
     
-    void setproduct(Tensor &mat, Vector &vec);
+    double* operator[](int i) {
+	return c + i*3;
+    };
 
-    double dotproduct(Vector &vec);
+    Tensor& operator=(const Tensor &tens) {
+	c[0] = tens.c[0]; c[1] = tens.c[1]; c[2] = tens.c[2];
+	c[3] = tens.c[3]; c[4] = tens.c[4]; c[5] = tens.c[5];
+	c[6] = tens.c[6]; c[7] = tens.c[7]; c[8] = tens.c[8];
+	return *this;
+    };
+
+    Tensor& setproduct(const Tensor &fac1, const Tensor &fac2);
+
+    Tensor& settranspose();
+    Tensor& settranspose(const Tensor& tens);
+
+    Tensor& seteuler(double d, double a, double p);
 };
 
 #endif /* _LISASIM_TENS_H_ */
