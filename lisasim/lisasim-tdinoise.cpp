@@ -1,10 +1,23 @@
 #include "lisasim-lisa.h"
 #include "lisasim-noise.h"
 #include "lisasim-tdinoise.h"
+#include <time.h>
 
 TDInoise::TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser, double claser) {
     lisa = mylisa;
+    phlisa = mylisa;
 
+    initialize(stproof, sdproof, stshot, sdshot, stlaser, sdlaser, claser);
+}
+
+TDInoise::TDInoise(LISA *mylisa, LISA *physlisa, double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser, double claser) {
+    lisa = mylisa;
+    phlisa = physlisa;
+
+    initialize(stproof, sdproof, stshot, sdshot, stlaser, sdlaser, claser);
+}
+
+void TDInoise::initialize(double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser, double claser) {
     // to estimate size of noisebuffer, take an armlength at time zero,
     // and add 10%; need to convert from years to seconds (we use the factor from lisasim-tdi.cpp)
     // ah, this might not work for OriginalLISA and strange geometries
@@ -69,6 +82,40 @@ TDInoise::~TDInoise() {
     }
 }
 
+void TDInoise::reset() {
+    // initialize random-number-generator seed
+    // here we're actually passing a long (on PPC); should work as long
+    // as "long" is the same as "int"
+
+    idum = -time(0);
+
+    for(int craft = 1; craft <= 3; craft++) {
+        pm[craft]->reset();
+        pms[craft]->reset();
+    }
+ 
+    // remove optical-path-noise InterpolateNoise objects
+
+    for(int craft1 = 1; craft1 <= 3; craft1++) {
+        for(int craft2 = 1; craft2 <= 3; craft2++) {
+            if(craft1 != craft2)
+                shot[craft1][craft2]->reset();
+        }
+    }
+
+    // remove laser-noise ExpGaussNoise objects
+
+    for(int craft = 1; craft <= 3; craft++) {
+        c[craft]->reset();
+        cs[craft]->reset();
+    }
+
+    // reset also LISA, in case it includes noise of some kind
+    
+    lisa->reset();
+    if(phlisa != lisa) phlisa->reset();
+}
+
 double TDInoise::y(int send, int slink, int recv, int ret1, int ret2, int ret3, double t) {
 //    cout << "Doing y(" << send << "," << slink << "," << recv << "," << ret1 << "," << ret2 << "," << ret3 << ")" << endl;
 
@@ -91,7 +138,7 @@ double TDInoise::y(int send, int slink, int recv, int ret1, int ret2, int ret3, 
         // if introducing error in the determination of the armlengths, it should not enter
         // the following (physical) retardation of the laser noise
 
-        double retardlaser = retardedtime - 3.1536E7 * lisa->armlength(link,3.17098E-8 * retardedtime);
+        double retardlaser = retardedtime - 3.1536E7 * phlisa->armlength(link,3.17098E-8 * retardedtime);
 
         cout.precision(16);
 
@@ -106,7 +153,7 @@ double TDInoise::y(int send, int slink, int recv, int ret1, int ret2, int ret3, 
 
         // ditto here
 
-        double retardlaser = retardedtime - 3.1536E7 * lisa->armlength(-link,3.17098E-8 * retardedtime);
+        double retardlaser = retardedtime - 3.1536E7 * phlisa->armlength(-link,3.17098E-8 * retardedtime);
 
         cout.precision(16);
 

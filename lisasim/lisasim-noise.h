@@ -17,7 +17,9 @@ class RingNoise {
     
         RingNoise(long bs);
         virtual ~RingNoise();
-    
+        
+        void reset();
+        
         void updatebuffer(long pos);
         double operator[](long pos);
     
@@ -66,6 +68,8 @@ class InterpolateNoise {
 
         InterpolateNoise(double st, double pbt, double sd, double ex);
         ~InterpolateNoise();
+
+        void reset();
         
         double inoise(double time);
         double operator[](double time);
@@ -101,6 +105,8 @@ class ExpGaussNoise {
     
     ExpGaussNoise(double samplinginterval, double lapseinterval, double foldingtime, double spectraldensity);
     ~ExpGaussNoise();
+
+    void reset();
 
     double operator[](double time);
 };

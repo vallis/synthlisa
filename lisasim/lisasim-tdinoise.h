@@ -6,7 +6,7 @@
 
 class TDInoise {
     private:
-        LISA *lisa;
+        LISA *lisa, *phlisa;
 
         InterpolateNoise *pm[4], *pms[4];
         
@@ -19,9 +19,17 @@ class TDInoise {
     public:
 
         // claser is a correlation e-folding time
+        // it is a bit awkward to have two of these... perhaps physlisa could be set as a default optional parameter
+        // assuming that SWIG can deal with that
 
         TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser, double claser);
+        TDInoise(LISA *mylisa, LISA *physlisa, double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser, double claser);
+
         ~TDInoise();
+
+        void initialize(double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser, double claser);
+
+        void reset();
 
         // leave these here so we can show the cancellation of laser noise
 

@@ -1,4 +1,5 @@
 #include "lisasim-lisa.h"
+#include "lisasim-noise.h"
 
 // --- generic LISA class --------------------------------------------------------------
 
@@ -111,8 +112,8 @@ ModifiedLISA::ModifiedLISA(double arm1,double arm2,double arm3) : OriginalLISA(a
         Lc[i]  = L[i] + sagnac[i];
         Lac[i] = L[i] - sagnac[i];
 
-        cout.precision(8);
-        cout << "Light times on arm " << i << ": " << Lc[i] / 3.17098E-8 << " " << Lac[i] / 3.17098E-8 << endl;
+//      cout.precision(8);
+//      cout << "Light times on arm " << i << ": " << Lc[i] / 3.17098E-8 << " " << Lac[i] / 3.17098E-8 << endl;
     }
 }
 
@@ -336,4 +337,53 @@ void MontanaEccentric::putp(Vector &p, int craft, double t) {
 
     for(int i=0;i<3;i++)
         p[i] = cachep[craft][i];
+}
+
+// --- NoisyLISA class -----------------------------------------------------
+
+// for simplicity, the error on the arms is defined in seconds
+
+NoisyLISA::NoisyLISA(LISA *clean,double starm,double sdarm) {
+    cleanlisa = clean;
+    
+    // to estimate size of noisebuffer, take an armlength at time zero,
+    // and add 10%; need to convert from years to seconds (we use the factor from lisasim-tdi.cpp)
+    // ah, this might not work for OriginalLISA and strange geometries
+
+    double lighttime = 1.10 * (cleanlisa->armlength(1,0.0) / 3.17098E-8);
+
+    // create InterpolateNoise objects for the arm determination noises
+    // we need triple retardations
+
+    double pbtarm = 3.0 * lighttime;
+
+    // we use plain uncorrelated white noise, for the moment
+
+    for(int link = 1; link <= 3; link++) {
+        uperror[link] = new InterpolateNoise(starm, pbtarm, sdarm, 0.0);
+        downerror[link] = new InterpolateNoise(starm, pbtarm, sdarm, 0.0);
+    }
+}
+
+NoisyLISA::~NoisyLISA() {
+    for(int link = 1; link <= 3; link++) {
+        delete uperror[link];
+        delete downerror[link];
+    }
+}
+
+void NoisyLISA::reset() {
+    for(int link = 1; link <= 3; link++) {
+        uperror[link]->reset();
+        downerror[link]->reset();
+    }    
+}
+
+// convert the error from seconds to years
+
+double NoisyLISA::armlength(int arm, double t) {
+    if(arm > 0)
+        return(cleanlisa->armlength(arm,t) + (*uperror[arm])[t/3.17098E-8] * 3.17098E-8);
+    else
+        return(cleanlisa->armlength(arm,t) + (*downerror[-arm])[t/3.17098E-8] * 3.17098E-8);
 }

@@ -2,6 +2,7 @@
 #define _LISASIM_LISA_H_
 
 #include "lisasim-tens.h"
+#include "lisasim-noise.h"
 
 class LISA {
     public:
@@ -11,6 +12,8 @@ class LISA {
         // default destructor: do I need this?
 
         virtual ~LISA() {};
+
+        virtual void reset() {};
 
         virtual void putn(Vector &n, int arm, double t) = 0;
         virtual void putp(Vector &p, int craft, double t) = 0;
@@ -151,6 +154,37 @@ class MontanaEccentric : public LISA {
         void putn(Vector &n,int arm,double t);
 
         void putp(Vector &p,int craft,double t);
+};
+
+class NoisyLISA : public LISA {
+    private:
+        LISA *cleanlisa;
+
+        InterpolateNoise *uperror[4], *downerror[4];
+
+    public:
+        NoisyLISA(LISA *clean,double starm,double sdarm);
+        ~NoisyLISA();
+        
+        void reset();
+    
+        double armlength(int arm, double t);
+
+        void putn(Vector &n, int arm, double t) {
+            cleanlisa->putn(n,arm,t);
+        }
+        
+        void putp(Vector &p, int craft, double t) {
+            cleanlisa->putp(p,craft,t);
+        }
+
+        void putn(double n[], int arm, double t) {
+            cleanlisa->putn(n,arm,t);
+        }
+        
+        void putp(double p[], int craft, double t) {
+            cleanlisa->putp(p,craft,t);
+	}
 };
 
 #endif /* _LISASIM_LISA_H_ */

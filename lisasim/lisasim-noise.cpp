@@ -104,6 +104,16 @@ RingNoise::~RingNoise() {
     delete [] bufferx;
 }
 
+void RingNoise::reset() {
+    for(int i=0; i<buffersize; i++) {
+        bufferx[i] = 0.00;
+        buffery[i] = 0.00;
+    }
+    
+    earliest = -1;
+    latest = -1;    
+}
+
 void RingNoise::updatebuffer(long pos) {
     for(int i=latest+1; i<=pos; i++) {
         bufferx[i % buffersize] = deviate();
@@ -199,6 +209,10 @@ InterpolateNoise::~InterpolateNoise() {
     delete buffernoise;
 }
 
+void InterpolateNoise::reset() {
+    buffernoise->reset();
+}
+
 double InterpolateNoise::inoise(double time) {
     double ctime = time / samplingtime;
     double itime = floor(ctime);
@@ -283,15 +297,47 @@ ExpGaussNoise::~ExpGaussNoise() {
     delete ptbuffer;
 }
 
+void ExpGaussNoise::reset() {
+    // put back all the samples in the list into the buffer
+
+    GaussSample *nextone;
+    
+    while(first) {
+        nextone = first->next;
+
+        bufferlevel = bufferlevel + 1;
+        ptbuffer[bufferlevel] = first;
+
+        first = nextone;
+    }
+
+    if(bufferlevel !=  buffersize - 1) {
+        cout << "ExpGaussNoise::reset: I've lost a GaussSample (or more) somewhere!" << endl;
+        abort();
+    }
+
+    // reinitialize first and last from the buffer
+
+    first = ptbuffer[bufferlevel];
+    bufferlevel = bufferlevel - 1;
+    last = first;
+    
+    first->time = -lapsetime;
+    first->value = gasdev();
+    
+    first->prev = 0;
+    first->next = 0;
+}
+
 double safeexp(double e) {
-    if(e > -20.0)
+//    if(e > -20.0)
         return exp(e);
-    else
-        return 0.0;
+//    else
+//        return 0.0;
 }
 
 double ExpGaussNoise::operator[](double time) {
-    const double alloweddelta = 1.0e-12;
+    const double alloweddelta = 1.0e-14;
     
     GaussSample *current = first;
 
