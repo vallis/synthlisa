@@ -128,6 +128,14 @@ class zLockNoise : public Noise {
     double noise(double time) {
 	return (*this)[time];
     };
+
+    double noise(double tb,double tc) {
+	if (slave > 0) {
+	    return masterc->noise(tb,tc) - masterpm->noise(tb,tc) - slavepm->noise(tb,tc);
+	} else {
+	    return masterc->noise(tb,tc) + masterpm->noise(tb,tc) + slavepm->noise(tb,tc);
+	}
+    };
 };
 
 class yLockNoise : public Noise {
@@ -158,6 +166,16 @@ class yLockNoise : public Noise {
 
     double noise(double time) {
 	return (*this)[time];
+    };
+
+    double noise(double tb,double tc) {
+	if (slave > 0) {
+	    return masterc->noise(tb,tc - lisa->armlength(arm,tb+tc))
+		- 2.0 * slavepm->noise(tb,tc) + shot->noise(tb,tc);
+	} else {
+	    return masterc->noise(tb,tc - lisa->armlength(arm,tb+tc))
+		+ 2.0 * slavepm->noise(tb,tc) + shot->noise(tb,tc);
+	}
     };
 };
 
