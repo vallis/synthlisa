@@ -6,14 +6,6 @@
 #include <sys/time.h>
 #include <math.h>
 
-LISA *stdlisa() {
-  return new OriginalLISA(Lstd,Lstd,Lstd);
-}
-
-TDInoise *stdnoise(LISA *mylisa) {
-    return new TDInoise(mylisa,1.0,2.5e-48,1.0,1.8e-37,1.0,1.1e-26,1.0e-6);
-}
-
 void printtdi(char *filename,TDI *mytdi,int samples,double samplingtime,char *observables) {
     ofstream outfile(filename);    
 

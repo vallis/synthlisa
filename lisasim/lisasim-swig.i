@@ -61,13 +61,21 @@ class Noise;
 class InterpolateNoise : public Noise {
 public:
     InterpolateNoise(double sampletime,double prebuffer,double density,double exponent);
-
     InterpolateNoise(double *noisebuf,long samples,double sampletime,double prebuffer,double norm);
 
     ~InterpolateNoise();
 
     void reset();
         
+    virtual double inoise(double time);
+};
+
+class InterpolateNoiseBetter : public InterpolateNoise {
+ public:
+
+    InterpolateNoiseBetter(double sampletime,double prebuffer,double density,double exponent,int swindow);
+    InterpolateNoiseBetter(double *noisebuf,long samples,double sampletime,double prebuffer,double norm,int swindow);
+
     double inoise(double time);
 };
 
@@ -134,9 +142,9 @@ public:
 
 class TDInoise : public TDI {
 public:
-    TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser, double claser);
+    TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser);
 
-    TDInoise(LISA *mylisa, double stproof[6], double sdproof[6], double stshot[6], double sdshot[6], double stlaser[6], double sdlaser[6], double claser[6]);
+    TDInoise(LISA *mylisa, double stproof[6], double sdproof[6], double stshot[6], double sdshot[6], double stlaser[6], double sdlaser[6]);
 
     TDInoise(LISA *mylisa, Noise *proofnoise[6],Noise *shotnoise[6],Noise *lasernoise[6]);
 
@@ -174,12 +182,15 @@ extern Noise *stdproofnoise(LISA *lisa,double stproof,double sdproof);
 extern Noise *stdopticalnoise(LISA *lisa,double stshot,double sdshot);
 
 %newobject stdlasernoise;
-extern Noise *stdlasernoise(LISA *lisa,double stlaser,double sdlaser,double claser);
+extern Noise *stdlasernoise(LISA *lisa,double stlaser,double sdlaser);
 
-/* TDI */
+%newobject newstdlasernoise;
+extern Noise *newstdlasernoise(LISA *lisa,double stlaser,double sdlaser,int window);
 
 %newobject stdnoise;
 extern TDInoise *stdnoise(LISA *mylisa);
+
+/* TDI interface (defined in lisasim-swig.i) */
 
 extern void printtdi(char *filename,TDI *mytdi,int samples,double samplingtime,char *observables);
 
