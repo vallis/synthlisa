@@ -6,6 +6,109 @@
 #include <sys/time.h>
 #include <math.h>
 
+void printp(LISA *lisa,double t)
+{
+    Vector p;
+
+    for(int i=1;i<4;i++) {
+	lisa->putp(p,i,t);
+	printf("%d(%f): %f %f %f\n",i,t,p[0],p[1],p[2]);
+    }
+}
+
+void printn(LISA *lisa,double t)
+{
+    Vector n;
+
+    for(int i=1;i<4;i++) {
+	lisa->putn(n,i,t);
+	printf("%d(%f): %f %f %f\n",i,t,n[0],n[1],n[2]);
+    }
+}
+
+extern void retardone(LISA *lisa,int ret,double t,double *retardedtime,double *totalretardbaseline,double *totalretardaccurate);
+
+double retardation(LISA *lisa,int ret1,int ret2,int ret3,int ret4,int ret5,int ret6,int ret7,int ret8,double t) {
+    double retardedtime = t;
+
+    double totalretardbaseline = 0.0;
+    double totalretardaccurate = 0.0;
+
+    if(ret8 != 0) retardone(lisa,ret8,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
+    if(ret7 != 0) retardone(lisa,ret7,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
+    if(ret6 != 0) retardone(lisa,ret6,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
+    if(ret5 != 0) retardone(lisa,ret5,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
+    if(ret4 != 0) retardone(lisa,ret4,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
+    if(ret3 != 0) retardone(lisa,ret3,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
+    if(ret2 != 0) retardone(lisa,ret2,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
+    if(ret1 != 0) retardone(lisa,ret1,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
+
+    return totalretardbaseline + totalretardaccurate;
+}
+
+double observable(TDI *mytdi,char **obs,double t) {
+    switch((*obs)[0]) {
+    case 't':
+	return t;
+	break;
+    case 'X':
+	if((*obs)[1] == 'm') {
+	    (*obs)++;
+	    return mytdi->Xm(t);
+	} else if((*obs)[1] == '1') {
+	    (*obs)++;
+	    return mytdi->X1(t);
+	} else
+	    return mytdi->X(t);
+	break;
+    case 'Y':
+	if((*obs)[1] == 'm') {
+	    (*obs)++;
+	    return mytdi->Ym(t);
+	} else
+	    return mytdi->Y(t);          
+	break;
+    case 'Z':
+	if((*obs)[1] == 'm') {
+	    (*obs)++;
+	    return mytdi->Zm(t);
+	} else
+	    return mytdi->Z(t);           
+	break;
+    case 'a':
+	return mytdi->alpha(t);
+	break;
+    case 'b':
+	return mytdi->beta(t);
+	break;
+    case 'g':
+	return mytdi->gamma(t);
+	break;
+    case 'z':
+	return mytdi->zeta(t);
+	break;
+    case 'P':
+	return mytdi->P(t);
+	break;
+    case 'E':
+	return mytdi->E(t);
+	break;
+    case 'U':
+	return mytdi->U(t);
+	break;
+    case 'y':
+	return mytdi->y(3,1,2,0,0,0,t);
+	break;
+    case 'w':
+	return mytdi->z(3,1,2,0,0,0,0,t);
+	break;
+    default:
+	break;
+    }
+
+    return 0.0;
+}
+
 void printtdi(char *filename,TDI *mytdi,int samples,double samplingtime,char *observables) {
     ofstream outfile(filename);    
 
@@ -31,57 +134,7 @@ void printtdi(char *filename,TDI *mytdi,int samples,double samplingtime,char *ob
         char *obs = observables;
 
         while(obs[0]) {
-            switch(obs[0]) {
-                case 't':
-                    outfile << t;
-                    break;
-                case 'X':
-                    if(obs[1] == 'm') {
-                        outfile << mytdi->Xm(t);
-                        obs++;
-                    } else {
-                        outfile << mytdi->X(t);
-                    }
-                
-                    break;
-                case 'Y':
-                    outfile << mytdi->Y(t);
-                    break;
-                case 'Z':
-                    outfile << mytdi->Z(t);
-                    break;
-                case 'a':
-                    outfile << mytdi->alpha(t);
-                    break;
-                case 'b':
-                    outfile << mytdi->beta(t);
-                    break;
-                case 'g':
-                    outfile << mytdi->gamma(t);
-                    break;
-                case 'z':
-                    outfile << mytdi->zeta(t);
-                    break;
-                case 'P':
-                    outfile << mytdi->P(t);
-                    break;
-                case 'E':
-                    outfile << mytdi->E(t);
-                    break;
-                case 'U':
-                    outfile << mytdi->U(t);
-                    break;
-                case 'y':
-                    outfile << mytdi->y(3,1,2,0,0,0,t);
-                    break;
-                case 'w':
-                    outfile << mytdi->z(3,1,2,0,0,0,0,t);
-                    break;
-                default:
-                    break;
-            }
-        
-            outfile << " ";
+	    outfile << observable(mytdi,&obs,t) << " ";
             obs++;
         }
     
@@ -118,57 +171,7 @@ void settdi(double *array, TDI *mytdi,int samples,double samplingtime,char *obse
 
 	// for the moment, only the first observable is returned
 
-            switch(obs[0]) {
-                case 't':
-                    array[i] = t;
-                    break;
-                case 'X':
-                    if(obs[1] == 'm') {
-                        array[i] = mytdi->Xm(t);
-                        obs++;
-                    } else {
-                        array[i] = mytdi->X(t);
-                    }
-                
-                    break;
-                case 'Y':
-                    array[i] = mytdi->Y(t);
-                    break;
-                case 'Z':
-                    array[i] = mytdi->Z(t);
-                    break;
-                case 'a':
-                    array[i] = mytdi->alpha(t);
-                    break;
-                case 'b':
-                    array[i] = mytdi->beta(t);
-                    break;
-                case 'g':
-                    array[i] = mytdi->gamma(t);
-                    break;
-                case 'z':
-                    array[i] = mytdi->zeta(t);
-                    break;
-                case 'P':
-                    array[i] = mytdi->P(t);
-                    break;
-                case 'E':
-                    array[i] = mytdi->E(t);
-                    break;
-                case 'U':
-                    array[i] = mytdi->U(t);
-                    break;
-                case 'y':
-                    array[i] = mytdi->y(3,1,2,0,0,0,t);
-                    break;
-                case 'w':
-                    array[i] = mytdi->z(3,1,2,0,0,0,0,t);
-                    break;
-                default:
-                    break;
-            }
-
-            obs++;
+	array[i] = observable(mytdi,&obs,t);
     }
 
     gettimeofday(&tv,0);
