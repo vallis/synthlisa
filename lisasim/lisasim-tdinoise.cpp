@@ -4,7 +4,7 @@
 
 // this version takes the parameters of the basic noises and lets us allocate objects as needed
 
-TDInoise::TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser, double claser) {
+TDInoise::TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser) {
     lisa = mylisa->thislisa();
     phlisa = mylisa;
 
@@ -23,8 +23,8 @@ TDInoise::TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, 
     }
 
     for(int craft = 1; craft <= 3; craft++) {
-        c[craft] = stdlasernoise(lisa,stlaser,sdlaser,claser);
-        cs[craft] = stdlasernoise(lisa,stlaser,sdlaser,claser);
+	c[craft] = stdlasernoise(lisa,stlaser,sdlaser);
+        cs[craft] = stdlasernoise(lisa,stlaser,sdlaser);
     }
 
     allocated = 1;
@@ -33,7 +33,7 @@ TDInoise::TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, 
 // this version takes arrays of basic-noise parameters, allowing for different noises on different objects,
 // and lets us allocate objects as needed
 
-TDInoise::TDInoise(LISA *mylisa, double *stproof, double *sdproof, double *stshot, double *sdshot, double *stlaser, double *sdlaser, double *claser) {
+TDInoise::TDInoise(LISA *mylisa, double *stproof, double *sdproof, double *stshot, double *sdshot, double *stlaser, double *sdlaser) {
     lisa = mylisa->thislisa();
     phlisa = mylisa;
 
@@ -57,8 +57,8 @@ TDInoise::TDInoise(LISA *mylisa, double *stproof, double *sdproof, double *stsho
     }
 
     for(int craft = 1; craft <= 3; craft++) {
-        c[craft]  = stdlasernoise(lisa,stlaser[2*(craft-1)],  sdlaser[2*(craft-1)],  claser[2*(craft-1)]);
-        cs[craft] = stdlasernoise(lisa,stlaser[2*(craft-1)+1],sdlaser[2*(craft-1)+1],claser[2*(craft-1)+1]);
+        c[craft]  = stdlasernoise(lisa,stlaser[2*(craft-1)],  sdlaser[2*(craft-1)]);
+        cs[craft] = stdlasernoise(lisa,stlaser[2*(craft-1)+1],sdlaser[2*(craft-1)+1]);
     }
 
     allocated = 1;
@@ -256,12 +256,24 @@ Noise *stdopticalnoise(LISA *lisa,double stshot, double sdshot) {
     return new InterpolateNoise(stshot, pbtshot, sdshot, 2.0);
 }
 
-Noise *stdlasernoise(LISA *lisa,double stlaser, double sdlaser, double claser) {
+Noise *stdlasernoise(LISA *lisa,double stlaser, double sdlaser) {
     // create laser noise objects
     // quadruple retardations are needed for the C's
 
     double pbtlaser = 4.0 * lighttime(lisa);
 
-    return new ExpGaussNoise(stlaser,pbtlaser,claser,sdlaser);
+    return new InterpolateNoise(stlaser, pbtlaser, sdlaser, 0.0);
 }
 
+Noise *newstdlasernoise(LISA *lisa,double stlaser, double sdlaser, int window) {
+    // create laser noise objects
+    // quadruple retardations are needed for the C's
+
+    double pbtlaser = 4.0 * lighttime(lisa) + window * stlaser;
+
+    return new InterpolateNoiseBetter(stlaser,pbtlaser,sdlaser,0.0,window);
+}
+
+TDInoise *stdnoise(LISA *mylisa) {
+    return new TDInoise(mylisa,1.0,2.5e-48,1.0,1.8e-37,1.0,1.1e-26);
+}

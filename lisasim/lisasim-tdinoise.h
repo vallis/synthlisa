@@ -24,12 +24,12 @@ class TDInoise : public TDI {
     public:
         // standard noises for everybody, same levels
 
-        TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser, double claser);
+        TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser);
 
 	// provide arrays of noise parameters
 	// the convention is {1, 1*, 2, 2*, 3, 3*}, and {12,21,23,32,31,13} (sending and receiving)
 
-        TDInoise(LISA *mylisa, double *stproof, double *sdproof, double *stshot, double *sdshot, double *stlaser, double *sdlaser, double *claser);
+        TDInoise(LISA *mylisa, double *stproof, double *sdproof, double *stshot, double *sdshot, double *stlaser, double *sdlaser);
 
 	// provide arrays of pointers to noise objects
 
@@ -61,6 +61,10 @@ extern double lighttime(LISA *lisa);
 
 extern Noise *stdproofnoise(LISA *lisa,double stproof, double sdproof);
 extern Noise *stdopticalnoise(LISA *lisa,double stshot, double sdshot);
-extern Noise *stdlasernoise(LISA *lisa,double stlaser, double sdlaser, double claser);
+
+extern Noise *stdlasernoise(LISA *lisa,double stlaser, double sdlaser);
+extern Noise *newstdlasernoise(LISA *lisa,double stlaser, double sdlaser, int window);
+
+extern TDInoise *stdnoise(LISA *mylisa);
 
 #endif /* _LISASIM_TDINOISE_H_ */
