@@ -2,11 +2,18 @@ from Numeric import *
 from FFT import *
 
 # estimate spectrum
+# patches = 0 gives the unwindowed spectrum
+# patches = 1 gives the triangle-windowed spectrum
+# patches > 1 gives the triangle-windowed, averaged over "patches" periods
+
+# detrend controls the subtraction of DC components
 
 def spect(series,sampling,patches=1,detrend=0):
     nyquistf = 0.5 / sampling
 
-    if patches==1:
+    if patches==0:
+        period = pdg(series)
+    elif patches==1:
         period = wpdg(series,detrend)
     else:
         period = opwpdg(series,patches,detrend)
@@ -109,6 +116,59 @@ def getobs(snum,stime,observables):
                 array[i,j] = observables[j](i*stime)
     return array
 
+# used by getobsc (hoping time.time() will work on all platforms...)
+
+import sys
+from time import time
+
+def dotime(i,snum,inittime,lasttime):
+    currenttime = int(time()) - inittime
+
+    if currenttime - lasttime > 2:
+        percdone = int((100.0*i)/snum)
+        timeleft = int(((1.0 * currenttime) / i) * (snum-i))
+
+        vel = ((1.0*i)/currenttime)
+
+        minleft = timeleft / 60
+        secleft = timeleft - minleft*60
+
+        print "\r...%d/%d (%d%%) done [%d (multi)samples/s], est. %dm%ds left..." % (i,snum,percdone,vel,minleft,secleft),
+        sys.stdout.flush()
+
+        return currenttime
+
+    return lasttime
+
+# the next version, getobsc, will display a countdown to completion
+
+def getobsc(snum,stime,observables):
+    inittime = int(time())
+    lasttime = 0
+    
+    print "Processing...",
+    sys.stdout.flush()
+
+    if len(shape(observables)) == 0:
+        array = zeros(snum,typecode='d')
+        for i in arange(0,snum):
+            array[i] = observables(i*stime)
+            if i % 1024 == 0:
+                lasttime = dotime(i,snum,inittime,lasttime)
+    else:
+        obslen = shape(observables)[0]
+        array = zeros((snum,obslen),typecode='d')
+        for i in arange(0,snum):
+            for j in range(0,obslen):
+                array[i,j] = observables[j](i*stime)
+            if i % 1024 == 0:
+                lasttime = dotime(i,snum,inittime,lasttime)
+
+    currenttime = int(time()) - inittime
+    print "\r...completed in %d s.                                                 " % currenttime
+    
+    return array
+
 # this version is less efficient, probably because of the conversion
 # between the result of map (a sequence) and the numeric array
 
@@ -149,49 +209,11 @@ def writebinary(filename,a):
     file.write(a.tostring())
     file.close()
 
-# should also get the length from the file
+# in a future version, this should also get the length from the file
 
 def readbinary(filename,length):
     file = open(filename,'r')
     buffer = Numeric.fromstring(file.read(length*8),'double')
     file.close()
-    # then reshape the buffer
+    # then reshape the buffer if needed
     return buffer
-
-# computing the S/N of a GW source from the time series and the noise spectrum
-
-import arrayfns
-
-def sn(timeseries,samplingrate,spectrum):
-    # get half the spectrum
-
-    foursiglen = shape(timeseries)[0]
-
-    foursig = fft(timeseries)
-    foursig = samplingrate * foursig[0:foursiglen/2+1]
-
-    # compute the frequencies we need
-
-    foursiglen = shape(foursig)[0]
-
-    df = 1.0 / (samplingrate * foursiglen)
-    fourfreq = 0.5 * df * arange(0,foursiglen)
-
-    # interpolate the noise to the required frequencies
-
-    mynoise = arrayfns.interp(spectrum[:,1],spectrum[:,0],fourfreq)
-
-    # integrate the S/N
-
-    sn2 = 4 * df * sum(conjugate(foursig) * foursig / mynoise).real
-
-    return sqrt(sn2)
-
-# alternative method of computation, from the estimated spectral density
-
-def sn2(duration,spec1,spec2):
-    df = spec1[1,0] - spec1[0,0]
-
-    sn2 = 4 * duration * df * sum(spec1[:,1] / spec2[:,1])
-
-    return sqrt(sn2)
