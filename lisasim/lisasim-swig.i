@@ -17,8 +17,12 @@ public:
     // accept the armlength in seconds
 
     OriginalLISA(double arm1,double arm2,double arm3);
-    
+
     virtual double armlength(int arm, double t);
+
+    virtual double armlengthbaseline(int arm, double t);
+    virtual double armlengthaccurate(int arm, double t);
+
 };
 
 class ModifiedLISA : public OriginalLISA {
@@ -29,6 +33,8 @@ public:
     ModifiedLISA(double arm1,double arm2,double arm3);
         
     double armlength(int arm, double t);
+
+    double genarmlength(int arms, double t);
 };
 
 class CircularRotating : public LISA {
@@ -40,6 +46,21 @@ public:
     CircularRotating(double myL,double eta0,double xi0,double sw);
     
     double armlength(int arm, double t);
+
+    double armlengthbaseline(int arm, double t);
+    double armlengthaccurate(int arm, double t);
+    
+    double genarmlength(int arms, double t);
+};
+
+class EccentricInclined : public LISA {
+public:
+    EccentricInclined(double kappa0,double lambda0);
+
+    double armlength(int arm, double t);
+
+    double armlengthbaseline(int arm, double t);
+    double armlengthaccurate(int arm, double t);
     
     double genarmlength(int arms, double t);
 };
@@ -131,9 +152,16 @@ public:
     virtual double U(double t);
     
     virtual double Xm(double t);
+    virtual double Ym(double t);
+    virtual double Zm(double t);
+
+    virtual double X1(double t);
 
     virtual double y(int send, int link, int recv, int ret1, int ret2, int ret3, double t);
     virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, double t);
+
+    virtual double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t);
+    virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
 };
 
 %apply double PYTHON_SEQUENCE_DOUBLE[ANY] {double stproof[6], double sdproof[6], double stshot[6], double sdshot[6], double stlaser[6], double sdlaser[6], double claser[6]}
@@ -203,3 +231,8 @@ extern void settdi(double *array,TDI *mytdi,int samples,double samplingtime,char
 %apply double *NUMPY_ARRAY_DOUBLE { double *ax };
 extern void setabg(double *aa, double *ab, double *ag, TDI *mytdi,int samples,double samplingtime);
 extern void setabgx(double *aa, double *ab, double *ag, double *ax, TDI *mytdi,int samples,double samplingtime);
+
+extern double retardation(LISA *mylisa,int ret1,int ret2,int ret3,int ret4,int ret5,int ret6,int ret7,int ret8,double t);
+
+extern void printp(LISA *lisa,double t);
+extern void printn(LISA *lisa,double t);
