@@ -1,6 +1,6 @@
 /* File : lisasim-swig.i */
 
-%module lisaswig
+%module(directors="1") lisaswig
 %{
 #include "lisasim.h"
 %}
@@ -45,6 +45,32 @@ class CircularRotating : public LISA {
     double genarmlength(int arms, double t);
 };
 
+%feature("director") AnyLISA;
+class AnyLISA : public LISA {
+ public:
+    AnyLISA(LISA *clean);
+    virtual ~AnyLISA();
+
+    virtual void reset();
+
+    virtual double armlength(int arm, double t);
+
+    virtual double armlengthbaseline(int arm, double t);
+    virtual double armlengthaccurate(int arm, double t);
+};
+
+%apply PyObject* PYTHONFUNC { PyObject *func };
+
+class PyLISA : public LISA {
+  public:
+    PyLISA(LISA *base,PyObject *func);
+
+    double armlength(int arm, double t);
+
+    double armlengthbaseline(int arm, double t);
+    double armlengthaccurate(int arm, double t);
+};
+
 class EccentricInclined : public LISA {
  public:
 
@@ -58,13 +84,12 @@ class EccentricInclined : public LISA {
     double genarmlength(int arm, double t);
 };
 
-
 class NoisyLISA : public LISA {
 public:
     NoisyLISA(LISA *clean,double starm,double sdarm);
 
     // nontrivial destructor should appear here
-	
+
     ~NoisyLISA(); 
 
     double armlength(int arm, double t);
@@ -119,6 +144,17 @@ public:
     double armlengthaccurate(int arm, double t);
 };
 
+class MeasureLISA : public LISA {
+ public:
+    MeasureLISA(LISA *clean,double starm,double sdarm,int swindow = 1);
+    ~MeasureLISA();
+        
+    double armlength(int arm, double t);
+
+    double armlengthbaseline(int arm, double t);
+    double armlengthaccurate(int arm, double t);
+};
+
 /* -------- Noise objects -------- */
 
 class Noise {
@@ -167,6 +203,13 @@ public:
 class InterpolateMemory : public Wave {
 public:
     InterpolateMemory(double *hpa, double *hca, long samples, double samplingtime, double lookback, double d, double a, double p);
+};
+
+%apply PyObject* PYTHONFUNC { PyObject *hpf, PyObject *hcf };
+
+class PyWave : public Wave {
+  public:
+    PyWave(PyObject *hpf, PyObject *hcf, double d, double a, double p);
 };
 
 /* -------- TDI objects -------- */
