@@ -51,6 +51,9 @@ class TDInoise : public TDI {
 
         double y(int send, int link, int recv, int ret1, int ret2, int ret3, double t);
         double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, double t);
+
+	double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t);
+	double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
 };
 
 // return approx lighttime, for estimation of noise buffer size
@@ -66,5 +69,7 @@ extern Noise *stdlasernoise(LISA *lisa,double stlaser, double sdlaser);
 extern Noise *newstdlasernoise(LISA *lisa,double stlaser, double sdlaser, int window);
 
 extern TDInoise *stdnoise(LISA *mylisa);
+
+extern void retardone(LISA *lisa,int ret,double t,double *retardedtime,double *totalretardbaseline,double *totalretardaccurate);
 
 #endif /* _LISASIM_TDINOISE_H_ */

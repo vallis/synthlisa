@@ -26,9 +26,17 @@ class TDI {
 	virtual double U(double t);
 
 	virtual double Xm(double t);
+	virtual double Ym(double t);
+	virtual double Zm(double t);
+
+	virtual double X1(double t);
 
         virtual double y(int send, int link, int recv, int ret1, int ret2, int ret3, double t);
         virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, double t);
+
+	virtual double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t);
+	virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
+
 };
 
 #endif /* _LISASIM_TDI_H_ */

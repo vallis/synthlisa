@@ -39,6 +39,17 @@ double TDIsignal::retard(int craft, double t) {
 // note that the call to putn is already computing the armlength that we request later
 // we could make putn return the corresponding armlength
 
+double TDIsignal::y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t) {
+    double retardedtime = t;
+
+    if(ret7 != 0) retardedtime -= lisa->armlength(ret7,retardedtime);
+    if(ret6 != 0) retardedtime -= lisa->armlength(ret6,retardedtime);
+    if(ret5 != 0) retardedtime -= lisa->armlength(ret5,retardedtime);    
+    if(ret4 != 0) retardedtime -= lisa->armlength(ret4,retardedtime);
+
+    return y(send,link,recv,ret1,ret2,ret3,retardedtime);
+}
+
 double TDIsignal::y(int send, int slink, int recv, int ret1, int ret2, int ret3, double t) {
     int link = abs(slink);
 

@@ -165,16 +165,36 @@ void TDInoise::reset() {
     if(phlisa != lisa) phlisa->reset();
 }
 
+void retardone(LISA *lisa,int ret,double t,double *retardedtime,double *totalretardbaseline,double *totalretardaccurate) {
+    *totalretardbaseline += lisa->armlengthbaseline(ret,*retardedtime);  
+    *totalretardaccurate += lisa->armlengthaccurate(ret,*retardedtime);
+
+    *retardedtime = t - *totalretardbaseline - *totalretardaccurate;
+}
+
 double TDInoise::y(int send, int slink, int recv, int ret1, int ret2, int ret3, double t) {
+    return y(send,slink,recv,ret1,ret2,ret3,0,0,0,0,t);
+}
+
+double TDInoise::y(int send, int slink, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t) {
     int link = abs(slink);
 
     // this recursive retardation procedure assumes smart TDI...
 
     double retardedtime = t;
 
-    if(ret3 != 0) retardedtime -= lisa->armlength(ret3,retardedtime);
-    if(ret2 != 0) retardedtime -= lisa->armlength(ret2,retardedtime);    
-    if(ret1 != 0) retardedtime -= lisa->armlength(ret1,retardedtime);
+    double totalretardbaseline = 0.0;
+    double totalretardaccurate = 0.0;
+
+    if(ret7 != 0) retardone(lisa,ret7,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
+    if(ret6 != 0) retardone(lisa,ret6,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
+    if(ret5 != 0) retardone(lisa,ret5,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
+    if(ret4 != 0) retardone(lisa,ret4,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
+    if(ret3 != 0) retardone(lisa,ret3,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
+    if(ret2 != 0) retardone(lisa,ret2,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
+    if(ret1 != 0) retardone(lisa,ret1,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
+
+    double retardlaser = retardedtime;
 
     if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2)) {
         // cyclic combination
@@ -182,7 +202,7 @@ double TDInoise::y(int send, int slink, int recv, int ret1, int ret2, int ret3, 
         // if introducing error in the determination of the armlengths, it should not enter
         // the following (physical) retardation of the laser noise, so we use the phlisa object
 
-        double retardlaser = retardedtime - phlisa->armlength(link,retardedtime);
+	retardone(phlisa,link,t,&retardlaser,&totalretardbaseline,&totalretardaccurate);
 
         return( (*cs[send])[retardlaser] - 2.0 * (*pm[recv])[retardedtime]  - (*c[recv])[retardedtime]  + 
                 (*shot[send][recv])[retardedtime] );
@@ -191,7 +211,7 @@ double TDInoise::y(int send, int slink, int recv, int ret1, int ret2, int ret3, 
 
         // ditto here
 
-        double retardlaser = retardedtime - phlisa->armlength(-link,retardedtime);
+	retardone(phlisa,-link,t,&retardlaser,&totalretardbaseline,&totalretardaccurate);
 
         return( (*c[send])[retardlaser]  + 2.0 * (*pms[recv])[retardedtime] - (*cs[recv])[retardedtime] +
                 (*shot[send][recv])[retardedtime] );
@@ -199,6 +219,10 @@ double TDInoise::y(int send, int slink, int recv, int ret1, int ret2, int ret3, 
 }
 
 double TDInoise::z(int send, int slink, int recv, int ret1, int ret2, int ret3, int ret4, double t) {
+    return z(send,slink,recv,ret1,ret2,ret3,ret4,0,0,0,0,t);
+}
+
+double TDInoise::z(int send, int slink, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t) {
     int link = abs(slink);
 
     // this recursive retardation procedure assumes smart TDI...
@@ -206,11 +230,18 @@ double TDInoise::z(int send, int slink, int recv, int ret1, int ret2, int ret3, 
 
     double retardedtime = t;
 
-    if(ret4 != 0) retardedtime -= lisa->armlength(ret4,retardedtime);
-    if(ret3 != 0) retardedtime -= lisa->armlength(ret3,retardedtime);
-    if(ret2 != 0) retardedtime -= lisa->armlength(ret2,retardedtime);    
-    if(ret1 != 0) retardedtime -= lisa->armlength(ret1,retardedtime);
-    
+    double totalretardbaseline = 0.0;
+    double totalretardaccurate = 0.0;
+
+    if(ret8 != 0) retardone(lisa,ret8,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
+    if(ret7 != 0) retardone(lisa,ret7,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
+    if(ret6 != 0) retardone(lisa,ret6,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
+    if(ret5 != 0) retardone(lisa,ret5,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
+    if(ret4 != 0) retardone(lisa,ret4,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
+    if(ret3 != 0) retardone(lisa,ret3,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
+    if(ret2 != 0) retardone(lisa,ret2,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
+    if(ret1 != 0) retardone(lisa,ret1,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
+
     if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2)) {
         // cyclic combination
 
@@ -240,36 +271,36 @@ double lighttime(LISA *lisa) {
 
 Noise *stdproofnoise(LISA *lisa,double stproof, double sdproof) {
     // create InterpolateNoise objects for proof-mass noises
-    // we need quadruple retardations for the V's appearing in the z's
+    // we need quadruple retardations for the V's appearing in the z's (octuple for 2nd-gen TDI)
 
-    double pbtproof = 4.0 * lighttime(lisa);
+    double pbtproof = 8.0 * lighttime(lisa);
 
     return new InterpolateNoise(stproof, pbtproof, sdproof, -2.0);
 }
 
 Noise *stdopticalnoise(LISA *lisa,double stshot, double sdshot) {
     // create InterpolateNoise objects for optical-path noises
-    // we need only triple retardations for the shot's appearing in the y's
+    // we need only triple retardations for the shot's appearing in the y's (septuple for 2nd-gen TDI)
 
-    double pbtshot = 3.0 * lighttime(lisa);
+    double pbtshot = 7.0 * lighttime(lisa);
 
     return new InterpolateNoise(stshot, pbtshot, sdshot, 2.0);
 }
 
 Noise *stdlasernoise(LISA *lisa,double stlaser, double sdlaser) {
     // create laser noise objects
-    // quadruple retardations are needed for the C's
+    // quadruple retardations are needed for the C's (octuple for 2nd-gen TDI)
 
-    double pbtlaser = 4.0 * lighttime(lisa);
+    double pbtlaser = 8.0 * lighttime(lisa);
 
     return new InterpolateNoise(stlaser, pbtlaser, sdlaser, 0.0);
 }
 
 Noise *newstdlasernoise(LISA *lisa,double stlaser, double sdlaser, int window) {
     // create laser noise objects
-    // quadruple retardations are needed for the C's
+    // quadruple retardations are needed for the C's (octuple for 2nd-gen TDI)
 
-    double pbtlaser = 4.0 * lighttime(lisa) + window * stlaser;
+    double pbtlaser = 8.0 * lighttime(lisa) + window * stlaser;
 
     return new InterpolateNoiseBetter(stlaser,pbtlaser,sdlaser,0.0,window);
 }
