@@ -1,25 +1,35 @@
 #OPTIONS = -Wall -g 
 #OPTIONS = -Wall -O3 -pg -g 
-OPTIONS = -Wall -O3 
+OPTIONS = -Wall -O3
+
+PLATFORM=$(shell uname)
+BUILD=../build/$(PLATFORM)
+BINS=../bin/$(PLATFORM)
 
 CFILES= lisasim-lisa.cpp lisasim-noise.cpp lisasim-tdi.cpp lisasim-tdisignal.cpp lisasim-tdinoise.cpp lisasim-tens.cpp lisasim-wave.cpp
+
 HFILES= $(CFILES:.cpp=.h)
 
-OFILES= $(CFILES:.cpp=.o)
+OFILES= $(foreach cfile,$(CFILES),$(BUILD)/$(cfile:.cpp=.o))
 
-lisasim: $(OFILES) lisasim-main.o lisasim-tdifast.o
-	g++ $(OPTIONS) $(OFILES) lisasim-main.o lisasim-tdifast.o -o lisasim
+lisasim: $(BINS) $(BUILD) $(OFILES) $(BUILD)/lisasim-main.o $(BUILD)/lisasim-tdifast.o
+	g++ $(OPTIONS) $(OFILES) $(BUILD)/lisasim-main.o $(BUILD)/lisasim-tdifast.o -o $(BINS)/lisasim
 
-%.o: %.cpp lisasim.h
-	g++ $(OPTIONS) -c $<
+$(BUILD)/%.o: %.cpp lisasim.h
+	g++ $(OPTIONS) -c $< -o $@
+
+$(BUILD):
+	mkdir -p $(BUILD)
+
+$(BINS):
+	mkdir -p $(BINS)
 
 lisasim.h: $(HFILES)
 
 clean:
-	rm -rf *.o lisasim
+	rm -rf $(BUILD)/*.o $(BINS)/lisasim
 	rm -rf lisasim-swig_wrap.cxx lisaswig.py lisaswig.pyc _lisaswig.so
 	rm -rf literate/*.htex literate/*.ctex literate/*.aux literate/*.log literate/*.pdf literate/*.ps
-
 .PHONEY: clean
 
 # --- testing ---
@@ -36,7 +46,17 @@ PYTHON_LIB=	/usr/lib/python2.2/config
 SO=	.so
 
 #LDSHARED=	gcc -bundle -undefined suppress -flat_namespace
-LDSHARED=	g++ -bundle -bundle_loader /usr/bin/python
+
+ifeq ($(PLATFORM),Darwin)
+	LDSHARED=g++ -bundle -bundle_loader /usr/bin/python
+endif
+
+ifeq ($(PLATFORM),Linux)
+	LDSHARED=g++ -shared
+endif
+
+print:
+	echo $(LDSHARED)
 
 lisasim-swig_wrap.cxx: lisasim-swig.i
 	$(SWIG) -c++ -python lisasim-swig.i
