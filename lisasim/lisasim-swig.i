@@ -88,6 +88,17 @@ class NominalLISA : public LISA {
     double armlengthaccurate(int arm, double t);
 };
 
+class CacheLISA : public LISA {
+public:
+    CacheLISA(LISA *basic);
+    ~CacheLISA(); 
+
+    double armlength(int arm, double t);
+
+    double armlengthbaseline(int arm, double t);
+    double armlengthaccurate(int arm, double t);
+};
+
 /* -------- Noise objects -------- */
 
 class Noise {
@@ -158,6 +169,10 @@ public:
     virtual double alpha3(double t);
     
     virtual double zeta(double t);
+
+    virtual double zeta1(double t);
+    virtual double zeta2(double t);
+    virtual double zeta3(double t);
 
     virtual double P(double t);
     virtual double E(double t);
