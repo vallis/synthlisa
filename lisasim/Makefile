@@ -63,7 +63,7 @@ $(BUILD)/%.o: %.cpp lisasim.h
 
 # clean objects
 objects-clean:
-	-rm $(OFILES)
+	-rm -f $(OFILES)
 
 # --- build lisaswig ---
 
@@ -98,9 +98,9 @@ $(LIBS)/_lisaswig$(PYTHON_SO): $(OFILES) $(BUILD)/lisasim-swig.o $(BUILD)/lisasi
 	$(CXXSHARED) $(OFILES) $(GSL_OFILES) $(BUILD)/lisasim-swig.o $(BUILD)/lisasim-swig_wrap.o $(IOBJS) $(PYTHON_DLNK) $(CPP_DLLIBS) -o $(LIBS)/_lisaswig$(PYTHON_SO)
 
 lisaswig-clean:
-	-rm $(BUILD)/lisasim-swig_wrap.cxx
-	-rm $(BUILD)/lisasim-swig.o $(BUILD)/lisasim-swig_wrap.o
-	-rm $(LIBS)/lisaswig.py $(LIBS)/lisaswig.pyc $(LIBS)/_lisaswig$(PYTHON_SO)
+	-rm -f $(BUILD)/lisasim-swig_wrap.cxx
+	-rm -f $(BUILD)/lisasim-swig.o $(BUILD)/lisasim-swig_wrap.o
+	-rm -f $(LIBS)/lisaswig.py $(LIBS)/lisaswig.pyc $(LIBS)/_lisaswig$(PYTHON_SO)
 
 # --- build lisasim tool, including tdifast ---
 
@@ -110,8 +110,8 @@ $(BINS)/lisasim: $(BINS) $(BUILD) $(OFILES) $(BUILD)/lisasim-main.o $(BUILD)/lis
 	g++ $(OPTIONS) $(OFILES) $(GSL_OFILES) $(BUILD)/lisasim-main.o $(BUILD)/lisasim-tdifast.o -o $(BINS)/lisasim
 
 lisasim-clean:
-	-rm $(BUILD)/lisasim-main.o $(BUILD)/lisasim-tdifast.o
-	-rm $(BINS)/lisasim
+	-rm -f $(BUILD)/lisasim-main.o $(BUILD)/lisasim-tdifast.o
+	-rm -f $(BINS)/lisasim
 
 # --- build lisatest ---
 
@@ -121,8 +121,8 @@ $(BINS)/lisatest-tdi: $(OFILES) $(BUILD)/lisatest-tdi.o
 	g++ $(OPTIONS) $(OFILES) $(GSL_OFILES) $(BUILD)/lisatest-tdi.o -o $(BINS)/lisatest-tdi
 
 lisatest-clean:
-	-rm $(BUILD)/lisatest-tdi.o
-	-rm $(BINS)/lisatest-tdi
+	-rm -f $(BUILD)/lisatest-tdi.o
+	-rm -f $(BINS)/lisatest-tdi
 
 # --- build package docs from literate programming ---
 
