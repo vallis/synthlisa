@@ -63,7 +63,7 @@ include ../swig/$(PLATFORM)/Makefile.python
 
 lisaswig: $(BUILD) $(LIBS) $(LIBS)/_lisaswig$(PYTHON_SO)
 
-SWIG= ../swig/$(PLATFORM)/bin/swig
+SWIG= ../swig/$(PLATFORM)/bin/swig -w402
 
 # build the swig wrapper from the swig interface
 # this is really a multiple target operation; it also builds $(LIBS)/lisasim.py
