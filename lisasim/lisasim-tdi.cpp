@@ -38,7 +38,6 @@ double TDI::Y(double t) {
             z(3, 1, 2, 0, 0, 0, 0, t) ) );
 }
 
-}
 double TDI::Z(double t) {
     return( y(3, 2, 1, 2, 1, 1, t) -
             y(3, 1, 2, 1, 2, 2, t) +
