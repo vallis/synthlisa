@@ -118,6 +118,18 @@
   $1 = &temp[0];
 }
 
+// from the SWIG documentation: input a python function
+
+%typemap(python,in) PyObject* PYTHONFUNC {
+  if (!PyCallable_Check($input)) {
+      PyErr_SetString(PyExc_TypeError, "Need a callable object!");
+      return NULL;
+  }
+  $1 = $input;
+}
+
+// typechecks
+
 %typecheck(SWIG_TYPECHECK_POINTER) double *NUMPY_ARRAY_DOUBLE {
     /* Check that obj is really an array (of something) */
   
@@ -155,4 +167,3 @@
 	}
     }
 }
-
