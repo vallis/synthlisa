@@ -7,6 +7,8 @@
 
 %include lisasim-typemaps.i
 
+/* -------- LISA objects -------- */
+
 class LISA;
 
 class OriginalLISA : public LISA {
@@ -50,11 +52,18 @@ public:
     double armlength(int arm, double t);
 };
 
+/* -------- Noise objects -------- */
+
 class Noise;
+
+%apply double *NUMPY_ARRAY_DOUBLE { double *noisebuf };
 
 class InterpolateNoise : public Noise {
 public:
-    InterpolateNoise(double st, double pbt, double sd, double ex);
+    InterpolateNoise(double sampletime,double prebuffer,double density,double exponent);
+
+    InterpolateNoise(double *noisebuf,long samples,double sampletime,double prebuffer,double norm);
+
     ~InterpolateNoise();
 
     void reset();
@@ -73,6 +82,8 @@ public:
     double enoise(double time);
 };
 
+/* -------- Wave objects -------- */
+
 class Wave;
 
 class SimpleBinary : public Wave {
@@ -80,13 +91,15 @@ public:
     SimpleBinary(double freq, double initphi, double inc, double amp, double d, double a, double p);
 };
 
-%apply double* IN_1D_DOUBLE { double *hpa };
-%apply double* IN_1D_DOUBLE { double *hca };
+%apply double *NUMPY_ARRAY_DOUBLE { double *hpa };
+%apply double *NUMPY_ARRAY_DOUBLE { double *hca };
 
 class InterpolateMemory : public Wave {
 public:
     InterpolateMemory(double *hpa, double *hca, long samples, double samplingtime, double lookback, double d, double a, double p);
 };
+
+/* -------- TDI objects -------- */
 
 class TDI {
 public:
@@ -115,15 +128,18 @@ public:
     virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, double t);
 };
 
+%apply double PYTHON_SEQUENCE_DOUBLE[ANY] {double stproof[6], double sdproof[6], double stshot[6], double sdshot[6], double stlaser[6], double sdlaser[6], double claser[6]}
+
+%apply Noise *PYTHON_SEQUENCE_NOISE[ANY] {Noise *proofnoise[6], Noise *shotnoise[6], Noise *lasernoise[6]}
+
 class TDInoise : public TDI {
 public:
     TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser, double claser);
 
-%apply double* IN_1D_DOUBLE { double *aa };
-
     TDInoise(LISA *mylisa, double stproof[6], double sdproof[6], double stshot[6], double sdshot[6], double stlaser[6], double sdlaser[6], double claser[6]);
 
     TDInoise(LISA *mylisa, Noise *proofnoise[6],Noise *shotnoise[6],Noise *lasernoise[6]);
+
     ~TDInoise();
 
     void setphlisa(LISA *mylisa);
@@ -142,24 +158,14 @@ public:
     double y(int send, int link, int recv, int ret1, int ret2, int ret3, double t);
 };
 
-%newobject stdnoise;
-extern TDInoise *stdnoise(LISA *mylisa);
+/* -------- Helper functions -------- */
+
+/* LISA */
 
 %newobject stdlisa;
 extern LISA *stdlisa();
 
-extern void printtdi(char *filename,TDI *mytdi,int samples,double samplingtime,char *observables);
-
-%apply double* IN_1D_DOUBLE { double *array };
-extern void settdi(double *array,TDI *mytdi,int samples,double samplingtime,char *observables);
-
-%apply double* IN_1D_DOUBLE { double *aa };
-%apply double* IN_1D_DOUBLE { double *ab };
-%apply double* IN_1D_DOUBLE { double *ag };
-extern void setabg(double *aa, double *ab, double *ag, TDI *mytdi,int samples,double samplingtime);
-
-%apply double* IN_1D_DOUBLE { double *ax };
-extern void setabgx(double *aa, double *ab, double *ag, double *ax, TDI *mytdi,int samples,double samplingtime);
+/* Noise */
 
 %newobject stdproofnoise;
 extern Noise *stdproofnoise(LISA *lisa,double stproof,double sdproof);
@@ -169,3 +175,20 @@ extern Noise *stdopticalnoise(LISA *lisa,double stshot,double sdshot);
 
 %newobject stdlasernoise;
 extern Noise *stdlasernoise(LISA *lisa,double stlaser,double sdlaser,double claser);
+
+/* TDI */
+
+%newobject stdnoise;
+extern TDInoise *stdnoise(LISA *mylisa);
+
+extern void printtdi(char *filename,TDI *mytdi,int samples,double samplingtime,char *observables);
+
+%apply double *NUMPY_ARRAY_DOUBLE { double *array };
+extern void settdi(double *array,TDI *mytdi,int samples,double samplingtime,char *observables);
+
+%apply double *NUMPY_ARRAY_DOUBLE { double *aa };
+%apply double *NUMPY_ARRAY_DOUBLE { double *ab };
+%apply double *NUMPY_ARRAY_DOUBLE { double *ag };
+%apply double *NUMPY_ARRAY_DOUBLE { double *ax };
+extern void setabg(double *aa, double *ab, double *ag, TDI *mytdi,int samples,double samplingtime);
+extern void setabgx(double *aa, double *ab, double *ag, double *ax, TDI *mytdi,int samples,double samplingtime);
