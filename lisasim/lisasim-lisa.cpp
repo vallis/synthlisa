@@ -205,14 +205,29 @@ double ModifiedLISA::armlength(int arm, double t) {
 // measure everything in seconds
 // if the last argument is negative, switch 2 and 3; needed for coherence with the Montana simulator
 
+CircularRotating::CircularRotating(double myL, double e0, double x0, double sw) {
+    // set custom armlength (s)
+
+    L = myL;
+
+    initialize(e0,x0,sw);
+}
+
 CircularRotating::CircularRotating(double e0, double x0, double sw) {
+    // set standard armlength (s)
+
+    L = Lstd;
+
+    initialize(e0,x0,sw);
+}
+
+void CircularRotating::initialize(double e0, double x0, double sw) {
     // set distance from the Sun (s)
 
     R = Rgc;
 
-    // set armlength (s), distance from guiding center (s)
+    // set distance from guiding center (s)
 
-    L = Lstd;
     scriptl = L / sqrt(3.0);
 
     // define guessL, in case we wish to call the base-LISA armlength()

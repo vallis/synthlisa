@@ -156,8 +156,11 @@ class CircularRotating : public LISA {
 
         void settime(double t);
 
+	void initialize(double e0, double x0, double sw);
+
     public:
         CircularRotating(double eta0 = 0.0,double xi0 = 0.0,double sw = 1.0);
+	CircularRotating(double myL, double e0, double x0, double sw);
 
         // CircularRotating defines a computed (fitted) version of armlength
         // however, putn defaults to the base version
