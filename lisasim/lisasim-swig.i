@@ -104,7 +104,10 @@ public:
 class Noise {
  public:
     virtual void reset() {};
+
     virtual double noise(double time) = 0;
+
+    virtual double noise(double timebase,double timecorr);
 };
 
 %apply double *NUMPY_ARRAY_DOUBLE { double *noisebuf };
@@ -119,6 +122,7 @@ class InterpolateNoise : public Noise {
     
     void reset();
     double noise(double time);
+    double noise(double timebase,double timecorr);
 
     void setinterp(int window);
 };
@@ -208,13 +212,24 @@ public:
 
     TDInoise(LISA *mylisa, Noise *proofnoise[6],Noise *shotnoise[6],Noise *lasernoise[6]);
 
-    ~TDInoise();
+    // just when are virtual destructors needed?
+    virtual ~TDInoise();
 
     void setphlisa(LISA *mylisa);
 
     void lock(int master);
     
     void reset();
+
+    virtual double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t);
+    virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
+};
+
+class TDIaccurate : public TDInoise {
+ public:
+    TDIaccurate(LISA *mylisa, Noise *proofnoise[6],Noise *shotnoise[6],Noise *lasernoise[6]);
+
+    ~TDIaccurate();
 
     double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t);
     double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
