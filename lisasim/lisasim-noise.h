@@ -297,7 +297,6 @@ class InterpolateNoise : public Noise {
     void setfilter(double ex);
     void setnorm(double sd, double ex);
     void setnormsampled(double sd, double ex);
-    void setinterp(int window);
 
  public:
     InterpolateNoise(double sampletime,double prebuffer,double density,double exponent, int swindow = 1);
@@ -315,6 +314,10 @@ class InterpolateNoise : public Noise {
     double noise(double time) {
 	return (*this)[time];
     };
+
+    // expose the setinterp method so it becomes possible to change
+    // the interpolation window dynamically for a noise object
+    void setinterp(int window);
 };
 
 

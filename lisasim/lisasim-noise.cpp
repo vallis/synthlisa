@@ -147,6 +147,8 @@ InterpolateNoise::InterpolateNoise(double st, double pbt, double sd, double ex, 
 
     setfilter(ex);
     setnorm(sd,ex);
+
+    interp = 0;
     setinterp(win);
 
     long buffersize = 2;
@@ -177,6 +179,8 @@ InterpolateNoise::InterpolateNoise(double *nb,long sl,double st,double pbt,doubl
 
     setfilter(ex);
     setnormsampled(sd,ex);
+
+    interp = 0;
     setinterp(win);
 
     // SampledNoise object
@@ -234,6 +238,9 @@ void InterpolateNoise::setnormsampled(double sd, double ex) {
 }
 
 void InterpolateNoise::setinterp(int window) {
+    if (interp != 0)
+	delete interp;
+
     if (window < 1) {
 	interp = new NearestInterpolator();
     } else if (window == 1) {
