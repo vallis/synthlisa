@@ -1,9 +1,9 @@
 #include "lisasim-tdisignal.h"
 
 TDIsignal::TDIsignal(LISA *mylisa, Wave *mywave) {
-    lisa = mylisa->thislisa();
-    phlisa = mylisa;
-    
+    phlisa = mylisa->thislisa();
+    lisa = mylisa;
+
     wave = mywave;
 }
 
@@ -47,12 +47,12 @@ double TDIsignal::y(int send, int slink, int recv, int ret1, int ret2, int ret3,
 double TDIsignal::y(int send, int slink, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t) {
     int link = abs(slink);
 
-    retardtime myrt(lisa,t);
+    lisa->newretardtime(t);
 
-    myrt.retard(ret7); myrt.retard(ret6); myrt.retard(ret5);
-    myrt.retard(ret4); myrt.retard(ret3); myrt.retard(ret2); myrt.retard(ret1);
+    lisa->retard(ret7); lisa->retard(ret6); lisa->retard(ret5);
+    lisa->retard(ret4); lisa->retard(ret3); lisa->retard(ret2); lisa->retard(ret1);
 
-    double retardedtime = myrt.retardedtime();
+    double retardedtime = lisa->retardedtime();
 
     // for the moment, let's not trust the sign of slink, and recompute it
 

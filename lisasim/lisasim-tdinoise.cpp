@@ -5,8 +5,8 @@
 // this version takes the parameters of the basic noises and lets us allocate objects as needed
 
 TDInoise::TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser) {
-    lisa = mylisa->thislisa();
-    phlisa = mylisa;
+    phlisa = mylisa->thislisa();
+    lisa = mylisa;
 
     // allocate noise objects
 
@@ -34,8 +34,8 @@ TDInoise::TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, 
 // and lets us allocate objects as needed
 
 TDInoise::TDInoise(LISA *mylisa, double *stproof, double *sdproof, double *stshot, double *sdshot, double *stlaser, double *sdlaser) {
-    lisa = mylisa->thislisa();
-    phlisa = mylisa;
+    phlisa = mylisa->thislisa();
+    lisa = mylisa;
 
     // allocate noise objects
     // the convention is {1,1*,2,2*,3,3*}, and {12,21,23,32,31,13}
@@ -67,8 +67,8 @@ TDInoise::TDInoise(LISA *mylisa, double *stproof, double *sdproof, double *stsho
 // this version takes pointers to noise objects, allowing for user-specified noises on different objects
 
 TDInoise::TDInoise(LISA *mylisa, Noise *proofnoise[6],Noise *shotnoise[6],Noise *lasernoise[6]) {
-    lisa = mylisa->thislisa();
-    phlisa = mylisa;
+    phlisa = mylisa->thislisa();
+    lisa = mylisa;
 
     // set noise objects
     // the convention is {1,1*,2,2*,3,3*}, and {12,21,23,32,31,13}
@@ -248,12 +248,12 @@ void TDInoise::reset() {
 // this is a debugging function, which appears in lisasim-swig.i
 
 double retardation(LISA *lisa,int ret1,int ret2,int ret3,int ret4,int ret5,int ret6,int ret7,int ret8,double t) {
-    retardtime myrt(lisa,t);
+    lisa->newretardtime(t);
 
-    myrt.retard(ret8); myrt.retard(ret7); myrt.retard(ret6); myrt.retard(ret5);
-    myrt.retard(ret4); myrt.retard(ret3); myrt.retard(ret2); myrt.retard(ret1);
+    lisa->retard(ret8); lisa->retard(ret7); lisa->retard(ret6); lisa->retard(ret5);
+    lisa->retard(ret4); lisa->retard(ret3); lisa->retard(ret2); lisa->retard(ret1);
 
-    return myrt.retardedtime();
+    return lisa->retardedtime();
 }
 
 double TDInoise::y(int send, int slink, int recv, int ret1, int ret2, int ret3, double t) {
@@ -265,20 +265,20 @@ double TDInoise::y(int send, int slink, int recv, int ret1, int ret2, int ret3, 
 
     // this recursive retardation procedure assumes smart TDI...
 
-    retardtime myrt(lisa,t);
+    lisa->newretardtime(t);
 
-    myrt.retard(ret7); myrt.retard(ret6); myrt.retard(ret5);
-    myrt.retard(ret4); myrt.retard(ret3); myrt.retard(ret2); myrt.retard(ret1);
+    lisa->retard(ret7); lisa->retard(ret6); lisa->retard(ret5);
+    lisa->retard(ret4); lisa->retard(ret3); lisa->retard(ret2); lisa->retard(ret1);
 
-    double retardedtime = myrt.retardedtime();
+    double retardedtime = lisa->retardedtime();
 
     if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2)) {
         // cyclic combination
         // if introducing error in the determination of the armlengths, it should not enter
         // the following (physical) retardation of the laser noise, so we use the phlisa object
 
-	myrt.retard(phlisa,link);
-	double retardlaser = myrt.retardedtime();
+	lisa->retard(phlisa,link);
+	double retardlaser = lisa->retardedtime();
 
         return( (*cs[send])[retardlaser] - 2.0 * (*pm[recv])[retardedtime]  - (*c[recv])[retardedtime]  + 
                 (*shot[send][recv])[retardedtime] );
@@ -286,8 +286,8 @@ double TDInoise::y(int send, int slink, int recv, int ret1, int ret2, int ret3, 
         // anticyclic combination
         // ditto here
 
-	myrt.retard(phlisa,-link);
-	double retardlaser = myrt.retardedtime();
+	lisa->retard(phlisa,-link);
+	double retardlaser = lisa->retardedtime();
 
         return( (*c[send])[retardlaser]  + 2.0 * (*pms[recv])[retardedtime] - (*cs[recv])[retardedtime] +
                 (*shot[send][recv])[retardedtime] );
@@ -304,12 +304,12 @@ double TDInoise::z(int send, int slink, int recv, int ret1, int ret2, int ret3, 
     // this recursive retardation procedure assumes smart TDI...
     // (and the correct order in the retardation expressions)
 
-    retardtime myrt(lisa,t);
+    lisa->newretardtime(t);
 
-    myrt.retard(ret8); myrt.retard(ret7); myrt.retard(ret6); myrt.retard(ret5);
-    myrt.retard(ret4); myrt.retard(ret3); myrt.retard(ret2); myrt.retard(ret1);
+    lisa->retard(ret8); lisa->retard(ret7); lisa->retard(ret6); lisa->retard(ret5);
+    lisa->retard(ret4); lisa->retard(ret3); lisa->retard(ret2); lisa->retard(ret1);
 
-    double retardedtime = myrt.retardedtime();
+    double retardedtime = lisa->retardedtime();
 
     if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2)) {
         // cyclic combination
