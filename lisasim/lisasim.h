@@ -8,5 +8,6 @@
 #include "lisasim-noise.h"
 #include "lisasim-lisa.h"
 #include "lisasim-tens.h"
+#include "lisasim-retard.h"
 
 #endif /* _LISASIM_H_ */
