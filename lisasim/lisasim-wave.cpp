@@ -19,25 +19,24 @@ Wave::Wave(double d, double a, double p) {
     k[1] = kArray[1];
     k[2] = kArray[2];
 
-    Tensor stdpp, stdpc;
-    
+    Tensor stdpp(0.0), stdpc(0.0);
+
     stdpp[0][0] = 1.0; stdpp[1][1] = -1.0;
     stdpc[0][1] = 1.0; stdpc[1][0] =  1.0;
 
     Tensor A, At;
     
     A.seteuler(dec,asc,pol);
-    At = A; 
-    At.seteuler(dec,asc,pol);
-    At.settranspose(); 
-    
+
+    At.settranspose(A);
+
     Tensor tmp;
     
     tmp.setproduct(stdpp,At);
     pp.setproduct(A,tmp);
     
     tmp.setproduct(stdpc,At);
-    pc.setproduct(A,tmp);      
+    pc.setproduct(A,tmp);    
 
     for(int i=0;i<3;i++) {
       for(int j=0;j<3;j++) {
