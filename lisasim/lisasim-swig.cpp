@@ -28,6 +28,14 @@ void printn(LISA *lisa,double t)
     }
 }
 
+void printw(Wave *wave,double t)
+{
+    Tensor h;
+
+    wave->putwave(h,t);
+    printf("(%f): %f %f %f %f %f %f %f %f %f\n",t,h[0][0],h[0][1],h[0][2],h[1][0],h[1][1],h[1][2],h[2][0],h[2][1],h[2][2]);
+}
+
 extern void retardone(LISA *lisa,int ret,double t,double *retardedtime,double *totalretardbaseline,double *totalretardaccurate);
 
 double retardation(LISA *lisa,int ret1,int ret2,int ret3,int ret4,int ret5,int ret6,int ret7,int ret8,double t) {
@@ -60,6 +68,12 @@ double observable(TDI *mytdi,char **obs,double t) {
 	} else if((*obs)[1] == '1') {
 	    (*obs)++;
 	    return mytdi->X1(t);
+	} else if((*obs)[1] == '2') {
+	    (*obs)++;
+	    return mytdi->X2(t);
+	} else if((*obs)[1] == '3') {
+	    (*obs)++;
+	    return mytdi->X3(t);
 	} else
 	    return mytdi->X(t);
 	break;
@@ -78,13 +92,34 @@ double observable(TDI *mytdi,char **obs,double t) {
 	    return mytdi->Z(t);           
 	break;
     case 'a':
-	return mytdi->alpha(t);
+	if((*obs)[1] == 'm') {
+	    (*obs)++;
+	    return mytdi->alpham(t);
+	} else if((*obs)[1] == '1') {
+	    (*obs)++;
+	    return mytdi->alpha1(t);
+	} else if((*obs)[1] == '2') {
+	    (*obs)++;
+	    return mytdi->alpha2(t);
+	} else if((*obs)[1] == '3') {
+	    (*obs)++;
+	    return mytdi->alpha3(t);
+	} else
+	    return mytdi->alpha(t);
 	break;
     case 'b':
-	return mytdi->beta(t);
+	if((*obs)[1] == 'm') {
+	    (*obs)++;
+	    return mytdi->betam(t);
+	} else
+	    return mytdi->beta(t);          
 	break;
     case 'g':
-	return mytdi->gamma(t);
+	if((*obs)[1] == 'm') {
+	    (*obs)++;
+	    return mytdi->gammam(t);
+	} else
+	    return mytdi->gamma(t);          
 	break;
     case 'z':
 	return mytdi->zeta(t);
