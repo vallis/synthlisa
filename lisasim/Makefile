@@ -1,5 +1,7 @@
 # detect platform, set directories
 
+MAKE=make
+
 PLATFORM=$(shell uname -s)-$(shell uname -r)
 
 # get current directory
@@ -85,7 +87,7 @@ GSL_BUILD=$(GSL_DIR)/build/$(PLATFORM)
 GSL_OFILES= $(GSL_BUILD)/rng.o $(GSL_BUILD)/ranlux.o $(GSL_BUILD)/mt.o
 
 $(GSL_OFILES):
-	make -C $(GSL_DIR) libs
+	$(MAKE) -C $(GSL_DIR) libs
 
 # compile the swig wrapper in the build directory
 $(BUILD)/lisasim-swig_wrap.o: $(BUILD)/lisasim-swig_wrap.cxx
