@@ -130,4 +130,27 @@ class InterpolateNoiseBetter : public InterpolateNoise {
     double operator[](double time);
 };
 
+const int maxwindow = 100;
+
+class InterpolateNoiseLagrange : public InterpolateNoise {
+ private:
+    double polint(double x, int n);
+
+    int semiwindow;
+
+    double xa[2*maxwindow+1],ya[2*maxwindow+1];
+    double c[2*maxwindow+1],d[2*maxwindow+1];
+
+ public:
+    InterpolateNoiseLagrange(double sampletime,double prebuffer,double density,double exponent,int swindow);
+    InterpolateNoiseLagrange(double *noisebuf,long samples,double sampletime,double prebuffer,double norm,int swindow);
+
+    double lagnoise(double time,int semiorder);
+
+    double inoise(double time);
+    double operator[](double time);
+
+    double pnoise(double time);
+};
+
 #endif /* _LISASIM_NOISE_H_ */

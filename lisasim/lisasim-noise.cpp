@@ -90,7 +90,7 @@ double RingNoise::operator[](long pos) {
     if (pos > latest) {
         updatebuffer(pos);
     } if(pos < earliest) {
-        cout << "RingNoise::[] trying to access element before oldest kept." << endl;
+        cout << "RingNoise::[] trying to access element (" << pos << ") before oldest kept." << endl;
         abort();
     } else {
         return buffery[pos % buffersize];
@@ -104,8 +104,11 @@ void RingNoise::seedrandgen() {
   
     // printf("seconds is: %ld, microseconds is: %ld\n",tv.tv_sec,tv.tv_usec);
     // printf("seed is: %ld\n",tv.tv_sec+tv.tv_usec);
+
+    // will this seed be different enough for the various noise object
+    // when they are all allocated in sequence?
   
-    gsl_rng_set(randgen,tv.tv_sec+tv.tv_usec); 
+    gsl_rng_set(randgen,tv.tv_sec+tv.tv_usec);
     cacheset = 0;
 }
 
@@ -114,8 +117,6 @@ void RingNoise::seedrandgen() {
 
 double RingNoise::deviate() {
   double x, y, r2;
-
-  // this will never return a cached 0.0, but what's the chance?
 
   if (cacheset == 0) {
       do {
@@ -145,7 +146,7 @@ double RingNoise::filter(long pos) {
 
 // derived classes: differentiating and integrating filters
 
-DiffNoise::DiffNoise(long bs) : RingNoise(bs) {};
+DiffNoise::DiffNoise(long bs) : RingNoise(bs) {}
 
 double DiffNoise::filter(long pos) {
     return (bufferx[pos % buffersize] - bufferx[(pos + buffersize - 1) % buffersize]);
@@ -153,7 +154,7 @@ double DiffNoise::filter(long pos) {
 
 IntNoise::IntNoise(long bs, double ic) : RingNoise(bs) {
     intconst = ic;
-};
+}
 
 double IntNoise::filter(long pos) {
     return (intconst * buffery[(pos + buffersize - 1) % buffersize] + bufferx[pos % buffersize]);
@@ -310,4 +311,99 @@ double InterpolateNoiseBetter::inoise(double time) {
 
 double InterpolateNoiseBetter::operator[](double time) {
     return inoise(time);
+}
+
+// --- Lagrange interpolation ------------------------------------------------
+
+const int bestwindow = 20;
+
+InterpolateNoiseLagrange::InterpolateNoiseLagrange(double sampletime,double prebuffer,double density,double exponent,int swindow) : InterpolateNoise(sampletime,prebuffer,density,exponent) {
+    semiwindow = swindow;
+
+    for(int i=1;i<=2*bestwindow;i++) {
+	xa[i] = 1.0*i;
+	ya[i] = 0.0;
+    }
+}
+
+InterpolateNoiseLagrange::InterpolateNoiseLagrange(double *noisebuf,long samples,double sampletime,double prebuffer,double norm,int swindow) : InterpolateNoise(noisebuf,samples,sampletime,prebuffer,norm) {
+    semiwindow = swindow;
+
+    for(int i=1;i<=2*bestwindow;i++) {
+	xa[i] = 1.0*i;
+	ya[i] = 0.0;
+    }
+}
+
+double InterpolateNoiseLagrange::inoise(double time) {
+    return lagnoise(time,semiwindow);
+}
+
+double InterpolateNoiseLagrange::operator[](double time) {
+    return inoise(time);
+}
+
+double InterpolateNoiseLagrange::lagnoise(double time,int semiwindow) {
+    double ctime = time / samplingtime;
+    double itime = floor(ctime);
+
+    long index;
+
+    index = long(itime) + prebuffertime;
+    
+    // careful with this tolerance!
+
+    if (itime == ctime) {
+	return ( normalize * (*buffernoise)[index] );
+    } else {
+	for(int i=0;i<semiwindow;i++) {
+	    ya[semiwindow-i] = (*buffernoise)[index-i];
+	    ya[semiwindow+i+1] = (*buffernoise)[index+i+1];
+	}
+	
+	return ( normalize * polint(semiwindow+(ctime-itime),2*semiwindow) );
+    }
+}
+
+double InterpolateNoiseLagrange::pnoise(double time) {
+    return lagnoise(time,bestwindow);
+}
+
+// modified from Numerical Recipes
+
+double InterpolateNoiseLagrange::polint(double x,int n) {
+    int i,m,ns=1;
+    double den,dif,dift,ho,hp,w;
+
+    double res,dres; // dres is the error estimate
+
+    dif=fabs(x-xa[1]);
+
+    for (i=1;i<=n;i++) {
+	if ( (dift=fabs(x-xa[i])) < dif) {
+	    ns=i;
+	    dif=dift;
+	}
+
+	c[i]=ya[i];
+	d[i]=ya[i];
+    }
+
+    res=ya[ns--];
+
+    for (m=1;m<n;m++) {
+	for (i=1;i<=n-m;i++) {
+	    ho=xa[i]-x;
+	    hp=xa[i+m]-x;
+	    w=c[i+1]-d[i];
+	    den=ho-hp;
+	    den=w/den;
+	    d[i]=hp*den;
+	    c[i]=ho*den;
+	}
+	
+	res += (dres=(2*ns < (n-m) ? c[ns+1] : d[ns--]));
+    }
+
+    return res;
 }

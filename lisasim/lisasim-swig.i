@@ -80,7 +80,7 @@ class Noise;
 %apply double *NUMPY_ARRAY_DOUBLE { double *noisebuf };
 
 class InterpolateNoise : public Noise {
-public:
+ public:
     InterpolateNoise(double sampletime,double prebuffer,double density,double exponent);
     InterpolateNoise(double *noisebuf,long samples,double sampletime,double prebuffer,double norm);
 
@@ -99,6 +99,18 @@ class InterpolateNoiseBetter : public InterpolateNoise {
 
     double inoise(double time);
 };
+
+class InterpolateNoiseLagrange : public InterpolateNoise {
+ public:
+
+    InterpolateNoiseLagrange(double sampletime,double prebuffer,double density,double exponent,int swindow);
+    InterpolateNoiseLagrange(double *noisebuf,long samples,double sampletime,double prebuffer,double norm,int swindow);
+
+    double lagnoise(double time,int semiorder);
+    double inoise(double time);
+    double pnoise(double time);
+};
+
 
 /* -------- Wave objects -------- */
 
