@@ -72,6 +72,24 @@ public:
     ~NoisyLISA();
 	
     double armlength(int arm, double t);
+
+    double armlengthbaseline(int arm, double t);
+    double armlengthaccurate(int arm, double t);
+};
+
+class NominalLISA : public LISA {
+ public:
+    double emod, cmod, toff;
+
+    NominalLISA(double eta0,double xi0,double sw,double t0);
+    ~NominalLISA();
+
+    void setparameters(double cm,double em,double toff);
+
+    double armlength(int arm, double t);
+
+    double armlengthbaseline(int arm, double t);
+    double armlengthaccurate(int arm, double t);
 };
 
 /* -------- Noise objects -------- */
@@ -217,4 +235,4 @@ extern void settdi(double *array,TDI *mytdi,int samples,double samplingtime,char
 
 %apply Noise *PYTHON_SEQUENCE_NOISE[ANY] {Noise *proofnoise[6], Noise *shotnoise[6], Noise *lasernoise[6]}
 
-// extern double retardation(LISA *mylisa,int ret1,int ret2,int ret3,int ret4,int ret5,int ret6,int ret7,int ret8,double t);
+extern double retardation(LISA *mylisa,int ret1,int ret2,int ret3,int ret4,int ret5,int ret6,int ret7,int ret8,double t);
