@@ -1,9 +1,9 @@
 # main lisasim Makefile
 # Michele 12/18/2003
 
-all: lisaswig lisasim doc
+all: lisaswig lisasim lisatest doc
 
-clean: lisaswig-clean lisasim-clean objects-clean doc-clean
+clean: lisaswig-clean lisasim-clean lisatest-clean objects-clean doc-clean
 
 # standard compilation options
 OPTIONS = -Wall -O3
@@ -53,7 +53,7 @@ $(BUILD)/%.o: %.cpp lisasim.h
 
 # clean objects
 objects-clean:
-	rm $(OFILES)
+	-rm $(OFILES)
 
 # --- build lisaswig ---
 
@@ -73,36 +73,46 @@ $(BUILD)/lisasim-swig_wrap.cxx $(LIBS)/lisasim.py: lisasim-swig.i $(LIBS)
 	mv lisasim-swig_wrap.cxx $(BUILD)
 	mv lisaswig.py $(LIBS)
 
+NUMERIC_INCLUDE=-I../numeric/$(PLATFORM)/include/$(shell ls ../numeric/$(PLATFORM)/include | head -1)/Numeric
+
 # compile the swig wrapper in the build directory
 # need -Wno-long-double for OS X? It is found in CFLAGS within swig Makefile
-# will need to include also arrayobject.h, presumably from the Numeric distribution (currently from .)
+# we are including arrayobject.h from the Numeric distribution
+# we are including lisasim.h from .
 $(BUILD)/lisasim-swig_wrap.o: $(BUILD)/lisasim-swig_wrap.cxx
-	g++ $(OPTIONS) -c $(BUILD)/lisasim-swig_wrap.cxx -I. -I$(PYTHON_INCLUDE) -o $(BUILD)/lisasim-swig_wrap.o
+	g++ $(OPTIONS) -c $(BUILD)/lisasim-swig_wrap.cxx -I. $(NUMERIC_INCLUDE) $(PYTHON_INCLUDE) -o $(BUILD)/lisasim-swig_wrap.o
 
 # assemble everything in the lisaswig library
 $(LIBS)/_lisaswig$(PYTHON_SO): $(OFILES) $(BUILD)/lisasim-swig.o $(BUILD)/lisasim-swig_wrap.o
 	$(CXXSHARED) $(OFILES) $(BUILD)/lisasim-swig.o $(BUILD)/lisasim-swig_wrap.o $(IOBJS) $(PYTHON_DLNK) $(CPP_DLLIBS) -o $(LIBS)/_lisaswig$(PYTHON_SO)
 
 lisaswig-clean:
-	rm $(BUILD)/lisasim-swig.o $(BUILD)/lisasim-swig_wrap.o
-	rm $(LIBS)/lisaswig.py $(LIBS)/lisaswig.pyc $(LIBS)/_lisaswig$(PYTHON_SO)
+	-rm $(BUILD)/lisasim-swig.o $(BUILD)/lisasim-swig_wrap.o
+	-rm $(LIBS)/lisaswig.py $(LIBS)/lisaswig.pyc $(LIBS)/_lisaswig$(PYTHON_SO)
 
 # --- build lisasim tool, including tdifast ---
 
-lisasim: $(BINS) $(BUILD) $(OFILES) $(BUILD)/lisasim-main.o $(BUILD)/lisasim-tdifast.o
+lisasim: $(BINS)/lisasim
+
+$(BINS)/lisasim: $(BINS) $(BUILD) $(OFILES) $(BUILD)/lisasim-main.o $(BUILD)/lisasim-tdifast.o
 	g++ $(OPTIONS) $(OFILES) $(BUILD)/lisasim-main.o $(BUILD)/lisasim-tdifast.o -o $(BINS)/lisasim
 
 lisasim-clean:
-	rm $(BUILD)/lisasim-main.o $(BUILD)/lisasim-tdifast.o $(BINS)/lisasim
+	-rm $(BUILD)/lisasim-main.o $(BUILD)/lisasim-tdifast.o
+	-rm $(BINS)/lisasim
 
-.PHONEY: clean
+# --- build lisatest ---
 
-# --- testing ---
+lisatest: $(BINS)/lisatest-tdi
 
-lisatest-tdi: $(OFILES) lisatest-tdi.o
-	g++ $(OFILES) lisatest-tdi.o -o lisatest-tdi
+$(BINS)/lisatest-tdi: $(OFILES) $(BUILD)/lisatest-tdi.o
+	g++ $(OPTIONS) $(OFILES) $(BUILD)/lisatest-tdi.o -o $(BINS)/lisatest-tdi
 
-# --- package docs from literate programming ---
+lisatest-clean:
+	-rm $(BUILD)/lisatest-tdi.o
+	-rm $(BINS)/lisatest-tdi
+
+# --- build package docs from literate programming ---
 
 DOCDIR=../doc
 DOCBUILD=../doc/build
@@ -121,18 +131,17 @@ $(DOCBUILD):
 $(BINS)/comments.py: ../bin/comments.py
 	cp -p ../bin/comments.py $(BINS)
 
-$(DOCBUILD)/%.ctex: $(DOCBUILD) %.cpp
+$(DOCBUILD)/%.ctex: $(BINS)/comments.py $(DOCBUILD) %.cpp
 	$(BINS)/comments.py $< > $@
 
-$(DOCBUILD)/%.htex: %.h
+$(DOCBUILD)/%.htex: $(BINS)/comments.py $(DOCBUILD) %.h
 	$(BINS)/comments.py $< > $@
 
 $(DOCDIR)/program.pdf: $(DOCDIR) program.tex $(TEXFILES)
 	cp -p program.tex $(DOCBUILD)
-	cd $(DOCBUILD)
-	pdflatex program.tex; pdflatex program.tex
-	mv $(DOCBUILD)/program.pdf $(DOCDIR)
-	cd $(CURDIR)
+	cd $(DOCBUILD); pdflatex --interaction batchmode program.tex; pdflatex --interaction batchmode program.tex; mv program.pdf ..; cd $(CURDIR)
 
 doc-clean:
-	rm -rf $(DOCBUILD)/*.htex $(DOCBUILD)/*.ctex $(DOCBUILD)/*.aux $(DOCBUILD)/*.log $(DOCDIR)/*.pdf
+	-rm -rf $(DOCBUILD)/*.htex $(DOCBUILD)/*.ctex $(DOCBUILD)/*.aux $(DOCBUILD)/*.log $(DOCDIR)/*.pdf
+
+.PHONEY: clean
