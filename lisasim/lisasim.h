@@ -5,7 +5,6 @@
 #include "lisasim-tdi.h"
 #include "lisasim-tdinoise.h"
 #include "lisasim-tdisignal.h"
-#include "lisasim-tdifast.h"
 #include "lisasim-noise.h"
 #include "lisasim-lisa.h"
 #include "lisasim-tens.h"
