@@ -50,6 +50,7 @@ class Wave {
         virtual double hc(double t) = 0;  
 
         void putwave(Tensor &h, double t);
+        void putwave(double **h, double t);
 };
 
 class SimpleBinary : public Wave {
@@ -255,6 +256,8 @@ class TDIfast : public TDI {
  private:
 	int samples;
 	double srate; // Stored in years
+
+	double **cwave;
 
 	//	double psi(Vector lisan, double twave);
 	double psi(double lisan[], double twave);

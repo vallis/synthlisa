@@ -43,6 +43,19 @@ void Wave::putwave(Tensor &h, double t) {
   }
 }
 
+void Wave::putwave(double **h, double t) {
+  double hp_temp;
+  double hc_temp; 
+  hp_temp = hp(t);
+  hc_temp = hc(t);
+  
+  for(int i=0;i<3;i++) {
+    for(int j=0;j<3;j++) {
+      h[i][j] = hp_temp * pp[i][j] + hc_temp * pc[i][j];
+    }        
+  }
+}
+
 // full constructor for SimpleBinary; needs frequency in Hertz
 // d and a are (notwithstanding their name, which should be changed) heliocentric ecliptic latitude and longitude
 

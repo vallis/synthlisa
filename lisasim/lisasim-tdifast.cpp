@@ -14,24 +14,40 @@ void CheckError(bool value, char *file, int linenum) {
   //return(1);
 }
 
-// double TDI::psi(int arm, double t) {
-double TDIfast::psi(double lisanTemp[], double twave) {
-  Vector lisan;
-    // lisa->putn(lisan,arm,t);  // Cache?
-  /*    Check(Checkputn[arm]);
-    lisan = Storedputn[arm][0];  // Incorrect Testing
-  */
-  lisan[0] = lisanTemp[0];
-  lisan[1] = lisanTemp[1];
-  lisan[2] = lisanTemp[2];
-
-    Tensor cwave;
-    wave->putwave(cwave,twave);
+double setproductdotvec(double **mat, double vec[]){
+  double result = 0.0;
+  for(int i=0;i<3;i++) {
+    double pr=0.0;
     
-    Vector tmp;
-    tmp.setproduct(cwave,lisan);
+    for(int k=0;k<3;k++) {
+      pr += mat[i][k] * vec[k];
+    }
+    result += pr*vec[i];
+  }
+  return(result);
+}
 
-    return(0.5 * lisan.dotproduct(tmp));
+
+
+// double TDI::psi(int arm, double t) {
+double TDIfast::psi(double lisan[], double twave) {
+  //  Vector lisan;
+  // lisa->putn(lisan,arm,t);  // Cache?
+  /*    Check(Checkputn[arm]);
+	lisan = Storedputn[arm][0];  // Incorrect Testing
+  */
+  /*  lisan[0] = lisanTemp[0];
+      lisan[1] = lisanTemp[1];
+      lisan[2] = lisanTemp[2];
+  */
+  //  Tensor cwave;
+
+  wave->putwave(cwave,twave);
+    
+  //  Vector tmp;
+  // tmp.setproduct(cwave,lisan);
+  
+  return(0.5 * setproductdotvec(cwave,lisan));
 }
 /*
 double TDIfast::retard(int craft, double t) {
@@ -61,9 +77,11 @@ TDIfast::TDIfast(LISA *mylisa, Wave *mywave, double mysrate, long mysamples):TDI
 
   cout << "sample rate in years is" << srate << endl;
 
+  cwave = new double*[4];
   Storedarmlength = new double*[4];
   Checkarmlength = new bool[4];
   for (int i = 0; i < 4; i++) {
+    cwave[i] = new double[4]; 
     Checkarmlength[i] = 0;
   }
 

@@ -232,8 +232,10 @@ int main(int argc, char **argv) {
     cout << "  done!" << endl;
     
     delete mywave;
-    delete mytdi;
-    delete mytdifast;
-    
+    if(!fast){
+      delete mytdi;
+    } else {
+      delete mytdifast;
+    }
 }
 
