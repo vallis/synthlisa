@@ -68,13 +68,14 @@ inline double TDIfast::retardfast(int craft, int tIndex) {
 
 
 
-TDIfast::TDIfast(LISA *mylisa, Wave *mywave, double mysrate, long mysamples):TDI(mylisa,mywave) {
+TDIfast::TDIfast(LISA *mylisa, Wave *mywave, double mysrate, long mysamples){
   lisa = mylisa;
   wave = mywave;
   srate = mysrate * 3.17098E-8; // convert from seconds to years
+  //srate = mysrate;
   samples = mysamples;
 
-  cout << "sample rate in years is" << srate << endl;
+  //  cout << "sample rate in years is" << srate << endl;
 
   cwave = new double*[4];
   Storedarmlength = new double*[4];

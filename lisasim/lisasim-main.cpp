@@ -1,4 +1,4 @@
-#include <iostream.h>
+#include <iostream>
 #include <math.h>
 #include <unistd.h>
 #include "lisasim.h"

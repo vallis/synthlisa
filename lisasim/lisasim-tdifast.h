@@ -4,9 +4,11 @@
 #include "lisasim-tdi.h"
 #include "lisasim-wave.h"
 
-class TDIfast : public TDI {
+class TDIfast {
  public:
-
+        LISA *lisa;
+        Wave *wave;
+        
         TDIfast(LISA *mylisa, Wave *mywave, double srate, long samples);
         virtual ~TDIfast() ;
 	/*
