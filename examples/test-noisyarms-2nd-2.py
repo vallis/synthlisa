@@ -9,12 +9,7 @@ from lisautils import *
 oneyear = 31536000.0
 mylisa = EccentricInclined(0.0,0.0,1.0,0.0*oneyear)
 
-stime = 8
-
-cleanTDI = TDInoise(mylisa,
-                    stime, 2.5e-48, # proof-mass noise parameters
-                    stime, 1.8e-37, # optical-path noise parameters
-                    stime, 1.1e-26) # laser frequency noise parameters
+stime = 16
 
 # set the measurement noise (white) from its variance, and bandlimit frequency
 #
@@ -24,14 +19,14 @@ cleanTDI = TDInoise(mylisa,
 #
 # using dx = 50 m, f_b = 1/(2*16) s, S_h = 8.88e-13 s^2/Hz
 
-noisylisa = NoisyLISA(mylisa,16.0,8.88e-13)
+noisylisa = NoisyLISA(mylisa,16.0,0.01*8.88e-13)
 
 noisyTDI = TDInoise(noisylisa,
                     stime, 2.5e-48, # proof-mass noise parameters
                     stime, 1.8e-37, # optical-path noise parameters
                     stime, 1.1e-26) # laser frequency noise parameters
 
-cleanerlisa = NoisyLISA(mylisa,16.0,0.1*8.88e-13)
+cleanerlisa = NoisyLISA(mylisa,16.0,0.001*8.88e-13)
 
 cleanerTDI = TDInoise(cleanerlisa,
                       stime, 2.5e-48, # proof-mass noise parameters
@@ -43,15 +38,11 @@ cleanerTDI = TDInoise(cleanerlisa,
 samples = 2**25/stime # on a 1.25GHz G4, 2**18 samples take 36 s
 windows = 512
 
-[noiseclean,
- noisenoisy,
- noisecleaner] = transpose(getobs(samples,stime,[cleanTDI.X1,noisyTDI.X1,cleanerTDI.X1]))
-
-myspecclean = spect(noiseclean,stime,windows)
-writearray('data/tdinoisy-2nd-clean.txt',myspecclean[1:])
+[noisenoisy,
+ noisecleaner] = transpose(getobs(samples,stime,[noisyTDI.X1,cleanerTDI.X1]))
 
 myspecnoisy = spect(noisenoisy,stime,windows)
-writearray('data/tdinoisy-2nd-noisy.txt',myspecnoisy[1:])
+writearray('data/tdinoisy-2nd-cleanerer.txt',myspecnoisy[1:])
 
 myspeccleaner = spect(noisecleaner,stime,windows)
-writearray('data/tdinoisy-2nd-cleaner.txt',myspeccleaner[1:])
+writearray('data/tdinoisy-2nd-cleanest.txt',myspeccleaner[1:])

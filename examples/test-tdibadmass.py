@@ -46,12 +46,13 @@ badnoise = TDInoise(originallisa,
 # get the time series; since they're from different TDInoise objects,
 # there's no point in doing them together
 
-samples = 2**18  # 2**18 takes 22 s on a 1.25GHz G4
+samples = 2**19  # 2**18 takes 22 s on a 1.25GHz G4
 
-patches = 256
+patches = 1024
 
 noisegood = getobs(samples,stime,originalnoise.X)
-noisebad = getobs(samples,stime,badnoise.X)
+
+[noisebad,noisebad2,noisebad3] = transpose(getobs(samples,stime,[badnoise.X,badnoise.Y,badnoise.Z]))
 
 # compute spectra, and write to disk
 
@@ -60,3 +61,9 @@ writearray('data/tdibadmass-good.txt',myspecgood[1:])
 
 myspecbad =  spect(noisebad,stime,patches)
 writearray('data/tdibadmass-bad.txt', myspecbad[1:])
+
+myspecbad2 =  spect(noisebad2,stime,patches)
+writearray('data/tdibadmass-bad2.txt', myspecbad2[1:])
+
+myspecbad3 =  spect(noisebad3,stime,patches)
+writearray('data/tdibadmass-bad3.txt', myspecbad3[1:])
