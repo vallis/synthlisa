@@ -4,6 +4,8 @@
 #include "lisasim-tens.h"
 #include "lisasim-noise.h"
 
+#include <math.h>
+
 // ---- define file-wide numerical constants
 
 // seconds per year; this is just 60x60x24x365 (it differs from the LISA Simulator)
