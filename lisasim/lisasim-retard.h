@@ -136,6 +136,10 @@ class CacheLISA : public LISA {
 	return rt;
     }
 
+    double retardation() {
+	return trb + tra;
+    }
+
     /// Computes a retardation. Contains the caching mechanism.
     void retard(int ret) {
 	if(ret == 0)
