@@ -7,18 +7,15 @@ TDIsignal::TDIsignal(LISA *mylisa, Wave *mywave) {
     wave = mywave;
 }
 
-TDIsignal::TDIsignal(LISA *mylisa, LISA *physlisa, Wave *mywave) {
-    lisa = mylisa;
-    phlisa = physlisa;
-
-    wave = mywave;
+void TDIsignal::setphlisa(LISA *mylisa) {
+    phlisa = mylisa;
 }
 
 // the argument t is actually redundant here!
 
-double TDIsignal::psi(Vector &lisan, double t, double twave) {
+double TDIsignal::psi(Vector &lisan, double t) {
     Tensor cwave;
-    wave->putwave(cwave,twave);
+    wave->putwave(cwave,t);
     
     Vector tmp;
     tmp.setproduct(cwave,lisan);
@@ -43,48 +40,37 @@ double TDIsignal::retard(int craft, double t) {
 // note that the call to putn is already computing the armlength that we request later
 // we could make putn return the corresponding armlength
 
-double TDIsignal::y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t) {
-    double retardedtime = t;
-
-    if(ret7 != 0) retardedtime -= lisa->armlength(ret7,retardedtime);
-    if(ret6 != 0) retardedtime -= lisa->armlength(ret6,retardedtime);
-    if(ret5 != 0) retardedtime -= lisa->armlength(ret5,retardedtime);    
-    if(ret4 != 0) retardedtime -= lisa->armlength(ret4,retardedtime);
-
-    return y(send,link,recv,ret1,ret2,ret3,retardedtime);
+double TDIsignal::y(int send, int slink, int recv, int ret1, int ret2, int ret3, double t) {
+    return y(send,slink,recv,ret1,ret2,ret3,0,0,0,0,t);
 }
 
-double TDIsignal::y(int send, int slink, int recv, int ret1, int ret2, int ret3, double t) {
+double TDIsignal::y(int send, int slink, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t) {
     int link = abs(slink);
 
-    double retardedtime = t;
+    retardtime myrt(lisa,t);
 
-    if(ret3 != 0) retardedtime -= lisa->armlength(ret3,retardedtime);
-    if(ret2 != 0) retardedtime -= lisa->armlength(ret2,retardedtime);    
-    if(ret1 != 0) retardedtime -= lisa->armlength(ret1,retardedtime);
+    myrt.retard(ret7); myrt.retard(ret6); myrt.retard(ret5);
+    myrt.retard(ret4); myrt.retard(ret3); myrt.retard(ret2); myrt.retard(ret1);
 
-    Vector linkn;
-    double denom, retardsignal;
+    double retardedtime = myrt.retardedtime();
 
     // for the moment, let's not trust the sign of slink, and recompute it
-    // however, the linkn returned by the "modern" versions of putn is oriented,
-    // therefore the sign in denom should be the same (-) for both cases
+
+    if( (link == 3 && recv == 2) || (link == 1 && recv == 3) || (link == 2 && recv == 1) )
+	link = -link;
+
+    // since the linkn returned by the "modern" versions of putn is oriented,
+    // therefore the sign in denom is the same (-) for both positive and negative links
     // there's no problem in psi, because n is dotted twice into h
- 
-    if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2)) {
-        lisa->putn(linkn,link,retardedtime);    
-        denom = 1.0 - linkn.dotproduct(wave->k);
 
-        retardsignal = retardedtime - phlisa->armlength(link,retardedtime);
-    } else {
-        lisa->putn(linkn,-link,retardedtime);    
-        denom = 1.0 - linkn.dotproduct(wave->k);
+    Vector linkn;
+    lisa->putn(linkn,link,retardedtime);    
+    
+    double denom = 1.0 - linkn.dotproduct(wave->k);
+    double retardsignal = retardedtime - phlisa->armlength(link,retardedtime);
 
-        retardsignal = retardedtime - phlisa->armlength(-link,retardedtime);
-    }
-
-    return (( psi(linkn, retardsignal, retardsignal + retard(send, retardsignal)) -
-              psi(linkn, retardedtime, retardedtime + retard(recv, retardedtime)) ) / denom);
+    return (( psi(linkn, retardsignal + retard(send, retardsignal)) -
+              psi(linkn, retardedtime + retard(recv, retardedtime)) ) / denom);
 }
 
 // the next three names are not standard!

@@ -10,18 +10,18 @@ class TDIsignal : public TDI {
         LISA *lisa, *phlisa;
         Wave *wave;
         
-	double psi(Vector &lisan, double t, double twave);
+	double psi(Vector &lisan, double t);
         
         double retard(int craft, double t);
         
     public:
         TDIsignal(LISA *mylisa, Wave *mywave);
 
-	// this is obsolete and should be removed
-	// when the same functionality is available from a TDI
-	// setlisa method
+	// change the physical LISA
 
-        TDIsignal(LISA *mylisa, LISA *physlisa, Wave *mywave);
+	void setphlisa(LISA *mylisa);
+
+	// defined here only for comparison with the LISA simulator
 
         double M(double t);
         double N(double t);
