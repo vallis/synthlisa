@@ -10,112 +10,42 @@ using namespace std;
 #include <float.h>
 
 // from contrib-source/GSL-1.4
+
 #include "gsl_rng.h"
 
 // for seedrandgen
+
 #include <sys/time.h>
 
-// --- SampledNoise ----------------------------------------------------
-
-SampledNoise::SampledNoise(double *nb, long samples) {
-    noisebuffer = nb;
-
-    maxsamples = samples;
-}
-
-double SampledNoise::operator[](long pos) {
-    if (pos > maxsamples) {
-      cout << "SampledNoise::[] accessing index larger than available" << endl;
-      abort();
-    }
-
-    return noisebuffer[pos];
-}
-
-
-// --- "Ring" classes --------------------------------------------------
-
-//  default constructor for RingNoise
-
-RingNoise::RingNoise(long bs) {
+WhiteNoise::WhiteNoise(unsigned long seed) {
     randgen = gsl_rng_alloc(gsl_rng_ranlux);
-    seedrandgen();
 
-    buffersize = bs;
-    
-    bufferx = new double[bs];
-    buffery = new double[bs];
-    
-    for(int i=0; i<bs; i++) {
-        bufferx[i] = 0.00;
-        buffery[i] = 0.00;
-    }
-    
-    earliest = -1;
-    latest = -1;
+    seedrandgen(seed);
 }
 
-RingNoise::~RingNoise() {
-    delete [] buffery;
-    delete [] bufferx;
-
+WhiteNoise::~WhiteNoise() {
     gsl_rng_free(randgen);
 }
 
-void RingNoise::reset() {
-    seedrandgen();
+void WhiteNoise::seedrandgen(unsigned long seed) {
+    if (seed == 0) {
+	struct timeval tv;
 
-    for(int i=0; i<buffersize; i++) {
-        bufferx[i] = 0.00;
-        buffery[i] = 0.00;
-    }
-    
-    earliest = -1;
-    latest = -1;    
-}
-
-void RingNoise::updatebuffer(long pos) {
-    for(int i=latest+1; i<=pos; i++) {
-        bufferx[i % buffersize] = deviate();
-        buffery[i % buffersize] = filter(i);
-    }
-
-    latest = pos;    
-
-    if (latest - earliest >= buffersize)
-        earliest = latest - buffersize + 1;
-}
-
-double RingNoise::operator[](long pos) {
-    if (pos > latest) {
-        updatebuffer(pos);
-    } if(pos < earliest) {
-        cout << "RingNoise::[] trying to access element (" << pos << ") before oldest kept." << endl;
-        abort();
+	gettimeofday(&tv,0);
+  
+	gsl_rng_set(randgen,tv.tv_sec+tv.tv_usec);
     } else {
-        return buffery[pos % buffersize];
+	gsl_rng_set(randgen,seed);
     }
-}
 
-void RingNoise::seedrandgen() {
-    struct timeval tv;
-
-    gettimeofday(&tv,0);
-  
-    // printf("seconds is: %ld, microseconds is: %ld\n",tv.tv_sec,tv.tv_usec);
-    // printf("seed is: %ld\n",tv.tv_sec+tv.tv_usec);
-
-    // will this seed be different enough for the various noise object
-    // when they are all allocated in sequence?
-  
-    gsl_rng_set(randgen,tv.tv_sec+tv.tv_usec);
     cacheset = 0;
+    cacherand = 0;
 }
 
 // Box-Muller transform to get Gaussian deviate from uniform random number
 // adapted from GSL 1.4 randist/gauss.c
 
-double RingNoise::deviate() {
+double WhiteNoise::deviate() {
   double x, y, r2;
 
   if (cacheset == 0) {
@@ -138,240 +68,40 @@ double RingNoise::deviate() {
   }
 }
 
-// the default is to apply no filter (yielding pure uncorrelated Gaussian white noise)
-
-double RingNoise::filter(long pos) {
-    return bufferx[pos % buffersize];
-}
-
-// derived classes: differentiating and integrating filters
-
-DiffNoise::DiffNoise(long bs) : RingNoise(bs) {}
-
-double DiffNoise::filter(long pos) {
-    return (bufferx[pos % buffersize] - bufferx[(pos + buffersize - 1) % buffersize]);
-}
-
-IntNoise::IntNoise(long bs, double ic) : RingNoise(bs) {
-    intconst = ic;
-}
-
-double IntNoise::filter(long pos) {
-    return (intconst * buffery[(pos + buffersize - 1) % buffersize] + bufferx[pos % buffersize]);
-}
-
-// --- dimensioned-noise classes --------------------------------------------------
-
-// constructor based on SampledNoise: need pointer to noise buffer, number of samples, sampling time,
-// requested prebuffer time (probably a multiple of some nominal armlength), and the one-sided power spectral density
-
-InterpolateNoise::InterpolateNoise(double *noisebuf,long samples,double st,double pbt,double norm) {
-    samplingtime = st;
-    nyquistf = 1.00 / (2*st);
-
-    // compute the prebuffer offset
-
-    prebuffertime = long(floor(1e-10 + pbt / samplingtime));
-
-    // the corresponding maximum sample time that can be accessed is
-    
-    maxitime = samples - prebuffertime - 1;    
-
-    buffernoise = new SampledNoise(noisebuf,samples);
-    normalize = norm;
-}
-
-// constructor based on RingNoise: need to pass the sampling time (in secs), the requested prebuffer time
-// (probably a multiple of some nominal armlength), and the one-sided power spectral density,
-// given as sd*(f/Hz)^ex, where sd is in Hz^-1, and ex is either 0.00, -2.00, or 2.00.
-// The corresponding ringnoise object is then allocated automatically
-
-InterpolateNoise::InterpolateNoise(double st, double pbt, double sd, double ex) {
-    samplingtime = st;
-    nyquistf = 1.00 / (2*st);
-
-    // compute the prebuffer offset
-
-    prebuffertime = long(floor(1e-10 + pbt / samplingtime));
-
-    // the corresponding maximum sample time that can be accessed is
-    
-    maxitime = LONG_MAX * 1.00 - prebuffertime - 1;    
-
-    // set the RingNoise buffer as a power of two larger than the offset
-
-    long rnbuffer = 2;
-    while (prebuffertime > rnbuffer) rnbuffer *= 2;
-
-    // create the RingNoise object corresponding to the requested digital filter
-    // do not have 'switch' for floats; manage with if
-    
-    if (ex == 0.00) {
-        buffernoise = new RingNoise(rnbuffer);
-        normalize = sqrt(sd) * sqrt(nyquistf);
-    } else if (ex == 2.00) {
-        buffernoise = new DiffNoise(rnbuffer);
-        normalize = sqrt(sd) * sqrt(nyquistf) / (2.00 * M_PI * samplingtime);
-    } else if (ex == -2.00) {
-        buffernoise = new IntNoise(rnbuffer,0.9999);
-        normalize = sqrt(sd) * sqrt(nyquistf) * (2.00 * M_PI * samplingtime);
-    } else {
-        cout << "InterpolateNoise::InterpolateNoise() spectral shape f^" << ex << " not implemented!" << endl;
-        abort();
-    }
-}
-
-InterpolateNoise::~InterpolateNoise() {
-    delete buffernoise;
-}
-
-void InterpolateNoise::reset() {
-    buffernoise->reset();
-}
-
-double InterpolateNoise::inoise(double time) {
-    double ctime = time / samplingtime;
-    double itime = floor(ctime);
-
-    long index;
-    
-    if (itime > maxitime) {
-        cout << "InterpolateNoise::inoise() accessing index larger than maximum allowed" << endl;
-        abort();
-    } else {
-        index = long(itime) + prebuffertime;
-    }
-
-    double interp = (ctime - itime) * (*buffernoise)[index+1] + (1.00 - (ctime - itime)) * (*buffernoise)[index];
-
-    return( normalize * interp );
-}
-
-double InterpolateNoise::operator[](double time) {
-    return inoise(time);
-}
-
-// --- windowed-sinc interpolation ------------------------------------------------
-
-InterpolateNoiseBetter::InterpolateNoiseBetter(double sampletime,double prebuffer,double density,double exponent,int swindow) : InterpolateNoise(sampletime,prebuffer,density,exponent) {
-    semiwindow = swindow;
-    semiconst = M_PI / swindow;
-}
-
-InterpolateNoiseBetter::InterpolateNoiseBetter(double *noisebuf,long samples,double sampletime,double prebuffer,double norm,int swindow) : InterpolateNoise(noisebuf,samples,sampletime,prebuffer,norm) {
-    semiwindow = swindow;
-    semiconst = M_PI / swindow;
-}
-
-inline double InterpolateNoiseBetter::sinc(double time) {
-    if(time==0.0)
-	return 1.0;
-    else
-	return ( sin(M_PI * time)/(M_PI * time) );
-}
-
-inline double InterpolateNoiseBetter::window(double time) {
-    return ( 0.54 + 0.46 * cos(time * semiconst) );
-}
-
-double InterpolateNoiseBetter::inoise(double time) {
-    double ctime = time / samplingtime;
-    double itime = floor(ctime);
-
-    long index;
-    
-    if (itime > maxitime) {
-        cout << "InterpolateNoise::inoise() accessing index larger than maximum allowed" << endl;
-        abort();
-    } else {
-        index = long(itime) + prebuffertime;
-    }
-
-    // or should I implement this with a tolerance?
-
-    if (itime == ctime) {
-	return ( normalize * (*buffernoise)[index] );
-    } else {
-	double interp = 0.0;
-	double t;
-
-	// here we work with integer bin abscissae
-
-	for(int i=0;i<semiwindow;i++) {
-	    t = ctime - itime + i;
-	    interp += sinc(t) * window(t) * (*buffernoise)[index-i];
-	    
-	    t = -(1.00 - (ctime - itime)) - i;
-	    interp += sinc(t) * window(t) * (*buffernoise)[index+1+i];
-	}
-	
-	return ( normalize * interp );
-    }
-}
-
-double InterpolateNoiseBetter::operator[](double time) {
-    return inoise(time);
-}
-
-// --- Lagrange interpolation ------------------------------------------------
-
-const int bestwindow = 20;
-
-InterpolateNoiseLagrange::InterpolateNoiseLagrange(double sampletime,double prebuffer,double density,double exponent,int swindow) : InterpolateNoise(sampletime,prebuffer,density,exponent) {
-    semiwindow = swindow;
-
-    for(int i=1;i<=2*bestwindow;i++) {
-	xa[i] = 1.0*i;
-	ya[i] = 0.0;
-    }
-}
-
-InterpolateNoiseLagrange::InterpolateNoiseLagrange(double *noisebuf,long samples,double sampletime,double prebuffer,double norm,int swindow) : InterpolateNoise(noisebuf,samples,sampletime,prebuffer,norm) {
-    semiwindow = swindow;
-
-    for(int i=1;i<=2*bestwindow;i++) {
-	xa[i] = 1.0*i;
-	ya[i] = 0.0;
-    }
-}
-
-double InterpolateNoiseLagrange::inoise(double time) {
-    return lagnoise(time,semiwindow);
-}
-
-double InterpolateNoiseLagrange::operator[](double time) {
-    return inoise(time);
-}
-
-double InterpolateNoiseLagrange::lagnoise(double time,int semiwindow) {
-    double ctime = time / samplingtime;
-    double itime = floor(ctime);
-
-    long index;
-
-    index = long(itime) + prebuffertime;
-    
-    // careful with this tolerance!
-
-    if (itime == ctime) {
-	return ( normalize * (*buffernoise)[index] );
-    } else {
-	for(int i=0;i<semiwindow;i++) {
-	    ya[semiwindow-i] = (*buffernoise)[index-i];
-	    ya[semiwindow+i+1] = (*buffernoise)[index+i+1];
-	}
-	
-	return ( normalize * polint(semiwindow+(ctime-itime),2*semiwindow) );
-    }
-}
-
-double InterpolateNoiseLagrange::pnoise(double time) {
-    return lagnoise(time,bestwindow);
-}
+// constructor based on WhiteNoise. Need to pass:
+// - the sampling time (in secs)
+// - the requested prebuffer time (in secs)
+// - the one-sided power spectral density, given as sd*(f/Hz)^ex,
+//   where sd is in Hz^-1, and ex is either 0.00, -2.00, or 2.00.
+// - the noise exponent ex
 
 // modified from Numerical Recipes
 
-double InterpolateNoiseLagrange::polint(double x,int n) {
+LagrangeInterpolator::LagrangeInterpolator(int sw)
+    : window(2*sw), semiwindow(sw) {
+    xa = new double[window+1];
+    ya = new double[window+1];
+    
+    c = new double[window+1];
+    d = new double[window+1];
+    
+    for(int i=1;i<=window;i++) {
+	xa[i] = 1.0*i;
+	ya[i] = 0.0;
+    }
+    
+};
+
+LagrangeInterpolator::~LagrangeInterpolator() {
+    delete d;
+    delete c;
+	
+    delete ya;
+    delete xa;
+};
+
+double LagrangeInterpolator::polint(double x) {
+    int n = window;
     int i,m,ns=1;
     double den,dif,dift,ho,hp,w;
 
@@ -406,4 +136,110 @@ double InterpolateNoiseLagrange::polint(double x,int n) {
     }
 
     return res;
+}
+
+InterpolateNoise::InterpolateNoise(double st, double pbt, double sd, double ex, int win) {
+    samplingtime = st;
+    nyquistf = 0.5 / st;
+
+    prebuffertime = pbt;
+    maxtime = samplingtime * (LONG_MAX - 1) - prebuffertime;    
+
+    setfilter(ex);
+    setnorm(sd,ex);
+    setinterp(win);
+
+    long buffersize = 2;
+    while (buffersize < long(prebuffertime/samplingtime))
+	buffersize *= 2;
+
+    // WhiteNoise object
+
+    getnoise = new WhiteNoise();
+
+    thenoise = new MakeNoise(getnoise,thefilter,buffersize);
+}
+
+// constructor based on SampledNoise. Need to pass:
+// - pointer to noise buffer
+// - number of samples
+// - sampling time
+// - requested prebuffer time
+// - the one-sided power spectral density, given as sd*(f/Hz)^ex,
+//   where sd is in Hz^-1, and ex is either 0.00, -2.00, or 2.00.
+// - the noise exponent ex, which determines the filtering
+
+InterpolateNoise::InterpolateNoise(double *nb,long sl,double st,double pbt,double sd,double ex,int win) {
+    samplingtime = st;
+    nyquistf = 0.5 / st;
+
+    prebuffertime = pbt;
+    maxtime = samplingtime * (LONG_MAX - 1) - prebuffertime;    
+
+    setfilter(ex);
+    setnorm(sd,ex);
+    setinterp(win);
+
+    // SampledNoise object
+
+    getnoise = new SampledNoise(nb,sl);
+
+    long &buffersize = sl;
+    thenoise = new MakeNoise(getnoise,thefilter,buffersize);
+}
+
+InterpolateNoise::~InterpolateNoise() {
+    delete interp;
+    delete thenoise;
+    delete thefilter;
+    delete getnoise;
+}
+
+void InterpolateNoise::setfilter(double ex) {
+    if (ex == 0.00) {
+	thefilter = new NoFilter();
+    } else if (ex == 2.00) {
+	thefilter = new DiffFilter();
+    } else if (ex == -2.00) {
+	thefilter = new IntFilter();
+    } else {
+        cout << "InterpolateNoise::InterpolateNoise: noise spectral shape f^" << ex << " not implemented. Defaulting to no filtering." << endl;
+        thefilter = new NoFilter();
+    }
+}
+
+void InterpolateNoise::setnorm(double sd, double ex) {
+    if (ex == 0.00) {
+        normalize = sqrt(sd) * sqrt(nyquistf);
+    } else if (ex == 2.00) {
+        normalize = sqrt(sd) * sqrt(nyquistf) / (2.00 * M_PI * samplingtime);
+    } else if (ex == -2.00) {
+        normalize = sqrt(sd) * sqrt(nyquistf) * (2.00 * M_PI * samplingtime);
+    } else {
+        cout << "InterpolateNoise::InterpolateNoise: noise spectral shape f^" << ex << " not implemented. Defaulting to no filtering." << endl;
+        normalize = sqrt(sd) * sqrt(nyquistf);
+    }
+}
+
+void InterpolateNoise::setinterp(int window) {
+    if (window < 1) {
+	interp = new NearestInterpolator();
+    } else if (window == 1) {
+	interp = new LinearInterpolator();
+    } else {
+	interp = new LagrangeInterpolator(window);
+    }
+}
+
+double InterpolateNoise::operator[](double time) {
+    if (time > maxtime) {
+        cout << "InterpolateNoise::[]: time requested (" << time << ") too large" << endl;
+        abort();
+    } else {
+	double rind = (time + prebuffertime) / samplingtime;
+	double dind = rind - floor(rind);
+	long ind = long(rind);
+
+	return normalize * (*interp)(*thenoise,ind,dind);
+    }
 }
