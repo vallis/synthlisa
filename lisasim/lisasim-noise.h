@@ -248,6 +248,15 @@ class LinearInterpolator : public Interpolator {
     };
 };
 
+// this is to use only "old" values, with (implicitly) 1 < dind < 2
+
+class LinearExtrapolator : public Interpolator {
+ public:
+    double operator()(MakeNoise &y,long ind,double dind) {
+	return (-dind) * y[ind-1] + (1.0 + dind) * y[ind];
+    };
+};
+
 class LagrangeInterpolator : public Interpolator {
  private:
     int window, semiwindow;
