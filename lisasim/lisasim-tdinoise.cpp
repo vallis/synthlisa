@@ -2,7 +2,7 @@
 #include "lisasim-noise.h"
 #include "lisasim-tdinoise.h"
 
-TDInoise::TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, double sdshot) {
+TDInoise::TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser, double claser) {
     lisa = mylisa;
 
     // to estimate size of noisebuffer, take an armlength at time zero,
@@ -31,6 +31,16 @@ TDInoise::TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, 
                 shot[craft1][craft2] = new InterpolateNoise(stshot, pbtshot, sdshot, 2.0);
         }
     }
+
+    // create laser noise objects
+    // quadruple retardations are needed for the C's
+
+    double pbtlaser = 4.0 * lighttime;
+    
+     for(int craft = 1; craft <= 3; craft++) {
+        c[craft] = new ExpGaussNoise(stlaser,pbtlaser,stlaser/claser,sdlaser);
+        cs[craft] = new ExpGaussNoise(stlaser,pbtlaser,stlaser/claser,sdlaser);
+    }
 }
 
 TDInoise::~TDInoise() {
@@ -49,6 +59,13 @@ TDInoise::~TDInoise() {
                 delete shot[craft1][craft2];
         }
     }
+
+    // remove laser-noise ExpGaussNoise objects
+
+    for(int craft = 1; craft <= 3; craft++) {
+        delete c[craft];
+        delete cs[craft];
+    }
 }
 
 double TDInoise::y(int send, int link, int recv, int ret1, int ret2, int ret3, double t) {
@@ -60,14 +77,18 @@ double TDInoise::y(int send, int link, int recv, int ret1, int ret2, int ret3, d
     if(ret2) retardedtime -= 3.1536E7 * lisa->armlength(ret2,t);
     if(ret3) retardedtime -= 3.1536E7 * lisa->armlength(ret3,t);
 
+    double retardlaser = retardedtime - 3.1536E7 * lisa->armlength(link,t);
+
     if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2)) {
         // cyclic combination
 
-        return( -2.0 * (*pm[recv])[retardedtime] + (*shot[send][recv])[retardedtime] );
+        return( (*cs[send])[retardlaser] - 2.0 * (*pm[recv])[retardedtime]  - (*c[recv])[retardedtime]  + 
+                (*shot[send][recv])[retardedtime] );
     } else {
         // anticyclic combination
 
-        return( 2.0 * (*pms[recv])[retardedtime] + (*shot[send][recv])[retardedtime] );
+        return( (*c[send])[retardlaser]  + 2.0 * (*pms[recv])[retardedtime] - (*cs[recv])[retardedtime] +
+                (*shot[send][recv])[retardedtime] );
     }
 }
 
@@ -84,11 +105,11 @@ double TDInoise::z(int send, int link, int recv, int ret1, int ret2, int ret3, i
     if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2)) {
         // cyclic combination
 
-        return( -2.0 * (*pms[recv])[retardedtime] );
+        return( (*cs[recv])[retardedtime] - 2.0 * (*pms[recv])[retardedtime] - (*c[recv])[retardedtime] );
     } else {
         // anticyclic combination
 
-        return( 2.0 * (*pm[recv])[retardedtime] );
+        return( (*c[recv])[retardedtime]  + 2.0 * (*pm[recv])[retardedtime]  - (*cs[recv])[retardedtime] );
     }
 }
 

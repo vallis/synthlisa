@@ -1,5 +1,5 @@
 class TDInoise {
-    public:
+    private:
         LISA *lisa;
 
         InterpolateNoise *pm[4], *pms[4];
@@ -8,7 +8,16 @@ class TDInoise {
         
         InterpolateNoise *shot[4][4];
 
-        TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, double sdshot);
+        ExpGaussNoise *c[4], *cs[4];
+
+        double y(int send, int link, int recv, int ret1, int ret2, int ret3, double t);
+        double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, double t);
+        
+    public:
+
+        // claser is a correlation e-folding time
+
+        TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser, double claser);
         ~TDInoise();
 
         double X(double t);
@@ -24,8 +33,4 @@ class TDInoise {
         double P(double t);
         
         double E(double t);
-    
-    private:
-        double y(int send, int link, int recv, int ret1, int ret2, int ret3, double t);
-        double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, double t);
 };

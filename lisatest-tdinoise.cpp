@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
 
     double dstep = 1.0;
 
-    TDInoise mytdinoise(&mylisa,dstep,2.5e-48,dstep,1.8e-37);
+    TDInoise mytdinoise(&mylisa,dstep,2.5e-48,dstep,1.8e-37,dstep,1.1e-26,1e-6);
 
     // initialize random-number-generator seed
     // here we're actually passing a long (on PPC); should work as long
@@ -44,10 +44,10 @@ int main(int argc, char **argv) {
 //    ofstream yout("noise-Y.txt");
 //    ofstream zout("noise-Z.txt");
 
-    ofstream aout("noise-alpha.txt");
+//    ofstream aout("noise-alpha.txt");
 
-    ofstream pout("noise-P.txt");
-    ofstream eout("noise-E.txt");
+//    ofstream pout("noise-P.txt");
+//    ofstream eout("noise-E.txt");
     
     // set this to a fraction of dstep to oversample by interpolation
     // (see the results on the spectra!)
@@ -59,9 +59,9 @@ int main(int argc, char **argv) {
 //        yout << mytdinoise.Y(sstep * i) << endl;
 //        zout << mytdinoise.Z(sstep * i) << endl;
 
-        aout << mytdinoise.alpha(sstep * i) << endl;
+//        aout << mytdinoise.alpha(sstep * i) << endl;
 
-        pout << mytdinoise.P(sstep * i) << endl;
-        eout << mytdinoise.E(sstep * i) << endl;
+//        pout << mytdinoise.P(sstep * i) << endl;
+//        eout << mytdinoise.E(sstep * i) << endl;
     }
 }
