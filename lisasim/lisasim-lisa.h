@@ -406,6 +406,181 @@ class LinearLISA : public LISA {
     }
 };
 
+class LISAMakeNoise: public MakeNoise {
+ private:
+    LISA *mylisa;
+    int myarm;
+
+    double mynorm, mystime, myptime;
+
+    MakeNoise *mynoise;
+
+ public:
+    LISAMakeNoise(LISA *lisa,int arm,double norm,double stime,double ptime,MakeNoise *noise)
+	: mylisa(lisa), myarm(arm), mynorm(norm), mystime(stime), myptime(ptime), mynoise(noise) {};
+
+    virtual ~LISAMakeNoise() {
+	delete mynoise;
+    };
+
+    void reset() {
+	mynoise->reset();
+    };
+
+    double operator[](long pos) {
+	return mylisa->armlength(myarm,pos*mystime - myptime) + mynorm * (*mynoise)[pos];
+    };
+};
+
+class LISANoise: public InterpolateNoise {
+ public:
+    LISANoise(LISA *cleanlisa,int link,double sampletime,double prebuffer,double density,int swindow)
+	: InterpolateNoise(sampletime,prebuffer,density,0.0,swindow) {
+	thenoise = new LISAMakeNoise(cleanlisa,link,density,sampletime,prebuffer,thenoise);
+	normalize = 1.0;
+    };
+};
+
+class MeasureLISA : public LISA {
+ private:
+    LISA *cleanlisa;
+
+    LISANoise *uperror[4], *downerror[4];
+
+ public:
+    MeasureLISA(LISA *clean,double starm,double sdarm,int swindow = 1);
+    ~MeasureLISA();
+        
+    void reset();
+
+    LISA *physlisa() {
+	return cleanlisa;
+    }
+
+    double armlength(int arm, double t);
+
+    double armlengthbaseline(int arm, double t);
+    double armlengthaccurate(int arm, double t);
+
+    void putn(Vector &n, int arm, double t) {
+	cleanlisa->putn(n,arm,t);
+    }
+        
+    void putp(Vector &p, int craft, double t) {
+	cleanlisa->putp(p,craft,t);
+    }
+
+    void putn(double n[], int arm, double t) {
+	cleanlisa->putn(n,arm,t);
+    }
+        
+    void putp(double p[], int craft, double t) {
+	cleanlisa->putp(p,craft,t);
+    }
+};
+
+class AnyLISA : public LISA {
+    private:
+        LISA *baselisa;
+
+    public:
+        AnyLISA(LISA *base) : baselisa(base) {};
+	virtual ~AnyLISA() {};
+
+        virtual void reset() {
+	    return baselisa->reset();
+	}
+
+       	LISA *physlisa() {
+	    return baselisa;
+	}
+
+        virtual double armlength(int arm, double t) {
+	    return baselisa->armlength(arm,t);
+	}
+
+	virtual double armlengthbaseline(int arm, double t) {
+	    return baselisa->armlengthbaseline(arm,t);
+	}
+
+	virtual double armlengthaccurate(int arm, double t) {
+	    return baselisa->armlengthaccurate(arm,t);
+	}
+	
+        virtual void putn(Vector &n, int arm, double t) {
+            baselisa->putn(n,arm,t);
+        }
+        
+        virtual void putp(Vector &p, int craft, double t) {
+            baselisa->putp(p,craft,t);
+        }
+
+        virtual void putn(double n[], int arm, double t) {
+            baselisa->putn(n,arm,t);
+        }
+        
+        void putp(double p[], int craft, double t) {
+            baselisa->putp(p,craft,t);
+	}
+};
+
+#include <Python.h>
+
+class PyLISA : public LISA {
+    private:
+        LISA *baselisa;
+	PyObject *armfunc;
+
+    public:
+        PyLISA(LISA *base,PyObject *func) : baselisa(base), armfunc(func) {};
+	virtual ~PyLISA() {};
+
+        void reset() {
+	    return baselisa->reset();
+	}
+
+       	LISA *physlisa() {
+	    return baselisa;
+	}
+
+        double armlength(int arm, double t) {
+	    PyObject *arglist, *result;
+
+	    double dres = 0.0;
+   
+	    arglist = Py_BuildValue("(id)",arm,t);        // Build argument list
+	    result = PyEval_CallObject(armfunc,arglist);  // Call Python
+	    Py_DECREF(arglist);                           // Trash arglist
+	    if (result) dres = PyFloat_AsDouble(result);  // If no errors, return double
+	    Py_XDECREF(result);                           // Trash result
+	    return dres;
+	}
+
+	double armlengthbaseline(int arm, double t) {
+	    return armlength(arm,t);
+	}
+
+	double armlengthaccurate(int arm, double t) {
+	    return 0.0;
+	}
+	
+        void putn(Vector &n, int arm, double t) {
+            baselisa->putn(n,arm,t);
+        }
+        
+        void putp(Vector &p, int craft, double t) {
+            baselisa->putp(p,craft,t);
+        }
+
+        void putn(double n[], int arm, double t) {
+            baselisa->putn(n,arm,t);
+        }
+        
+        void putp(double p[], int craft, double t) {
+            baselisa->putp(p,craft,t);
+	}
+};
+
 extern LISA *stdlisa();
 
 #endif /* _LISASIM_LISA_H_ */

@@ -711,3 +711,72 @@ double LinearLISA::armlengthaccurate(int arm, double t) {
 LISA *stdlisa() {
   return new OriginalLISA(Lstd,Lstd,Lstd);
 }
+
+// --- MeasureLISA class -----------------------------------------------------
+
+// we're doing something funny here: we're defining Noise-like objects
+// which will actually provide the LISA armlength measures, based on a regular
+// (but noisy) sampling of the actual armlengths
+
+MeasureLISA::MeasureLISA(LISA *clean,double starm,double sdarm,int swin) {
+    cleanlisa = clean;
+    
+    // to estimate size of noisebuffer, take the largest armlength at time zero, and add 10%
+
+    double arm1 = cleanlisa->armlength(1,0.0);
+    double arm2 = cleanlisa->armlength(2,0.0);
+    double arm3 = cleanlisa->armlength(3,0.0);
+
+    double maxarm = arm1 > arm2 ? arm1 : arm2;
+    maxarm = maxarm > arm3 ? maxarm : arm3;
+
+    double lighttime = 1.10 * maxarm;
+
+    // create InterpolateNoise objects for the arm determination noises
+    // we need triple retardations (septuple for 2nd-generation TDI)
+
+    double pbtarm = 8.0 * lighttime + (2.0 * swin + 1.0) * starm;
+
+    // we use plain uncorrelated white noise, for the moment
+
+    for(int link = 1; link <= 3; link++) {
+        uperror[link] = new LISANoise(cleanlisa, link, starm, pbtarm, sdarm, swin);
+        downerror[link] = new LISANoise(cleanlisa, -link, starm, pbtarm, sdarm, swin);
+    }
+}
+
+MeasureLISA::~MeasureLISA() {
+    for(int link = 1; link <= 3; link++) {
+        delete uperror[link];
+        delete downerror[link];
+    }
+}
+
+void MeasureLISA::reset() {
+    for(int link = 1; link <= 3; link++) {
+        uperror[link]->reset();
+        downerror[link]->reset();
+    }    
+}
+
+// Unfortunately it is hard to make the distinction between the
+// baseline and the accurate armlength within the LISANoise class. But
+// this should be good enough.
+
+double MeasureLISA::armlength(int arm, double t) {
+    if(arm > 0)
+        return (*uperror[arm])[t];
+    else
+        return (*downerror[-arm])[t];
+}
+
+double MeasureLISA::armlengthbaseline(int arm, double t) {
+    if(arm > 0)
+        return (*uperror[arm])[t];
+    else
+        return (*downerror[-arm])[t];
+}
+
+double MeasureLISA::armlengthaccurate(int arm, double t)  {
+    return 0;
+}
