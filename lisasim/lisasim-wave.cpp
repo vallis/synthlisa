@@ -127,3 +127,47 @@ double SimpleMonochromatic::hc(double t) {
     
     return ac * sin(twopi*f*t);
 }
+
+// --- InterpolateMemory wave class --------------------------------------------------
+
+InterpolateMemory::InterpolateMemory(double *hpa, double *hca, long samples, double samplingtime, double lookback, double d, double a, double p) : Wave(d,a,p) {
+  hpbuffer = hpa;
+  hcbuffer = hca;
+
+  maxsamples = samples;
+  sampletime = samplingtime;
+
+  lkback = lookback;
+}
+
+double InterpolateMemory::hp(double time) {
+    double ctime = (time + lkback) / sampletime;
+    double itime = floor(ctime);
+    long index = long(itime);
+    
+    if (index > maxsamples) {
+      cout << "InterpolateMemory::hp() accessing index larger than available" << endl;
+      abort();
+    } else if (index < 0) {
+      cout << "InterpolateMemory::lookback buffer insufficient" << endl;
+      abort();
+    }
+
+    return ( (ctime - itime) * hpbuffer[index+1] + (1.00 - (ctime - itime)) * hpbuffer[index] );
+}
+
+double InterpolateMemory::hc(double time) {
+    double ctime = (time + lkback) / sampletime;
+    double itime = floor(ctime);
+    long index = long(itime);
+    
+    if (index > maxsamples) {
+      cout << "InterpolateMemory::hp() accessing index larger than available" << endl;
+      abort();
+    } else if (index < 0) {
+      cout << "InterpolateMemory::lookback buffer insufficient" << endl;
+      abort();
+    }
+
+    return ( (ctime - itime) * hcbuffer[index+1] + (1.00 - (ctime - itime)) * hcbuffer[index] );
+}

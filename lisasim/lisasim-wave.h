@@ -69,4 +69,21 @@ class SimpleMonochromatic : public Wave {
         double hc(double t);
 };
 
+class InterpolateMemory : public Wave {
+ private:
+  
+  double *hpbuffer, *hcbuffer;
+
+  long maxsamples;
+  double sampletime;
+  double lkback;
+
+ public:
+
+  InterpolateMemory(double *hpa, double *hca, long samples, double samplingtime, double lookback, double d, double a, double p);
+
+  double hp(double t);
+  double hc(double t);
+};
+
 #endif /* _LISASIM_WAVE_H_ */
