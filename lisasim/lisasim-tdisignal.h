@@ -16,6 +16,11 @@ class TDIsignal : public TDI {
         
     public:
         TDIsignal(LISA *mylisa, Wave *mywave);
+
+	// this is obsolete and should be removed
+	// when the same functionality is available from a TDI
+	// setlisa method
+
         TDIsignal(LISA *mylisa, LISA *physlisa, Wave *mywave);
 
         double M(double t);
