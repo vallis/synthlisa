@@ -19,10 +19,6 @@ public:
     OriginalLISA(double arm1,double arm2,double arm3);
 
     virtual double armlength(int arm, double t);
-
-    virtual double armlengthbaseline(int arm, double t);
-    virtual double armlengthaccurate(int arm, double t);
-
 };
 
 class ModifiedLISA : public OriginalLISA {
@@ -33,15 +29,11 @@ public:
     ModifiedLISA(double arm1,double arm2,double arm3);
         
     double armlength(int arm, double t);
-
-    double genarmlength(int arms, double t);
 };
 
 class CircularRotating : public LISA {
  public:
 	
-    // three arguments: eta0, xi0, 2<->3 switch (1.0 or -1.0) 
-    
     CircularRotating(double eta0=0.0,double xi0=0.0,double sw=0.0,double t0=0.0);
     CircularRotating(double myL,double eta0,double xi0,double sw,double t0);
     
@@ -55,6 +47,7 @@ class CircularRotating : public LISA {
 
 class EccentricInclined : public LISA {
  public:
+
     EccentricInclined(double eta0 = 0.0,double xi0 = 0.0,double sw = 1.0,double t0=0.0);
     
     double armlength(int arm, double t);
@@ -69,8 +62,11 @@ class EccentricInclined : public LISA {
 class NoisyLISA : public LISA {
 public:
     NoisyLISA(LISA *clean,double starm,double sdarm);
-    ~NoisyLISA();
+
+    // nontrivial destructor should appear here
 	
+    ~NoisyLISA(); 
+
     double armlength(int arm, double t);
 
     double armlengthbaseline(int arm, double t);
@@ -94,7 +90,11 @@ class NominalLISA : public LISA {
 
 /* -------- Noise objects -------- */
 
-class Noise;
+class Noise {
+ public:
+    virtual void reset() {};
+    virtual double noise(double time) = 0;
+};
 
 %apply double *NUMPY_ARRAY_DOUBLE { double *noisebuf };
 
@@ -117,6 +117,11 @@ class Wave;
 class SimpleBinary : public Wave {
 public:
     SimpleBinary(double freq, double initphi, double inc, double amp, double d, double a, double p);
+};
+
+class SimpleMonochromatic : public Wave {
+public:
+    SimpleMonochromatic(double freq, double phi, double gamma, double amp, double d, double a, double p);
 };
 
 %apply double *NUMPY_ARRAY_DOUBLE { double *hpa };
