@@ -33,6 +33,8 @@ static const double Lstd = 16.6782;
 
 static const double ecc = 0.00964838;
 
+// ... almost deprecated ...
+
 // for CircularRotating
 // fit parameter for annual modulation of armlengths (1/sec, from armlength.nb)
 // this might need fine tuning
@@ -252,6 +254,49 @@ class EccentricInclined : public LISA {
 
         double genarmlength(int arm, double t);
 };
+
+class EccentricInclined2 : public LISA {
+    private:
+        // LISA armlength 
+
+        double L;
+
+        // initial azimuthal position of the guiding center
+        // and initial orientation of the spacecraft
+
+        double kappa; 
+        double lambda;
+	double swi;
+
+	// constants needed in the approximation to the armlength
+
+	double pdelmod, mdelmod, delmod3;
+
+	double delmodph[4], delmodph2;
+        
+        // caching the positions of spacecraft
+        
+        Vector cachep[4];
+        double cachetime[4];
+        
+        void settime(int craft,double t);
+        
+    public:
+        EccentricInclined2(double eta0 = 0.0,double xi0 = 0.0,double sw = 1.0);
+
+        void putp(Vector &p,int craft,double t);
+
+        // EccentricInclined defines a computed (fitted) version of armlength
+        // use genarmlength to get the exact armlength
+
+	double armlength(int arm, double t);
+
+	double armlengthbaseline(int arm, double t);
+	double armlengthaccurate(int arm, double t);
+
+        double genarmlength(int arm, double t);
+};
+
 
 class NoisyLISA : public LISA {
     private:

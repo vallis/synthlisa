@@ -65,6 +65,19 @@ public:
     double genarmlength(int arms, double t);
 };
 
+class EccentricInclined2 : public LISA {
+    public:
+        EccentricInclined2(double eta0 = 0.0,double xi0 = 0.0,double sw = 1.0);
+
+	double armlength(int arm, double t);
+
+	double armlengthbaseline(int arm, double t);
+	double armlengthaccurate(int arm, double t);
+
+        double genarmlength(int arm, double t);
+};
+
+
 class NoisyLISA : public LISA {
 public:
     NoisyLISA(LISA *clean,double starm,double sdarm);

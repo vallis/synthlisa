@@ -1,6 +1,9 @@
 #include "lisasim-lisa.h"
 #include "lisasim-noise.h"
 
+using namespace std;
+#include <iostream>
+
 // --- generic LISA class --------------------------------------------------------------
 
 // This is the generic version of "putn", which calls armlength
@@ -174,12 +177,14 @@ ModifiedLISA::ModifiedLISA(double arm1,double arm2,double arm3) : OriginalLISA(a
         double La = sqrt(initp[crafta].dotproduct(initp[crafta]));
         double Lb = sqrt(initp[craftb].dotproduct(initp[craftb]));
 
-        // see Mathematica file armlength.nb for this expression
-
         sagnac[i] = La * Lb * sqrt(1.0 - (La*La + Lb*Lb - L[i]*L[i])*(La*La + Lb*Lb - L[i]*L[i]) / (4.0 * La*La * Lb*Lb)) * Omega;
+
+	sagnac[i] = Omega * (initp[craftb][0]*initp[crafta][1] - initp[crafta][0]*initp[craftb][1]);
 
         Lc[i]  = L[i] + sagnac[i];
         Lac[i] = L[i] - sagnac[i];
+
+	guessL[i] = L[i];
     }
 }
 
@@ -277,22 +282,11 @@ void CircularRotating::initialize(double e0, double x0, double sw) {
     
     // set amplitude and phase of delay modulations
     
-    delmodamp = delmodconst * R * (scriptl * scriptl) * Omega;
-    // delmodamp = 0.0;
+    delmodamp = R * L * Omega;
     
     delmodph[1] = xi0;
-    delmodph[2] = xi0 + 4.*M_PI/3.0;
-    delmodph[3] = xi0 + 2.*M_PI/3.0;
-
-    if (sw < 0.0) {
-        double tmp;
-        
-        tmp = delmodph[2];
-        delmodph[2] = delmodph[3];
-        delmodph[3] = tmp;
-        
-        delmodamp = -delmodamp;
-    }
+    delmodph[2] = sw > 0.0 ? xi0 + 4.*M_PI/3.0 : xi0 + 2.*M_PI/3.0;
+    delmodph[3] = sw > 0.0 ? xi0 + 2.*M_PI/3.0 : xi0 + 4.*M_PI/3.0;
 
     settime(0);
 }
@@ -459,6 +453,116 @@ double EccentricInclined::armlengthaccurate(int arm, double t) {
 }
 
 double EccentricInclined::genarmlength(int arm, double t) {
+    return LISA::armlength(arm,t);
+}
+
+
+// --- EccentricInclined LISA class -----------------------------------------------------
+
+// full constructor
+// define the LISA Simulator kappa and lambda constants
+
+EccentricInclined2::EccentricInclined2(double eta0,double xi0,double sw) {
+    L = Lstd;
+
+    // since we do not define armlength, we must initialize guessL
+    // to the initial guess for the length of arms
+
+    guessL[1] = L; guessL[2] = L; guessL[3] = L;
+
+    kappa = eta0;
+    lambda = xi0 + eta0 - 3.*M_PI/2.0;
+    swi = sw;
+
+    // initialize constants for approximation to armlength
+
+    pdelmod = (swi > 0.0 ? 1.0 : -1.0)*(Omega * Rgc * L) - (15.0/32.0) * (ecc*L);
+    mdelmod = (swi > 0.0 ? -1.0 : 1.0)*(Omega * Rgc * L) - (15.0/32.0) * (ecc*L);
+    delmod3 = (1.0/32.0) * (ecc*L);
+
+    delmodph[1] = xi0;
+    delmodph[2] = (swi > 0.0) ? 4.*M_PI/3.0 + xi0 : 2.*M_PI/3.0 + xi0;
+    delmodph[3] = (swi > 0.0) ? 2.*M_PI/3.0 + xi0 : 4.*M_PI/3.0 + xi0;
+    
+    delmodph2 = 3.0*xi0;
+
+    // Initialize the position cache
+
+    settime(1,0.0); settime(2,0.0); settime(3,0.0);
+}
+
+// positions of spacecraft according to the LISA simulator
+
+void EccentricInclined2::settime(int craft, double t) {
+    const double sqecc = ecc*ecc;
+    const double sqrt3 = sqrt(3.0);
+
+    double alpha = Omega*t + kappa;
+
+    double beta;
+
+    switch(craft) {
+    case 1:
+	beta = lambda;
+	break;
+    case 2:
+	beta = (swi > 0.0) ? 4.0*M_PI/3.0 + lambda : 2.0*M_PI/3.0 + lambda;
+	break;
+    case 3:
+	beta = (swi > 0.0) ? 2.0*M_PI/3.0 + lambda : 4.0*M_PI/3.0 + lambda;
+	break;
+    default:
+	cout << "EccentricInclined::settime: invalid spacecraft index" << endl;
+	abort(); 
+	break;
+    }
+	    
+    cachep[craft][0] =   0.5 * Rgc * ecc * ( cos(2.0*alpha-beta) - 3.0*cos(beta) )
+                       + 0.125 * Rgc * sqecc * ( 3.0*cos(3.0*alpha-2.0*beta) - 5.0*( 2.0*cos(alpha)+cos(alpha-2.0*beta) ) )
+                       + Rgc * cos(alpha);
+                          
+    cachep[craft][1] =   0.5 * Rgc * ecc * ( sin(2.0*alpha-beta) - 3.0*sin(beta) )
+                       + 0.125 * Rgc * sqecc * ( 3.0*sin(3.0*alpha-2.0*beta) - 5.0*( 2.0*sin(alpha)-sin(alpha-2.0*beta) ) )
+                       + Rgc * sin(alpha);
+           
+    cachep[craft][2] = - sqrt3 * Rgc * ecc * cos(alpha-beta) 
+                       + sqrt3 * Rgc * sqecc * ( cos(alpha-beta)*cos(alpha-beta) + 2.0*sin(alpha-beta)*sin(alpha-beta) );                                               
+
+    cachetime[craft] = t;
+}
+
+void EccentricInclined2::putp(Vector &p, int craft, double t) {
+    if (t != cachetime[craft]) settime(craft,t);
+
+    for(int i=0;i<3;i++)
+        p[i] = cachep[craft][i];
+}
+
+double EccentricInclined2::armlength(int arm, double t) {
+    if(arm > 0) {
+	return L + pdelmod * sin(Omega*t - delmodph[arm]) 
+	    + delmod3 * sin(Omega3*t - delmodph2);
+    } else {
+	return L + mdelmod * sin(Omega*t - delmodph[-arm])
+	    + delmod3 * sin(Omega3*t - delmodph2);
+    }
+}
+
+double EccentricInclined2::armlengthbaseline(int arm, double t) {
+    return L;
+}
+
+double EccentricInclined2::armlengthaccurate(int arm, double t) {
+    if(arm > 0) {
+	return pdelmod * sin(Omega*t - delmodph[arm]) 
+	    + delmod3 * sin(Omega3*t - delmodph2);
+    } else {
+	return mdelmod * sin(Omega*t - delmodph[-arm])
+	    + delmod3 * sin(Omega3*t - delmodph2);
+    }
+}
+
+double EccentricInclined2::genarmlength(int arm, double t) {
     return LISA::armlength(arm,t);
 }
 
