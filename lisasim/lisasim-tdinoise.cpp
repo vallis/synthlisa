@@ -16,9 +16,8 @@ TDInoise::TDInoise(LISA *mylisa, LISA *physlisa, double stproof, double sdproof,
 }
 
 void TDInoise::initialize(double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser, double claser) {
-    // to estimate size of noisebuffer, take an armlength at time zero,
-    // and add 10% for uplink-downlink uncertainty and flexing;
-    // need to convert from years to seconds (we use the factor from lisasim-tdi.cpp)
+    // to estimate size of noisebuffer, take maximum armlength at time zero,
+    // and add 10% for uplink-downlink uncertainty and flexing
 
     double arm1 = lisa->armlength(1,0.0);
     double arm2 = lisa->armlength(2,0.0);
@@ -27,7 +26,7 @@ void TDInoise::initialize(double stproof, double sdproof, double stshot, double 
     double maxarm = arm1 > arm2 ? arm1 : arm2;
     maxarm = maxarm > arm3 ? maxarm : arm3;
 
-    double lighttime = 1.10 * (maxarm / 3.17098E-8);
+    double lighttime = 1.10 * maxarm;
 
     // create InterpolateNoise objects for proof-mass noises
     // we need quadruple retardations for the V's appearing in the z's
@@ -124,24 +123,21 @@ void TDInoise::reset() {
 double TDInoise::y(int send, int slink, int recv, int ret1, int ret2, int ret3, double t) {
     int link = abs(slink);
 
-    // need to convert retardations to seconds; conversion factor from lisasim-wave
-    // but armlength takes a time in years (when it does)
-
     // this recursive retardation procedure assumes smart TDI...
 
     double retardedtime = t;
 
-    if(ret3 != 0) retardedtime -= 3.1536E7 * lisa->armlength(ret3, 3.17098E-8 * retardedtime);
-    if(ret2 != 0) retardedtime -= 3.1536E7 * lisa->armlength(ret2, 3.17098E-8 * retardedtime);    
-    if(ret1 != 0) retardedtime -= 3.1536E7 * lisa->armlength(ret1, 3.17098E-8 * retardedtime);
+    if(ret3 != 0) retardedtime -= lisa->armlength(ret3,retardedtime);
+    if(ret2 != 0) retardedtime -= lisa->armlength(ret2,retardedtime);    
+    if(ret1 != 0) retardedtime -= lisa->armlength(ret1,retardedtime);
 
     if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2)) {
         // cyclic combination
 
         // if introducing error in the determination of the armlengths, it should not enter
-        // the following (physical) retardation of the laser noise
+        // the following (physical) retardation of the laser noise, so we use the phlisa object
 
-        double retardlaser = retardedtime - 3.1536E7 * phlisa->armlength(link,3.17098E-8 * retardedtime);
+        double retardlaser = retardedtime - phlisa->armlength(link,retardedtime);
 
         return( (*cs[send])[retardlaser] - 2.0 * (*pm[recv])[retardedtime]  - (*c[recv])[retardedtime]  + 
                 (*shot[send][recv])[retardedtime] );
@@ -150,7 +146,7 @@ double TDInoise::y(int send, int slink, int recv, int ret1, int ret2, int ret3, 
 
         // ditto here
 
-        double retardlaser = retardedtime - 3.1536E7 * phlisa->armlength(-link,3.17098E-8 * retardedtime);
+        double retardlaser = retardedtime - phlisa->armlength(-link,retardedtime);
 
         return( (*c[send])[retardlaser]  + 2.0 * (*pms[recv])[retardedtime] - (*cs[recv])[retardedtime] +
                 (*shot[send][recv])[retardedtime] );
@@ -160,17 +156,15 @@ double TDInoise::y(int send, int slink, int recv, int ret1, int ret2, int ret3, 
 double TDInoise::z(int send, int slink, int recv, int ret1, int ret2, int ret3, int ret4, double t) {
     int link = abs(slink);
 
-    // need to convert retardations to seconds; conversion factor from lisasim-wave
-
     // this recursive retardation procedure assumes smart TDI...
     // (and the correct order in the retardation expressions)
 
     double retardedtime = t;
 
-    if(ret4 != 0) retardedtime -= 3.1536E7 * lisa->armlength(ret4,3.17098E-8 * retardedtime);
-    if(ret3 != 0) retardedtime -= 3.1536E7 * lisa->armlength(ret3,3.17098E-8 * retardedtime);
-    if(ret2 != 0) retardedtime -= 3.1536E7 * lisa->armlength(ret2,3.17098E-8 * retardedtime);    
-    if(ret1 != 0) retardedtime -= 3.1536E7 * lisa->armlength(ret1,3.17098E-8 * retardedtime);
+    if(ret4 != 0) retardedtime -= lisa->armlength(ret4,retardedtime);
+    if(ret3 != 0) retardedtime -= lisa->armlength(ret3,retardedtime);
+    if(ret2 != 0) retardedtime -= lisa->armlength(ret2,retardedtime);    
+    if(ret1 != 0) retardedtime -= lisa->armlength(ret1,retardedtime);
     
     if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2)) {
         // cyclic combination
@@ -183,233 +177,3 @@ double TDInoise::z(int send, int slink, int recv, int ret1, int ret2, int ret3, 
     }
 }
 
-// time in seconds is OK here
-
-double TDInoise::X(double t) {
-    return( y(1, 3, 2, 3, 2, 2, t) -
-            y(1, 2, 3, 2, 3, 3, t) +
-            y(2, 3, 1, 2, 2, 0, t) -
-            y(3, 2, 1, 3, 3, 0, t) +
-            y(1, 2, 3, 2, 0, 0, t) -
-            y(1, 3, 2, 3, 0, 0, t) + 
-            y(3, 2, 1, 0, 0, 0, t) -
-            y(2, 3, 1, 0, 0, 0, t) +
-    0.5 * (-z(3, 2, 1, 2, 2, 3, 3, t) +
-            z(3, 2, 1, 3, 3, 0, 0, t) +
-            z(3, 2, 1, 2, 2, 0, 0, t) -
-            z(3, 2, 1, 0, 0, 0, 0, t) ) +
-    0.5 * ( z(2, 3, 1, 2, 2, 3, 3, t) -
-            z(2, 3, 1, 3, 3, 0, 0, t) -
-            z(2, 3, 1, 2, 2, 0, 0, t) +
-            z(2, 3, 1, 0, 0, 0, 0, t) ) );
-}
-
-double TDInoise::Y(double t) {
-    return( y(2, 1, 3, 1, 3, 3, t) -
-            y(2, 3, 1, 3, 1, 1, t) +
-            y(3, 1, 2, 3, 3, 0, t) -
-            y(1, 3, 2, 1, 1, 0, t) +
-            y(2, 3, 1, 3, 0, 0, t) -
-            y(2, 1, 3, 1, 0, 0, t) + 
-            y(1, 3, 2, 0, 0, 0, t) -
-            y(3, 1, 2, 0, 0, 0, t) + 
-    0.5 * (-z(1, 3, 2, 3, 3, 1, 1, t) +
-            z(1, 3, 2, 1, 1, 0, 0, t) +
-            z(1, 3, 2, 3, 3, 0, 0, t) -
-            z(1, 3, 2, 0, 0, 0, 0, t) ) +
-    0.5 * ( z(3, 1, 2, 3, 3, 1, 1, t) -
-            z(3, 1, 2, 1, 1, 0, 0, t) -
-            z(3, 1, 2, 3, 3, 0, 0, t) +
-            z(3, 1, 2, 0, 0, 0, 0, t) ) );
-}
-
-double TDInoise::Z(double t) {
-    return( y(3, 2, 1, 2, 1, 1, t) -
-            y(3, 1, 2, 1, 2, 2, t) +
-            y(1, 2, 3, 1, 1, 0, t) -
-            y(2, 1, 3, 2, 2, 0, t) +
-            y(3, 1, 2, 1, 0, 0, t) -
-            y(3, 2, 1, 2, 0, 0, t) + 
-            y(2, 1, 3, 0, 0, 0, t) -
-            y(1, 2, 3, 0, 0, 0, t) +
-    0.5 * (-z(2, 1, 3, 1, 1, 2, 2, t) +
-            z(2, 1, 3, 2, 2, 0, 0, t) +
-            z(2, 1, 3, 1, 1, 0, 0, t) -
-            z(2, 1, 3, 0, 0, 0, 0, t) ) +
-    0.5 * ( z(1, 2, 3, 1, 1, 2, 2, t) -
-            z(1, 2, 3, 2, 2, 0, 0, t) -
-            z(1, 2, 3, 1, 1, 0, 0, t) +
-            z(1, 2, 3, 0, 0, 0, 0, t) ) );
-}
-
-double TDInoise::alpha(double t) {
-    return( y(3, 2, 1, 0, 0, 0, t) -
-            y(2, 3, 1, 0, 0, 0, t) +
-            y(2, 1, 3, 2, 0, 0, t) -
-            y(3, 1, 2, 3, 0, 0, t) +
-            y(1, 3, 2, 1, 2, 0, t) -
-            y(1, 2, 3, 1, 3, 0, t) -
-    0.5 * ( z(2, 1, 3, 2, 0, 0, 0, t) +
-            z(2, 1, 3, 1, 3, 0, 0, t) +
-            z(3, 2, 1, 0, 0, 0, 0, t) +
-            z(3, 2, 1, 1, 2, 3, 0, t) +
-            z(1, 3, 2, 3, 0, 0, 0, t) +
-            z(1, 3, 2, 1, 2, 0, 0, t) ) +
-    0.5 * ( z(1, 2, 3, 2, 0, 0, 0, t) +
-            z(1, 2, 3, 1, 3, 0, 0, t) +
-            z(2, 3, 1, 0, 0, 0, 0, t) +
-            z(2, 3, 1, 1, 2, 3, 0, t) + 
-            z(3, 1, 2, 3, 0, 0, 0, t) +
-            z(3, 1, 2, 1, 2, 0, 0, t) ) );
-}
-
-double TDInoise::beta(double t) {
-    return( y(1, 3, 2, 0, 0, 0, t) -
-            y(3, 1, 2, 0, 0, 0, t) +
-            y(3, 2, 1, 3, 0, 0, t) -
-            y(1, 2, 3, 1, 0, 0, t) +
-            y(2, 1, 3, 2, 3, 0, t) -
-            y(2, 3, 1, 2, 1, 0, t) -
-    0.5 * ( z(3, 2, 1, 3, 0, 0, 0, t) +
-            z(3, 2, 1, 2, 1, 0, 0, t) +
-            z(1, 3, 2, 0, 0, 0, 0, t) +
-            z(1, 3, 2, 2, 3, 1, 0, t) +
-            z(2, 1, 3, 1, 0, 0, 0, t) +
-            z(2, 1, 3, 2, 3, 0, 0, t) ) +
-    0.5 * ( z(2, 3, 1, 3, 0, 0, 0, t) +
-            z(2, 3, 1, 2, 1, 0, 0, t) +
-            z(3, 1, 2, 0, 0, 0, 0, t) +
-            z(3, 1, 2, 2, 3, 1, 0, t) + 
-            z(1, 2, 3, 1, 0, 0, 0, t) +
-            z(1, 2, 3, 2, 3, 0, 0, t) ) );
-}
-
-double TDInoise::gamma(double t) {
-    return( y(2, 1, 3, 0, 0, 0, t) -
-            y(1, 2, 3, 0, 0, 0, t) +
-            y(1, 3, 2, 1, 0, 0, t) -
-            y(2, 3, 1, 2, 0, 0, t) +
-            y(3, 2, 1, 3, 1, 0, t) -
-            y(3, 1, 2, 3, 2, 0, t) -
-    0.5 * ( z(1, 3, 2, 1, 0, 0, 0, t) +
-            z(1, 3, 2, 3, 2, 0, 0, t) +
-            z(2, 1, 3, 0, 0, 0, 0, t) +
-            z(2, 1, 3, 3, 1, 2, 0, t) +
-            z(3, 2, 1, 2, 0, 0, 0, t) +
-            z(3, 2, 1, 3, 1, 0, 0, t) ) +
-    0.5 * ( z(3, 1, 2, 1, 0, 0, 0, t) +
-            z(3, 1, 2, 3, 2, 0, 0, t) +
-            z(1, 2, 3, 0, 0, 0, 0, t) +
-            z(1, 2, 3, 3, 1, 2, 0, t) + 
-            z(2, 3, 1, 2, 0, 0, 0, t) +
-            z(2, 3, 1, 3, 1, 0, 0, t) ) );
-}
-
-double TDInoise::zeta(double t) {
-    return( y(1, 3, 2, 2, 0, 0, t) -
-            y(1, 2, 3, 3, 0, 0, t) +
-            y(2, 1, 3, 3, 0, 0, t) -
-            y(2, 3, 1, 1, 0, 0, t) +
-            y(3, 2, 1, 1, 0, 0, t) -
-            y(3, 1, 2, 2, 0, 0, t) +
-    0.5 * (-z(2, 1, 3, 2, 1, 0, 0, t) +
-            z(1, 2, 3, 1, 2, 0, 0, t) -
-            z(3, 2, 1, 2, 3, 0, 0, t) +
-            z(2, 3, 1, 2, 3, 0, 0, t) -
-            z(1, 3, 2, 1, 3, 0, 0, t) +
-            z(3, 1, 2, 1, 3, 0, 0, t) ) +
-    0.5 * (-z(1, 3, 2, 2, 0, 0, 0, t) +
-            z(3, 1, 2, 2, 0, 0, 0, t) -
-            z(2, 1, 3, 3, 0, 0, 0, t) +
-            z(1, 2, 3, 3, 0, 0, 0, t) -
-            z(3, 2, 1, 1, 0, 0, 0, t) +
-            z(2, 3, 1, 1, 0, 0, 0, t) ) );
-}
-
-double TDInoise::P(double t) {
-    return( y(1, 3, 2, 2, 0, 0, t) -
-            y(1, 2, 3, 3, 0, 0, t) - 
-            y(3, 1, 2, 2, 0, 0, t) +
-            y(2, 1, 3, 3, 0, 0, t) +
-            y(3, 1, 2, 1, 3, 0, t) -
-            y(2, 1, 3, 1, 2, 0, t) + 
-            y(1, 2, 3, 3, 1, 1, t) -
-            y(1, 3, 2, 2, 1, 1, t) +
-    0.5 * (-z(3, 2, 1, 2, 3, 0, 0, t) +
-            z(3, 2, 1, 1, 1, 2, 3, t) + 
-            z(2, 3, 1, 2, 3, 0, 0, t) -
-            z(2, 3, 1, 1, 1, 2, 3, t) ) +
-    0.5 * (-z(1, 3, 2, 2, 0, 0, 0, t) + 
-            z(1, 3, 2, 1, 1, 2, 0, t) +
-            z(3, 1, 2, 2, 0, 0, 0, t) -
-            z(3, 1, 2, 1, 1, 2, 0, t) ) +
-    0.5 * (-z(2, 1, 3, 3, 0, 0, 0, t) +
-            z(2, 1, 3, 1, 1, 3, 0, t) +
-            z(1, 2, 3, 3, 0, 0, 0, t) -
-            z(1, 2, 3, 1, 1, 3, 0, t) ) );
-}
-
-double TDInoise::E(double t) {
-    return( y(3, 1, 2, 2, 1, 0, t) -
-            y(2, 1, 3, 3, 1, 0, t) -
-            y(3, 1, 2, 3, 0, 0, t) +
-            y(2, 1, 3, 2, 0, 0, t) +
-            y(2, 3, 1, 1, 1, 0, t) -
-            y(3, 2, 1, 1, 1, 0, t) -
-            y(2, 3, 1, 0, 0, 0, t) +
-            y(3, 2, 1, 0, 0, 0, t) -
-    0.5 * ( z(2, 1, 3, 2, 0, 0, 0, t) +
-            z(3, 2, 1, 0, 0, 0, 0, t) +
-            z(1, 3, 2, 3, 0, 0, 0, t) -
-            z(2, 1, 3, 1, 1, 2, 0, t) +
-            z(1, 2, 3, 1, 1, 2, 0, t) -
-            z(1, 3, 2, 1, 1, 3, 0, t) ) +
-    0.5 * ( z(1, 2, 3, 2, 0, 0, 0, t) +
-            z(2, 3, 1, 0, 0, 0, 0, t) +
-            z(3, 1, 2, 3, 0, 0, 0, t) -
-            z(3, 1, 2, 1, 1, 3, 0, t) +
-            z(3, 2, 1, 1, 1, 0, 0, t) -
-            z(2, 3, 1, 1, 1, 0, 0, t) ) );
-};
-
-double TDInoise::U(double t) {
-    return( y(3, 2, 1, 1, 1, 3, t) -
-            y(3, 2, 1, 3, 0, 0, t) -
-            y(3, 1, 2, 1, 2, 3, t) +
-            y(2, 1, 3, 1, 0, 0, t) -
-            y(2, 1, 3, 2, 3, 0, t) +
-            y(1, 3, 2, 1, 1, 0, t) -
-            y(1, 3, 2, 0, 0, 0, t) +
-            y(3, 1, 2, 0, 0, 0, t) -
-    0.5 * ( z(2, 3, 1, 3, 0, 0, 0, t) +
-            z(3, 1, 2, 0, 0, 0, 0, t) +
-            z(1, 2, 3, 2, 3, 0, 0, t) +
-            z(1, 3, 2, 1, 1, 0, 0, t) +
-            z(2, 1, 3, 1, 1, 2, 3, t) +
-            z(3, 2, 1, 1, 1, 3, 0, t) ) +
-    0.5 * ( z(3, 2, 1, 3, 0, 0, 0, t) +
-            z(1, 3, 2, 0, 0, 0, 0, t) +
-            z(2, 1, 3, 2, 3, 0, 0, t) +
-            z(3, 1, 2, 1, 1, 0, 0, t) +
-            z(1, 2, 3, 1, 1, 2, 3, t) +
-            z(2, 3, 1, 1, 1, 3, 0, t) ) );
-};
-
-double TDInoise::Xm(double t) {
-    return( y(1,-3, 2, 3, 2,-2, t) -
-            y(1, 2, 3,-2,-3, 3, t) +
-            y(2, 3, 1, 2,-2, 0, t) -
-            y(3,-2, 1,-3, 3, 0, t) +
-            y(1, 2, 3,-2, 0, 0, t) -
-            y(1,-3, 2, 3, 0, 0, t) + 
-            y(3,-2, 1, 0, 0, 0, t) -
-            y(2, 3, 1, 0, 0, 0, t) +
-    0.5 * (-z(3,-2, 1, 2,-2,-3, 3, t) +
-            z(3,-2, 1,-3, 3, 0, 0, t) +
-            z(3,-2, 1, 2,-2, 0, 0, t) -
-            z(3,-2, 1, 0, 0, 0, 0, t) ) +
-    0.5 * ( z(2, 3, 1, 2,-2,-3, 3, t) -
-            z(2, 3, 1,-3, 3, 0, 0, t) -
-            z(2, 3, 1, 2,-2, 0, 0, t) +
-            z(2, 3, 1, 0, 0, 0, 0, t) ) );
-}

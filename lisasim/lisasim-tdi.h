@@ -6,39 +6,29 @@
 
 class TDI {
     public:
-        LISA *lisa;
-        Wave *wave;
+        TDI() {};
+	virtual ~TDI() {};
 
-        TDI(LISA *mylisa, Wave *mywave) {
-            lisa = mylisa;
-            wave = mywave;
-        }
+	virtual void reset() {};
 
-        double M(double t);
-        double N(double t);
-        double O(double t);
+        virtual double X(double t);
+        virtual double Y(double t);
+        virtual double Z(double t);
     
-        double X(double t);
-        double Y(double t);
-        double Z(double t);
+        virtual double alpha(double t);
+        virtual double beta(double t);
+        virtual double gamma(double t);
     
-        double alpha(double t);
-        double beta(double t);
-        double gamma(double t);
-    
-        double zeta(double t);
+        virtual double zeta(double t);
 
-	double P(double t);
-	double E(double t);
-	double U(double t);
+	virtual double P(double t);
+	virtual double E(double t);
+	virtual double U(double t);
 
-    private:
-	double psi(int arm, double t, double twave);
-//        double psi(int arm, double t);
-    
-        double retard(int craft, double t);
-    
-        double y(int send, int link, int recv, int ret1, int ret2, int ret3, double t);
+	virtual double Xm(double t);
+
+        virtual double y(int send, int link, int recv, int ret1, int ret2, int ret3, double t);
+        virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, double t);
 };
 
 #endif /* _LISASIM_TDI_H_ */

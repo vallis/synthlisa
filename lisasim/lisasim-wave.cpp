@@ -1,3 +1,4 @@
+#include "lisasim-tens.h"
 #include "lisasim-wave.h"
 
 Wave::Wave(double d, double a, double p) {
@@ -12,7 +13,6 @@ Wave::Wave(double d, double a, double p) {
     k[0] = kArray[0];
     k[1] = kArray[1];
     k[2] = kArray[2];
-
 
     Tensor stdpp, stdpc;
     
@@ -33,7 +33,6 @@ Wave::Wave(double d, double a, double p) {
     
     tmp.setproduct(stdpc,At);
     pc.setproduct(A,tmp);      
-
 
     for(int i=0;i<3;i++) {
       for(int j=0;j<3;j++) {
@@ -70,13 +69,11 @@ void Wave::putwave(double **h, double t) {
   }
 }
 
-// full constructor for SimpleBinary; needs frequency in Hertz
+// full constructor for SimpleBinary; takes frequency in Hertz
 // d and a are (notwithstanding their name, which should be changed) heliocentric ecliptic latitude and longitude
 
 SimpleBinary::SimpleBinary(double freq, double initphi, double inc, double amp, double d, double a, double p) : Wave(d,a,p) {
-    // convert frequency from Hertz to 1/Year
-
-    f = 3.1536E7 * freq;
+    f = freq;
 
     phi0 = initphi;
 
@@ -105,9 +102,7 @@ double SimpleBinary::hc(double t) {
 // originally written to compare with John's fortran code
 
 SimpleMonochromatic::SimpleMonochromatic(double freq, double phi, double gamma, double amp, double d, double a, double p) : Wave(d,a,p) {
-    // convert frequency from Hertz to 1/Year
-
-    f = 3.1536E7 * freq;
+    f = freq;
 
     ph = phi;
     gm = gamma;

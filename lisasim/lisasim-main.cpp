@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
     int diff = 0, mono = 0, equat = 0, eclip = 0, fast=0, SkipCalc=0;
     double deltat = 0.0;
     char *filename = "tdi.txt";
-    TDI *mytdi=0;
+    TDIsignal *mytdi=0;
     TDIfast *mytdifast=0;
     
 
@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
     CircularRotating mylisa(1.50*M_PI,0.0,1.0);
 
     if (fast == 0) {
-      mytdi = new TDI(&mylisa,mywave);
+      mytdi = new TDIsignal(&mylisa,mywave);
     } else {
       mytdifast = new TDIfast(&mylisa,mywave, srate, samples);
       mytdifast->CacheX();

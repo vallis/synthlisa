@@ -4,6 +4,40 @@
 #include "lisasim-tens.h"
 #include "lisasim-noise.h"
 
+// ---- define file-wide numerical constants
+
+// seconds per year; this is just 60x60x24x365 (it differs from the LISA Simulator)
+
+const double secondsperyear = 31536000.0;
+const double yearspersecond = 3.1709791983764586e-8;
+
+// LISA's angular velocity
+
+const double Omega = 2.0 * M_PI * yearspersecond;
+
+// orbital radius of the guiding center (yrs)
+// LISA simulator has Rgc = 1.49597870660e11 m = 499.005 s
+ 
+static const double Rgc = 499.004;
+
+// mean arm length of the LISA detector (yrs)
+// LISA simulator has L = 5.0e9 m = 16.6782 s;
+
+static const double Lstd = 16.6782;
+
+// eccentricity of the LISA spacecraft orbits (for MontanaEccentric)
+// LISA simulator has L/(2.0*sqrt(3.0)*Rgc)
+// with L = 5.0e9, equal to 0.00964838
+
+static const double ecc = 0.00964838;
+
+// fit parameter for annual modulation of armlengths (1/sec, from armlength.nb)
+// this might need fine tuning
+
+const double delmodconst = 0.17647;
+
+// generic LISA class
+
 class LISA {
     public:
 
@@ -46,47 +80,44 @@ class LISA {
 
 class OriginalLISA : public LISA {
     protected:
-
-    double L[4];
-    
-    Vector initn[4];
-    Vector initp[4];
+        double L[4];
+        
+        Vector initn[4];
+        Vector initp[4];
         
     public:
+        // accept the armlength in seconds
     
-    // accept the armlength in seconds
-
-    OriginalLISA(double arm1,double arm2,double arm3);
-
-    virtual void putn(Vector &n, int arm, double t);
-    virtual void putp(Vector &p, int craft, double t);
-
-    virtual double armlength(int arm, double t);
+        OriginalLISA(double arm1,double arm2,double arm3);
+    
+        virtual void putn(Vector &n, int arm, double t);
+        virtual void putp(Vector &p, int craft, double t);
+    
+        virtual double armlength(int arm, double t);
 };
 
 // for the moment, use the following class only for TDInoise
 
 class ModifiedLISA : public OriginalLISA {
+    private:
+        double sagnac[4];
+        double Lc[4], Lac[4];
+        
     public:
+        // accept the armlength in seconds
     
-    double sagnac[4];
-    double Lc[4], Lac[4];
-
-    // accept the armlength in seconds
-
-    ModifiedLISA(double arm1,double arm2,double arm3);
-
-    void putn(Vector &n, int arm, double t);
-    void putp(Vector &p, int craft, double t);
-
-    double armlength(int arm, double t);
+        ModifiedLISA(double arm1,double arm2,double arm3);
+    
+        void putn(Vector &n, int arm, double t);
+        void putp(Vector &p, int craft, double t);
+    
+        double armlength(int arm, double t);
 };
 
 // The following classes model the geometry of LISA and can be used also for "signal" TDI
 
 class CircularRotating : public LISA {
-    public:
-    
+    private:
         double scriptl;
         double R;
         double L;
@@ -94,7 +125,10 @@ class CircularRotating : public LISA {
         double eta0;
         double xi0;
 
-        // Trick: we use 1-3 indexing for LISA positions and vectors, so we need to allocate 4
+        // Trick: we use 1-3 indexing for LISA positions and vectors, so we need to allocate 4 of everything
+
+        double delmodamp;
+        double delmodph[4];
 
         Vector initn[4];
         Vector initp[4];
@@ -103,35 +137,26 @@ class CircularRotating : public LISA {
         Vector center;
         Tensor rotation;
 
-        CircularRotating(double eta0 = 0.0,double xi0 = 0.0,double sw = 1.0);
-        
         void settime(double t);
 
+    public:
+        CircularRotating(double eta0 = 0.0,double xi0 = 0.0,double sw = 1.0);
+        
         void putn(Vector &n,int arm,double t);
         void putp(Vector &p,int craft,double t);
         
         double armlength(int arm, double t);
+        double genarmlength(int arms, double t);
 };
 
+// all the static constants below should have file scope and be used throughout
+
 class MontanaEccentric : public LISA {
-    public:
-    
-        // orbital radius of the guiding center (yrs)
-        // LISA simulator has Rgc = 1.49597870660e11 m
+    private:
+        // LISA armlength 
 
-        static const double Rgc = 0.0000158233;
+        double L;
 
-        // mean arm length of the LISA detector (yrs)
-        // LISA simulator has L = 5.0e9 m
-
-        static const double L = 5.288624035993024E-7;
-
-        // eccentricity of the LISA spacecraft orbits
-        // LISA simulator has L/(2.0*sqrt(3.0)*Rgc)
-        // with L = 5.0e9, equal to 0.00964837
-
-        static const double ecc = 0.00964839;
-        
         // initial azimuthal position of the guiding center
     
         double kappa;
@@ -145,14 +170,12 @@ class MontanaEccentric : public LISA {
         Vector cachep[4];
         double cachetime[4];
         
-        // public methods (perhaps not all should be)
-        
-        MontanaEccentric(double kappa0 = 0.0,double lambda0 = 0.0);
-
         void settime(int craft,double t);
         
+    public:
+        MontanaEccentric(double kappa0 = 0.0,double lambda0 = 0.0);
+        
         void putn(Vector &n,int arm,double t);
-
         void putp(Vector &p,int craft,double t);
 };
 

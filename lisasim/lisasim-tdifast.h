@@ -14,6 +14,7 @@ class TDIfast : public TDI {
         double N(double t);
         double O(double t);
 	*/
+
         double Xfast(int t);
         double Yfast(int t);
         double Zfast(int t);

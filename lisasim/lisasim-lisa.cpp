@@ -31,11 +31,9 @@ double LISA::armlength(int arm, double t) {
 // --- OriginalLISA LISA class ---------------------------------------------------------
 
 OriginalLISA::OriginalLISA(double L1,double L2,double L3) {
-    // convert from seconds to years
+    // take armlengths in seconds (do not convert to years)
 
-    L[1] = 3.17098E-8 * L1;
-    L[2] = 3.17098E-8 * L2;
-    L[3] = 3.17098E-8 * L3;
+    L[1] = L1; L[2] = L2; L[3] = L3;
     
     // construct the p vectors with the required lengths;
                 
@@ -94,9 +92,7 @@ double OriginalLISA::armlength(int arm, double t) {
 // --- ModifiedLISA LISA class ---------------------------------------------------------
 
 ModifiedLISA::ModifiedLISA(double arm1,double arm2,double arm3) : OriginalLISA(arm1,arm2,arm3) {
-    // computing everything in years...
-
-    double Omega = 2.0 * M_PI;
+    // compute everything in seconds
 
     for(int i=1;i<4;i++) {
         int crafta = (i + 1 < 4) ? i + 1 : i - 2;
@@ -111,9 +107,6 @@ ModifiedLISA::ModifiedLISA(double arm1,double arm2,double arm3) : OriginalLISA(a
 
         Lc[i]  = L[i] + sagnac[i];
         Lac[i] = L[i] - sagnac[i];
-
-//      cout.precision(8);
-//      cout << "Light times on arm " << i << ": " << Lc[i] / 3.17098E-8 << " " << Lac[i] / 3.17098E-8 << endl;
     }
 }
 
@@ -153,12 +146,11 @@ void ModifiedLISA::putn(Vector &n,int arms,double t) {
 }
 
 // implement simple LISA rotation in xy plane with period of a year
+// take input time in seconds
 
 void ModifiedLISA::putp(Vector &p,int craft,double t) {
-    const double twopi = 2.0*M_PI;
-    
-    p[0] = cos(twopi*t) * initp[craft][0] - sin(twopi*t) * initp[craft][1];
-    p[1] = sin(twopi*t) * initp[craft][0] + cos(twopi*t) * initp[craft][1];
+    p[0] = cos(Omega*t) * initp[craft][0] - sin(Omega*t) * initp[craft][1];
+    p[1] = sin(Omega*t) * initp[craft][0] + cos(Omega*t) * initp[craft][1];
     p[2] = initp[craft][2];
 }
 
@@ -171,16 +163,26 @@ double ModifiedLISA::armlength(int arm, double t) {
 
 // --- CircularRotating LISA class -----------------------------------------------------
 
-// full constructor; initialize positions and arm vectors; everything is measured in years
+// full constructor; initialize positions and arm vectors
+// measure everything in seconds
 // if the last argument is negative, switch 2 and 3; needed for coherence with the Montana simulator
 
 CircularRotating::CircularRotating(double e0, double x0, double sw) {
-    scriptl = 3.0533885108232977E-7;
-    R = 0.0000158233;
-    L = 5.288624035993024E-7;
+    // set distance from the Sun (s)
+
+    R = Rgc;
+
+    // set armlength (s), distance from guiding center (s)
+
+    L = Lstd;
+    scriptl = L / sqrt(3.0);
+
+    // set initial phases
 
     eta0 = e0;
     xi0 = x0;
+
+    // construct the arms
 
     initn[1][0] =  0.0; initn[1][1] = -1.0; initn[1][2] = 0.0;
     initn[2][0] = -cos(M_PI/6.0); initn[2][1] = sin(M_PI/6.0); initn[2][2] = 0.0;
@@ -189,6 +191,8 @@ CircularRotating::CircularRotating(double e0, double x0, double sw) {
     initp[1][0] = scriptl; initp[1][1] = 0.0; initp[1][2] = 0.0;
     initp[2][0] = scriptl * cos(2.*M_PI/3.0); initp[2][1] = -scriptl * sin(2.*M_PI/3.0); initp[2][2] = 0.0;
     initp[3][0] = scriptl * cos(4.*M_PI/3.0); initp[3][1] = -scriptl * sin(4.*M_PI/3.0); initp[3][2] = 0.0;
+
+    // switch the arms 2 and 3 if required; needed for comparison with Montana simulator
 
     if (sw < 0.0) {
         double tmp;
@@ -207,6 +211,25 @@ CircularRotating::CircularRotating(double e0, double x0, double sw) {
         }
     }
     
+    // set amplitude and phase of delay modulations
+    
+    delmodamp = delmodconst * R * (scriptl * scriptl) * Omega;
+    // delmodamp = 0.0;
+    
+    delmodph[1] = xi0;
+    delmodph[2] = xi0 + 4.*M_PI/3.0;
+    delmodph[3] = xi0 + 2.*M_PI/3.0;
+
+    if (sw < 0.0) {
+        double tmp;
+        
+        tmp = delmodph[2];
+        delmodph[2] = delmodph[3];
+        delmodph[3] = tmp;
+        
+        delmodamp = -delmodamp;
+    }
+
     settime(0);
 }
 
@@ -215,18 +238,17 @@ CircularRotating::CircularRotating(double e0, double x0, double sw) {
 
 void CircularRotating::settime(double t) {
     const double zeta = -M_PI/6.0;
-    const double twopi = 2.0*M_PI;
 
     // {eta -> Omega time + eta0, xi -> -Omega time + xi0}
     // {psi -> xi, asc -> eta, dec -> zeta}
-    // assume time measured in years 
+    // time is measured in seconds
     
-    rotation.seteuler(zeta,twopi*t+eta0,-twopi*t+xi0);
+    rotation.seteuler(zeta,Omega*t+eta0,-Omega*t+xi0);
     
     // R{Cos[Omega t + eta0], Sin[Omega t + eta0], 0}; leave center[2] = 0.0
     
-    center[0] = R * cos(twopi*t+eta0);
-    center[1] = R * sin(twopi*t+eta0);
+    center[0] = R * cos(Omega*t+eta0);
+    center[1] = R * sin(Omega*t+eta0);
 }
 
 // Return the unit vector along "arm" at time t in vector n
@@ -254,11 +276,73 @@ void CircularRotating::putp(Vector &p,int craft,double t) {
     p[1] += center[1];
 }
 
-// The length of arms is fixed to L for this model
-// It will work also with negative arm arguments
+// fit to armlength modulation from armlength.nb
 
 double CircularRotating::armlength(int arm, double t) {
-    return L;
+    if(arm > 0) {
+        return L + delmodamp * sin(Omega*t - delmodph[arm]);
+    } else {
+        return L - delmodamp * sin(Omega*t - delmodph[-arm]);
+    }
+}
+
+double CircularRotating::genarmlength(int arms, double t) {
+    int arm = abs(arms);
+
+    int crafta = (arm + 1 < 4) ? (arm + 1) : (arm - 2);
+    int craftb = (arm + 2 < 4) ? (arm + 2) : (arm - 1);
+
+    if(arms < 0) {
+        int swap = crafta;
+        crafta = craftb;
+        craftb = swap;
+    }
+
+    // this is consistent with pa(t) = pb(t-L(t;b->a)) + L(t;b->a) n
+    // for instance, p_1 = p_2 + n_3
+
+    Vector pa, pb, n;
+
+    putp(pa,crafta,t);
+
+    // implement a simple bisection search for the correct armlength
+    // use a 10% initial bracket
+
+    double newguess = L;
+    double hi = 1.10 * newguess, lo = 0.90 * newguess;
+
+    double guess;
+    
+    const double tol = 1e-6;
+
+    do {
+        guess = newguess;
+    
+        putp(pb,craftb,t-guess);
+
+        for(int i=0;i<3;i++)
+            n[i] = pa[i] - pb[i];
+
+        // compute the invariant relativistic distance between the events
+        // of emission and reception
+
+        double norm = sqrt(-guess*guess + n[0]*n[0] + n[1]*n[1] + n[2]*n[2]);
+
+        if(norm >= 0) {
+            // distance is spacelike; increase delay
+
+            lo = guess;
+        } else {
+            // distance is timelike; reduce delay
+        
+            hi = guess;
+        }
+        
+        newguess = 0.5 * (hi + lo);
+        
+    } while( fabs(newguess - guess) > tol );
+
+    return newguess;
 }
 
 // --- MontanaEccentric LISA class -----------------------------------------------------
@@ -267,6 +351,8 @@ double CircularRotating::armlength(int arm, double t) {
 // define the LISA Simulator kappa and lambda constants
 
 MontanaEccentric::MontanaEccentric(double k0, double l0) {
+    L = Lstd;
+
     kappa = k0;
     lambda = l0;
 
@@ -308,15 +394,14 @@ void MontanaEccentric::putn(Vector &n, int arm, double t) {
 // positions of spacecraft according to the LISA simulator
 
 void MontanaEccentric::settime(int craft, double t) {
-    const double twopi = 2.0*M_PI;
     const double sqecc = ecc*ecc;
     const double sqrt3 = sqrt(3.0);
 
-    // with respect to the Simulator, our time is already in years
-    // but the indexing of spacecraft is the same
+    // the indexing of spacecraft is the same with respect to the Simulator
+    // (if we do the switch in CircularRotating)
     
-    double alpha = twopi*t + kappa;
-    double beta = twopi*(craft-1)/3.0 + lambda;
+    double alpha = Omega*t + kappa;
+    double beta = 2.0*M_PI*(craft-1)/3.0 + lambda;
 
     cachep[craft][0] =   0.5 * Rgc * ecc * ( cos(2.0*alpha-beta) - 3.0*cos(beta) )
                        + 0.125 * Rgc * sqecc * ( 3.0*cos(3.0*alpha-2.0*beta) - 5.0*( 2.0*cos(alpha)+cos(alpha-2.0*beta) ) )
@@ -341,14 +426,12 @@ void MontanaEccentric::putp(Vector &p, int craft, double t) {
 
 // --- NoisyLISA class -----------------------------------------------------
 
-// for simplicity, the error on the arms is defined in seconds
+// the error on the arms is defined in seconds
 
 NoisyLISA::NoisyLISA(LISA *clean,double starm,double sdarm) {
     cleanlisa = clean;
     
-    // to estimate size of noisebuffer, take an armlength at time zero,
-    // and add 10%; need to convert from years to seconds (we use the factor from lisasim-tdi.cpp)
-    // ah, this might not work for OriginalLISA and strange geometries
+    // to estimate size of noisebuffer, take the largest armlength at time zero, and add 10%
 
     double arm1 = cleanlisa->armlength(1,0.0);
     double arm2 = cleanlisa->armlength(2,0.0);
@@ -357,7 +440,7 @@ NoisyLISA::NoisyLISA(LISA *clean,double starm,double sdarm) {
     double maxarm = arm1 > arm2 ? arm1 : arm2;
     maxarm = maxarm > arm3 ? maxarm : arm3;
 
-    double lighttime = 1.10 * (maxarm / 3.17098E-8);
+    double lighttime = 1.10 * maxarm;
 
     // create InterpolateNoise objects for the arm determination noises
     // we need triple retardations
@@ -386,11 +469,9 @@ void NoisyLISA::reset() {
     }    
 }
 
-// convert the error from seconds to years
-
 double NoisyLISA::armlength(int arm, double t) {
     if(arm > 0)
-        return(cleanlisa->armlength(arm,t) + (*uperror[arm])[t/3.17098E-8] * 3.17098E-8);
+        return(cleanlisa->armlength(arm,t) + (*uperror[arm])[t]);
     else
-        return(cleanlisa->armlength(arm,t) + (*downerror[-arm])[t/3.17098E-8] * 3.17098E-8);
+        return(cleanlisa->armlength(arm,t) + (*downerror[-arm])[t]);
 }

@@ -5,7 +5,6 @@
 
 class Wave {
     public:
-
         // position in the sky
 
         double dec, asc, pol;
@@ -20,12 +19,7 @@ class Wave {
         Tensor pp, pc;
 	double ppArray[9], pcArray[9];
 
-        // default constructor
-
         Wave(double d, double a, double p);
-
-        // default destructor; do I need this?
-
         virtual ~Wave() {};
 
         virtual double hp(double t) = 0;
@@ -36,8 +30,7 @@ class Wave {
 };
 
 class SimpleBinary : public Wave {
-    public:
-
+    private:
         // frequency, initial phase
 
         double f, phi0;
@@ -46,6 +39,7 @@ class SimpleBinary : public Wave {
 
         double i, a, ap, ac;
 
+    public:
         SimpleBinary(double freq, double initphi, double inc, double amp, double d, double a, double p);
 
         double hp(double t);
@@ -53,8 +47,7 @@ class SimpleBinary : public Wave {
 };
 
 class SimpleMonochromatic : public Wave {
-    public:
-
+    private:
         // frequency
 
         double f;
@@ -63,6 +56,7 @@ class SimpleMonochromatic : public Wave {
 
         double gm, ph, ap, ac;
 
+    public:
         SimpleMonochromatic(double freq, double phi, double gamma, double amp, double d, double a, double p);
 
         double hp(double t);
@@ -70,20 +64,18 @@ class SimpleMonochromatic : public Wave {
 };
 
 class InterpolateMemory : public Wave {
- private:
-  
-  double *hpbuffer, *hcbuffer;
+    private:
+        double *hpbuffer, *hcbuffer;
 
-  long maxsamples;
-  double sampletime;
-  double lkback;
+        long maxsamples;
+        double sampletime;
+        double lkback;
 
- public:
+    public:
+        InterpolateMemory(double *hpa, double *hca, long samples, double samplingtime, double lookback, double d, double a, double p);
 
-  InterpolateMemory(double *hpa, double *hca, long samples, double samplingtime, double lookback, double d, double a, double p);
-
-  double hp(double t);
-  double hc(double t);
+        double hp(double t);
+        double hc(double t);
 };
 
 #endif /* _LISASIM_WAVE_H_ */

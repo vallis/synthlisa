@@ -9,18 +9,18 @@ extern int idum;
 
 class RingNoise {
     public:
-    
         long buffersize;
         long earliest, latest;
     
         double *bufferx, *buffery;
     
+        void updatebuffer(long pos);
+
         RingNoise(long bs);
         virtual ~RingNoise();
         
         void reset();
         
-        void updatebuffer(long pos);
         double operator[](long pos);
     
         virtual double deviate();
@@ -31,17 +31,16 @@ class RingNoise {
 
 class DiffNoise : public RingNoise {
     public:
-
         DiffNoise(long bs);
 
         double filter(long pos);
 };
 
 class IntNoise : public RingNoise {
-    public:
-
+    private:
         double intconst;
-        
+
+    public:
         IntNoise(long bs, double ic);
         
         double filter(long pos);
@@ -50,8 +49,7 @@ class IntNoise : public RingNoise {
 // dimensioned interpolated noise
 
 class InterpolateNoise {
-    public:
-
+    private:
         RingNoise *buffernoise;
 
         // use time in seconds
@@ -66,6 +64,7 @@ class InterpolateNoise {
         
         double normalize;
 
+    public:
         InterpolateNoise(double st, double pbt, double sd, double ex);
         ~InterpolateNoise();
 
@@ -79,37 +78,34 @@ class InterpolateNoise {
 
 class GaussSample {
     public:
-
-    GaussSample *prev, *next;
-    
-    double time;
-    double value;
+        GaussSample *prev, *next;
+        
+        double time;
+        double value;
 };
 
 class ExpGaussNoise {
     private:
-
-    GaussSample **ptbuffer;
-    int buffersize;
-    int bufferlevel;
-
-    GaussSample *first, *last;
+        GaussSample **ptbuffer;
+        int buffersize;
+        int bufferlevel;
     
-    double samplingtime;
-    double lapsetime;
+        GaussSample *first, *last;
+        
+        double samplingtime;
+        double lapsetime;
+        
+        double lambda;
+        double normalize;
     
-    double lambda;
-    double normalize;
-
     public:
+        ExpGaussNoise(double samplinginterval, double lapseinterval, double foldingtime, double spectraldensity);
+        ~ExpGaussNoise();
     
-    ExpGaussNoise(double samplinginterval, double lapseinterval, double foldingtime, double spectraldensity);
-    ~ExpGaussNoise();
-
-    void reset();
-
-    double enoise(double time);
-    double operator[](double time);
+        void reset();
+    
+        double enoise(double time);
+        double operator[](double time);
 };
 
 #endif /* _LISASIM_NOISE_H_ */

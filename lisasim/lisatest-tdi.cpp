@@ -8,7 +8,7 @@
 // as computed by the LISA Simulator and by Synthetic LISA
 
 int main(int argc, char **argv) {
-    TDI *prova = new TDI(new CircularRotating(0.0,3.0*M_PI/2.0,-1.0),new SimpleBinary(0.00194545,0,1.60238,1.88392e-22,0.000796327,0,0));
+    TDIsignal *prova = new TDIsignal(new CircularRotating(0.0,3.0*M_PI/2.0,-1.0),new SimpleBinary(0.00194545,0,1.60238,1.88392e-22,0.000796327,0,0));
     
     cout << prova->X(0) << endl;
 
@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
     CircularRotating mylisa(0.0,3.0*M_PI/2.0,-1.0);    
     // MontanaEccentric mylisa(0.0,0.0);
     
-    TDI mytdi(&mylisa,&mybinary);
+    TDIsignal mytdi(&mylisa,&mybinary);
  
     // --- write to file
           
