@@ -15,13 +15,16 @@ void CheckError(bool value, char *file, int linenum) {
 }
 
 // double TDI::psi(int arm, double t) {
-double TDIfast::psi(Vector lisan, double twave) {
-  /*    Vector lisan;
+double TDIfast::psi(double lisanTemp[], double twave) {
+  Vector lisan;
     // lisa->putn(lisan,arm,t);  // Cache?
-    Check(Checkputn[arm]);
+  /*    Check(Checkputn[arm]);
     lisan = Storedputn[arm][0];  // Incorrect Testing
   */
-  
+  lisan[0] = lisanTemp[0];
+  lisan[1] = lisanTemp[1];
+  lisan[2] = lisanTemp[2];
+
     Tensor cwave;
     wave->putwave(cwave,twave);
     
@@ -76,30 +79,31 @@ TDIfast::TDIfast(LISA *mylisa, Wave *mywave, double mysrate, long mysamples):TDI
     Checkputp[i] = 0;
   }  
   
-  StoredRetardedTime = new double***[4];
+  StoredRetardedTime = new double*[4*4*4];
   CheckRetardedTime = new bool**[4];
-  StoredputnRet = new Vector*****[4];
+  //  StoredputnRet = new Vector*****[4];
+  StoredputnRet = new double**[2*4*4*4*4];
   CheckputnRet = new bool***[4];
   
   
 
   // i = ret1, j = ret2, k = ret3, l = link, (In all cases 0=subtract nothing, 1...3 = subtract armlength(1...3, tIndex))
   for (int i = 0; i < 4; i++) {
-    StoredRetardedTime[i] = new double**[4];
+    //    StoredRetardedTime[i] = new double**[4];
     CheckRetardedTime[i] = new bool*[4];
-    StoredputnRet[i] = new Vector****[4];
+    //StoredputnRet[i] = new Vector****[4];
     CheckputnRet[i] = new bool**[4];
     for (int j = 0; j < 4; j++) {
-      StoredRetardedTime[i][j] = new double*[4];
+      //StoredRetardedTime[i][j] = new double*[4];
       CheckRetardedTime[i][j] = new bool[4];
-      StoredputnRet[i][j] = new Vector***[4];
+      //StoredputnRet[i][j] = new Vector***[4];
       CheckputnRet[i][j] = new bool*[4];
       for (int k = 0; k < 4; k++) {
 	CheckRetardedTime[i][j][k] = 0;
-	StoredputnRet[i][j][k] = new Vector**[4];
+	//StoredputnRet[i][j][k] = new Vector**[4];
 	CheckputnRet[i][j][k] = new bool[4];
 	for (int l = 0; l < 4; l++){
-	  StoredputnRet[i][j][k][l] = new Vector*[2];
+	  //StoredputnRet[i][j][k][l] = new Vector*[2];
 	  //	  CheckputnRet[i][j][k][l] = new bool;
 	  CheckputnRet[i][j][k][l] = 0;
 	  
@@ -109,6 +113,16 @@ TDIfast::TDIfast(LISA *mylisa, Wave *mywave, double mysrate, long mysamples):TDI
   }
   
 }
+
+inline int SRTI(int i, int j, int k) {
+  return(k + 4*j + 16*i);
+}
+
+inline int SPNRI(int i, int j, int k, int l, int d) {
+  return(d + 2*l+ 2*4*k + 2*4*4*j + 2*4*4*4*i);
+}
+
+
 
 TDIfast::~TDIfast() {
   
@@ -137,31 +151,36 @@ TDIfast::~TDIfast() {
   delete [] Storedputp;
   delete [] Checkputp;
 
+  // i = ret1, j = ret2, k = ret3, l = link, (In all cases 0=subtract nothing, 1...3 = subtract armlength(1...3, tIndex))
   for (int i = 0; i < 4; i++) {
     for (int j = 0; j < 4; j++) {
       for (int k = 0; k < 4; k++) {
 	for (int l = 0; l < 4; l++){
 	  if (CheckputnRet[i][j][k][l]) {
-	    delete [] StoredputnRet[i][j][k][l][0];
-	    delete [] StoredputnRet[i][j][k][l][1];
+	    for (int tIndex = 0; tIndex <= samples; tIndex++){
+	      delete [] StoredputnRet[SPNRI(i,j,k,l,0)][tIndex];
+	      delete [] StoredputnRet[SPNRI(i,j,k,l,1)][tIndex];
+	    }
+	    delete [] StoredputnRet[SPNRI(i,j,k,l,0)];
+	    delete [] StoredputnRet[SPNRI(i,j,k,l,1)];
 	  }
-	  delete []  StoredputnRet[i][j][k][l];
+	  //delete []  StoredputnRet[i][j][k][l];
 	}
-	delete [] StoredputnRet[i][j][k];
+	//delete [] StoredputnRet[i][j][k];
 	delete [] CheckputnRet[i][j][k];
 	if (CheckRetardedTime[i][j][k]) {
-	  delete [] StoredRetardedTime[i][j][k];
+	  delete [] StoredRetardedTime[SRTI(i,j,k)];
 	}
       }
-      delete [] StoredputnRet[i][j];
+      //delete [] StoredputnRet[i][j];
       delete [] CheckputnRet[i][j];
-      delete [] StoredRetardedTime[i][j];
+      //      delete [] StoredRetardedTime[i][j];
       delete [] CheckRetardedTime[i][j];
       
     }
-    delete [] StoredputnRet[i];
+    //delete [] StoredputnRet[i];
     delete [] CheckputnRet[i];
-    delete [] StoredRetardedTime[i];
+    //delete [] StoredRetardedTime[i];
     delete [] CheckRetardedTime[i];
   }
   delete [] StoredputnRet;
@@ -201,12 +220,12 @@ int TDIfast::yc(int send, int link, int recv, int ret1, int ret2, int ret3) {
   }
 
   if (!CheckRetardedTime[ret1][ret2][ret3]) {
-    StoredRetardedTime[ret1][ret2][ret3] = new double[samples];
+    StoredRetardedTime[SRTI(ret1,ret2,ret3)] = new double[samples];
   }
 
   if (!CheckputnRet[ret1][ret2][ret3][link]) {
-    StoredputnRet[ret1][ret2][ret3][link][0] = new Vector[samples];
-    StoredputnRet[ret1][ret2][ret3][link][1] = new Vector[samples];
+    StoredputnRet[SPNRI(ret1,ret2,ret3,link,0)] = new double*[samples];
+    StoredputnRet[SPNRI(ret1,ret2,ret3,link,1)] = new double*[samples];
   }
     
   if ((!CheckRetardedTime[ret1][ret2][ret3]) || (!CheckputnRet[ret1][ret2][ret3][link])) {
@@ -219,12 +238,17 @@ int TDIfast::yc(int send, int link, int recv, int ret1, int ret2, int ret3) {
 	if(ret2) retardedtime -= Storedarmlength[ret2][tIndex];
 	if(ret3) retardedtime -= Storedarmlength[ret3][tIndex];
 	
-	StoredRetardedTime[ret1][ret2][ret3][tIndex] = retardedtime;
+	StoredRetardedTime[SRTI(ret1,ret2,ret3)][tIndex] = retardedtime;
       }
       
       if (!CheckputnRet[ret1][ret2][ret3][link]) {
-	lisa->putn(StoredputnRet[ret1][ret2][ret3][link][0][tIndex], link, StoredRetardedTime[ret1][ret2][ret3][tIndex]);
-	lisa->putn(StoredputnRet[ret1][ret2][ret3][link][1][tIndex], link, StoredRetardedTime[ret1][ret2][ret3][tIndex] - Storedarmlength[link][tIndex]);
+	Vector temp;
+	
+	StoredputnRet[SPNRI(ret1,ret2,ret3,link,0)][tIndex] = new double[3];
+	StoredputnRet[SPNRI(ret1,ret2,ret3,link,1)][tIndex] = new double[3];
+	
+	lisa->putn(StoredputnRet[SPNRI(ret1,ret2,ret3,link,0)][tIndex], link, StoredRetardedTime[SRTI(ret1,ret2,ret3)][tIndex]);
+	lisa->putn(StoredputnRet[SPNRI(ret1,ret2,ret3,link,1)][tIndex], link, StoredRetardedTime[SRTI(ret1,ret2,ret3)][tIndex] - Storedarmlength[link][tIndex]);
       }
 
     }
@@ -267,7 +291,7 @@ double TDIfast::y(int send, int link, int recv, int ret1, int ret2, int ret3, in
 #ifdef DEBUG    
   Check(CheckRetardedTime[ret1][ret2][ret3]);
 #endif 
-  retardedtime = StoredRetardedTime[ret1][ret2][ret3][tIndex];
+  retardedtime = StoredRetardedTime[SRTI(ret1,ret2,ret3)][tIndex];
   
   /*    if(ret1) Check(Checkarmlength[ret1]);
 	if(ret2) Check(Checkarmlength[ret2]);
@@ -300,8 +324,8 @@ double TDIfast::y(int send, int link, int recv, int ret1, int ret2, int ret3, in
     //        psi(link, retardedtime, retardedtime + retard(recv, tIndex)) ) / denom );
     //
 
-    return (( psi(StoredputnRet[ret1][ret2][ret3][link][1][tIndex], retardedtime + retardfast(send, tIndex) - Storedarmlength[link][tIndex]) -
-	      psi(StoredputnRet[ret1][ret2][ret3][link][0][tIndex], retardedtime + retardfast(recv, tIndex)) ) / denom );
+    return (( psi( StoredputnRet[SPNRI(ret1,ret2,ret3,link,1)][tIndex], retardedtime + retardfast(send, tIndex) - Storedarmlength[link][tIndex]) -
+	      psi( StoredputnRet[SPNRI(ret1,ret2,ret3,link,0)][tIndex], retardedtime + retardfast(recv, tIndex)) ) / denom );
     
 }
 

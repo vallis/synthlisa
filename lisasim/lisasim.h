@@ -98,6 +98,21 @@ class LISA {
         virtual void putn(Vector &n, int arm, double t) = 0;
         virtual void putp(Vector &p, int craft, double t) = 0;
 
+        virtual void putn(double n[], int arm, double t){
+	  Vector temp;
+	  putn(temp, arm, t);
+	  n[0] = temp[0];
+	  n[1] = temp[1];
+	  n[2] = temp[2];
+	}
+        virtual void putp(double p[], int craft, double t){
+	  Vector temp;
+	  putp(temp, craft, t);
+	  p[0] = temp[0];
+	  p[1] = temp[1];
+	  p[2] = temp[2];
+	}
+	  
         virtual double armlength(int arm, double t);
 };
 
@@ -241,7 +256,8 @@ class TDIfast : public TDI {
 	int samples;
 	double srate; // Stored in years
 
-	double psi(Vector lisan, double twave);
+	//	double psi(Vector lisan, double twave);
+	double psi(double lisan[], double twave);
 	//        double psi(int arm, double t, double twave);
 	//        double psi(int arm, double t);
     
@@ -259,9 +275,10 @@ class TDIfast : public TDI {
 	Vector **Storedputp;
 	bool *Checkputp;
 	
-	double ****StoredRetardedTime;
+	double **StoredRetardedTime;
 	bool ***CheckRetardedTime;
-	Vector ******StoredputnRet;
+	//Vector ******StoredputnRet;
+	double ***StoredputnRet;
 	bool ****CheckputnRet;
 
 	
