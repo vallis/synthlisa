@@ -82,4 +82,42 @@ class InterpolateMemory : public Wave {
         double hc(double t);
 };
 
+#include <Python.h>
+
+class PyWave : public Wave {
+ private:
+    PyObject *hpfunc, *hcfunc;
+
+ public:
+    PyWave(PyObject *hpf, PyObject *hcf, double d, double a, double p)
+	: Wave(d,a,p), hpfunc(hpf), hcfunc(hcf) {};
+    virtual ~PyWave() {};
+
+    double hp(double t) {
+	PyObject *arglist, *result;
+
+	double dres = 0.0;
+   
+	arglist = Py_BuildValue("(d)",t);             // Build argument list
+	result = PyEval_CallObject(hpfunc,arglist);  // Call Python
+	Py_DECREF(arglist);                           // Trash arglist
+	if (result) dres = PyFloat_AsDouble(result);  // If no errors, return double
+	Py_XDECREF(result);                           // Trash result
+	return dres;
+    }
+
+    double hc(double t) {
+	PyObject *arglist, *result;
+
+	double dres = 0.0;
+   
+	arglist = Py_BuildValue("(d)",t);             // Build argument list
+	result = PyEval_CallObject(hcfunc,arglist);  // Call Python
+	Py_DECREF(arglist);                           // Trash arglist
+	if (result) dres = PyFloat_AsDouble(result);  // If no errors, return double
+	Py_XDECREF(result);                           // Trash result
+	return dres;
+    }
+};
+
 #endif /* _LISASIM_WAVE_H_ */
