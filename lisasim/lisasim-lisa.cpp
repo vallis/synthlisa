@@ -102,6 +102,37 @@ double LISA::armlength(int arms, double t) {
     return newguess;
 }
 
+void LISA::newretardtime(double t) {
+    it = t;
+    rt = t;
+	
+    trb = 0.0;
+    tra = 0.0;
+}
+    
+double LISA::retardedtime() {
+    return rt;
+};
+
+void LISA::retard(int ret) {
+    if (ret != 0) {
+	trb += armlengthbaseline(ret,rt);  
+	tra += armlengthaccurate(ret,rt);
+
+	rt = (it - trb) - tra;
+    }
+};
+
+void LISA::retard(LISA *anotherlisa, int ret) {
+    if (ret != 0) {
+	trb += anotherlisa->armlengthbaseline(ret,rt);  
+	tra += anotherlisa->armlengthaccurate(ret,rt);
+
+	rt = (it - trb) - tra;
+    }
+}
+
+
 // --- OriginalLISA LISA class ---------------------------------------------------------
 
 OriginalLISA::OriginalLISA(double L1,double L2,double L3) {
@@ -488,7 +519,7 @@ NoisyLISA::NoisyLISA(LISA *clean,double starm,double sdarm) {
     // create InterpolateNoise objects for the arm determination noises
     // we need triple retardations (septuple for 2nd-generation TDI)
 
-    double pbtarm = 7.0 * lighttime;
+    double pbtarm = 8.0 * lighttime;
 
     // we use plain uncorrelated white noise, for the moment
 
