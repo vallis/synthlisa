@@ -3,6 +3,10 @@
 
 #include "lisasim-tens.h"
 
+// Note that for historical reasons, the ecliptic latitude is denoted "dec"
+// and the ecliptic longitude (from the vernal point) "asc". This should be changed
+// in a near future
+
 class Wave {
     public:
         // position in the sky
