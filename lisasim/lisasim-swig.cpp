@@ -12,20 +12,28 @@ void printp(LISA *lisa,double t)
 {
     Vector p;
 
+    printf("%f ",t);
+
     for(int i=1;i<4;i++) {
 	lisa->putp(p,i,t);
-	printf("%d(%f): %f %f %f\n",i,t,p[0],p[1],p[2]);
+	printf("%f %f %f ",p[0],p[1],p[2]);
     }
+
+    printf("\n");
 }
 
 void printn(LISA *lisa,double t)
 {
-    Vector n;
+    Vector p;
+
+    printf("%f ",t);
 
     for(int i=1;i<4;i++) {
-	lisa->putn(n,i,t);
-	printf("%d(%f): %f %f %f\n",i,t,n[0],n[1],n[2]);
+	lisa->putn(p,i,t);
+	printf("%f %f %f ",p[0],p[1],p[2]);
     }
+
+    printf("\n");
 }
 
 void printw(Wave *wave,double t)
