@@ -1,6 +1,11 @@
 #include "lisasim-tens.h"
 #include "lisasim-wave.h"
 
+#include <iostream>
+using namespace std;
+
+#include <math.h>
+
 Wave::Wave(double d, double a, double p) {
     dec = d;
     asc = a;
