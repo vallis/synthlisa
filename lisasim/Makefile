@@ -35,3 +35,6 @@ lisasim-swig_wrap.o: lisasim-swig_wrap.cxx
 swig: $(OFILES) lisasim-swig.o lisasim-swig_wrap.o
 	$(LDSHARED) $(OFILES) lisasim-swig.o lisasim-swig_wrap.o -lstdc++ -L$(PYTHON_LIB) -o _lisaswig$(SO)
 	cp lisaswig.py lisaswig.pyc _lisaswig.so python/.
+
+lisatest-tdi: $(OFILES) lisatest-tdi.o
+	g++ $(OFILES) lisatest-tdi.o -o lisatest-tdi
