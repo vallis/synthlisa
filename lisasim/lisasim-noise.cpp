@@ -1,81 +1,18 @@
 #include "lisasim-noise.h"
 
-#include "nr.h"
+#include <iostream>
+using namespace std;
 
 #include <cmath>
 #include <stdlib.h>
 
 #include <float.h>
 
-// --- uniform random number generator --------------------------------------------------
+// from contrib-source/GSL-1.4
+#include "gsl_rng.h"
 
-// from numerical recipes is C++:
-// "Minimal" random number generator of Park and Miller with Bays-Durham shuffle and added
-// safeguards. Returns a uniform random deviate between 0.0 and 1.0 (exclusive of the endpoint
-// values). Call with idum a negative integer to initialize; thereafter, do not alter idum between
-// successive deviates in a sequence. RNMX should approximate the largest floating value that is
-// less than 1.
-
-// modified by changing idum to a global variable
-
-int idum = 0;
-
-DP ran1()
-{
-        const int IA=16807,IM=2147483647,IQ=127773,IR=2836,NTAB=32;
-        const int NDIV=(1+(IM-1)/NTAB);
-        const DP EPS=3.0e-16,AM=1.0/IM,RNMX=(1.0-EPS);
-        static int iy=0;
-        static Vec_INT iv(NTAB);
-        int j,k;
-        DP temp;
-
-        if (idum <= 0 || !iy) {
-                if (-idum < 1) idum=1;
-                else idum = -idum;
-                for (j=NTAB+7;j>=0;j--) {
-                        k=idum/IQ;
-                        idum=IA*(idum-k*IQ)-IR*k;
-                        if (idum < 0) idum += IM;
-                        if (j < NTAB) iv[j] = idum;
-                }
-                iy=iv[0];
-        }
-        k=idum/IQ;
-        idum=IA*(idum-k*IQ)-IR*k;
-        if (idum < 0) idum += IM;
-        j=iy/NDIV;
-        iy=iv[j];
-        iv[j] = idum;
-        if ((temp=AM*iy) > RNMX) return RNMX;
-        else return temp;
-}
-
-// from numerical recipes in C++:
-// Returns a normally distributed deviate with zero mean and unit variance,
-// using ran1(idum) as the source of uniform deviates.
-
-DP gasdev()
-{
-        static int iset=0;
-        static DP gset;
-        DP fac,rsq,v1,v2;
-
-        if (iset == 0) {
-                do {
-                        v1=2.0*ran1()-1.0;
-                        v2=2.0*ran1()-1.0;
-                        rsq=v1*v1+v2*v2;
-                } while (rsq >= 1.0 || rsq == 0.0);
-                fac=sqrt(-2.0*log(rsq)/rsq);
-                gset=v1*fac;
-                iset=1;
-                return v2*fac;
-        } else {
-                iset=0;
-                return gset;
-        }
-}
+// for seedrandgen
+#include <sys/time.h>
 
 // --- SampledNoise ----------------------------------------------------
 
@@ -98,10 +35,10 @@ double SampledNoise::operator[](long pos) {
 // --- "Ring" classes --------------------------------------------------
 
 //  default constructor for RingNoise
-//  initialize ran1 if needed; should do with clock or with seed provided from main
 
 RingNoise::RingNoise(long bs) {
-    if (idum == 0) idum = -1;
+    randgen = gsl_rng_alloc(gsl_rng_ranlux);
+    seedrandgen();
 
     buffersize = bs;
     
@@ -120,9 +57,13 @@ RingNoise::RingNoise(long bs) {
 RingNoise::~RingNoise() {
     delete [] buffery;
     delete [] bufferx;
+
+    gsl_rng_free(randgen);
 }
 
 void RingNoise::reset() {
+    seedrandgen();
+
     for(int i=0; i<buffersize; i++) {
         bufferx[i] = 0.00;
         buffery[i] = 0.00;
@@ -155,8 +96,44 @@ double RingNoise::operator[](long pos) {
     }
 }
 
+void RingNoise::seedrandgen() {
+    struct timeval tv;
+
+    gettimeofday(&tv,0);
+  
+    // printf("seconds is: %ld, microseconds is: %ld\n",tv.tv_sec,tv.tv_usec);
+    // printf("seed is: %ld\n",tv.tv_sec+tv.tv_usec);
+  
+    gsl_rng_set(randgen,tv.tv_sec+tv.tv_usec); 
+    cacheset = 0;
+}
+
+// Box-Muller transform to get Gaussian deviate from uniform random number
+// adapted from GSL 1.4 randist/gauss.c
+
 double RingNoise::deviate() {
-    return gasdev();
+  double x, y, r2;
+
+  // this will never return a cached 0.0, but what's the chance?
+
+  if (cacheset == 0) {
+      do {
+	  x = -1.0 + 2.0 * gsl_rng_uniform(randgen);
+	  y = -1.0 + 2.0 * gsl_rng_uniform(randgen);
+	  
+	  r2 = x * x + y * y;
+      } while (r2 > 1.0 || r2 == 0);
+
+      double root = sqrt (-2.0 * log (r2) / r2);
+
+      cacheset = 1;
+      cacherand = x * root;
+
+      return y * root;
+  } else {
+      cacheset = 0;
+      return cacherand;
+  }
 }
 
 // the default is to apply no filter (yielding pure uncorrelated Gaussian white noise)
@@ -270,212 +247,6 @@ double InterpolateNoise::inoise(double time) {
 
 double InterpolateNoise::operator[](double time) {
     return inoise(time);
-}
-
-// --- correlated-Gaussian classes ------------------------------------------------
-
-ExpGaussNoise::ExpGaussNoise(double samplinginterval, double lapseinterval, double foldingtime, double spectraldensity) {
-    if (idum == 0) idum = -1;
-
-    samplingtime = samplinginterval;
-    lapsetime = lapseinterval;
-
-    // the buffersize should be set from the sampling time and the number
-    // of in-between samples needed in TDI; say 32?
-
-    buffersize = 32 * long(floor(1e-10 + lapsetime / samplingtime));
-
-    // lambda = -1 / e-folding time
-
-    lambda = -1.00 / foldingtime;
-
-    // need a sqrt of the Nyquist frequency here? probably yes
-
-    normalize = sqrt(spectraldensity) *  sqrt(1.00 / (2*samplingtime));
-
-    // now allocate the buffer of pointers
-
-    ptbuffer = new (GaussSample *)[buffersize];
-    
-    for(int i=0;i<buffersize;i++)
-        ptbuffer[i] = new GaussSample;
-        
-    bufferlevel = buffersize - 1;
-    
-    // need to create first and last sample, at -lapsetime
-    
-    first = ptbuffer[bufferlevel];
-    bufferlevel = bufferlevel - 1;
-    last = first;
-    
-    first->time = -lapsetime;
-    first->value = gasdev();
-    
-    first->prev = 0;
-    first->next = 0;
-}
-
-ExpGaussNoise::~ExpGaussNoise() {
-    // ah, need to be careful here; first release the buffer, then the list
-
-    GaussSample *nextone;
-
-    while(first) {
-        nextone = first->next;
-        delete first;
-        first = nextone;
-    }
-
-    while(bufferlevel >= 0) {
-        delete ptbuffer[bufferlevel];
-        bufferlevel = bufferlevel - 1;
-    }
-        
-    delete ptbuffer;
-}
-
-void ExpGaussNoise::reset() {
-    // put back all the samples in the list into the buffer
-
-    GaussSample *nextone;
-    
-    while(first) {
-        nextone = first->next;
-
-        bufferlevel = bufferlevel + 1;
-        ptbuffer[bufferlevel] = first;
-
-        first = nextone;
-    }
-
-    if(bufferlevel !=  buffersize - 1) {
-        cout << "ExpGaussNoise::reset: I've lost a GaussSample (or more) somewhere!" << endl;
-        abort();
-    }
-
-    // reinitialize first and last from the buffer
-
-    first = ptbuffer[bufferlevel];
-    bufferlevel = bufferlevel - 1;
-    last = first;
-    
-    first->time = -lapsetime;
-    first->value = gasdev();
-    
-    first->prev = 0;
-    first->next = 0;
-}
-
-double ExpGaussNoise::enoise(double time) {
-    return (*this)[time];
-}
-
-double ExpGaussNoise::operator[](double time) {
-    // this number should be set close to the machine epsilon 
-    // since the relevant scale for times is the second
-    // we might still have problems of accuracy when the time gets large!
-
-    // it seems currently testmodnoise needs ~1e-12 to work correctly
-
-    const double alloweddelta = 1.0e-8;
-    
-    GaussSample *current = first;
-
-    while(current->time <= time) {
-        if(fabs(current->time - time) < alloweddelta) {
-            // we already have the sample
-            return(normalize * current->value);
-        }
-        
-        current = current->next;
-        if(!current) break;
-    };
-
-    if(current && fabs(current->time - time) < alloweddelta) {
-            // we already have the sample
-            return(normalize * current->value);
-        } 
-
-    // we'll need a new sample
-    
-    GaussSample *newone = ptbuffer[bufferlevel];
-    ptbuffer[bufferlevel] = 0;
-    
-    bufferlevel = bufferlevel - 1;
-    if(bufferlevel < 0) {
-        cout << "ExpGaussNoise::out of GaussSample instances in buffer" << endl;
-        abort();  
-    }
-    
-    // now, let's check if we're at the end of the chain, at the beginning, or between samples
-    
-    if(!current) {
-        // we're at the end of the chain!
-        // create a new sample using the "last" rule
-        // remember that lambda is negative
-
-        double r = exp(lambda * (time - last->time));
-
-        newone->time = time;  
-        newone->value = sqrt(1 - r*r) * gasdev() + r * (last->value);
-    
-        // adjust the links in the chain
-    
-        newone->prev = last;
-        newone->next = 0;
-        
-        last->next = newone;
-        last = newone;
-
-        // since we added at the end, purge from the beginning
-
-        while(time - first->time > lapsetime) {
-            bufferlevel = bufferlevel + 1;
-            ptbuffer[bufferlevel] = first;
-            
-            first = first->next;
-            first->prev = 0;
-        }
-    } else {
-        GaussSample *previous = current->prev;
-
-        if(!previous) {
-            // we're at the beginning of the chain!
-
-            double r = exp(lambda * (current->time - time));
-
-            newone->time = time;  
-            newone->value = sqrt(1 - r*r) * gasdev() + r * (current->value);
-
-            newone->prev = 0;
-            newone->next = last;
-
-            first->prev = newone;
-            first = newone;
-        } else {
-            // we're in between! "current" holds the larger time, "previous" the smaller
-            // create a new sample using the "bridge" rule
-            // remember that lambda is negative
-        
-            double r1 = exp(lambda * (time - previous->time));
-            double r2 = exp(lambda * (current->time - time));
-
-            newone->time = time;
-            newone->value = sqrt( (1 - r1*r1) * (1 - r2*r2) / (1 - r1*r1*r2*r2) ) * gasdev() + 
-                                  (1 - r2*r2) * r1 * (previous->value) / (1 - r1*r1*r2*r2) +
-                                  (1 - r1*r1) * r2 * (current->value)  / (1 - r1*r1*r2*r2);
-
-            // adjust the links in the chain
-
-            newone->prev = previous;
-            newone->next = current;
-        
-            previous->next = newone;
-            current->prev = newone;            
-        }
-    }
-    
-    return(normalize * newone->value);
 }
 
 // --- windowed-sinc interpolation ------------------------------------------------

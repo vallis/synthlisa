@@ -1,49 +1,55 @@
 #ifndef _LISASIM_NOISE_H_
 #define _LISASIM_NOISE_H_
 
-class BufferNoise {
-    public:
-       virtual void reset() {};
+#include "gsl_rng.h"
 
-       virtual double operator[](long pos) = 0;
+class BufferNoise {
+ public:
+    virtual void reset() {};
+
+    virtual double operator[](long pos) = 0;
 };
 
 class SampledNoise : public BufferNoise {
-    private:
-        double *noisebuffer;
+ private:
+    double *noisebuffer;
 
-	long maxsamples;
+    long maxsamples;
 
-    public:
-        SampledNoise(double *nb, long samples);
+ public:
+    SampledNoise(double *nb, long samples);
 
-	double operator[](long pos);
+    double operator[](long pos);
 };
-
-// global seed for random number generator
-
-extern int idum;
 
 // current implementation limits the total number of total samples to MAX_LONG
 
 class RingNoise : public BufferNoise {
-    public:
-        long buffersize;
-        long earliest, latest;
-    
-        double *bufferx, *buffery;
-    
-        void updatebuffer(long pos);
+ private:
+    gsl_rng *randgen;
 
-        RingNoise(long bs);
-        virtual ~RingNoise();
-        
-        void reset();
-        
-        double operator[](long pos);
+    int cacheset;
+    double cacherand;
+
+ public:
+    long buffersize;
+    long earliest, latest;
     
-        virtual double deviate();
-        virtual double filter(long pos);
+    double *bufferx, *buffery;
+    
+    void updatebuffer(long pos);
+
+    RingNoise(long bs);
+    virtual ~RingNoise();
+	
+    void reset();
+        
+    double operator[](long pos);
+
+    void seedrandgen();
+    
+    virtual double deviate();
+    virtual double filter(long pos);
 };
 
 // derived classes: differentiating and integrating filters
@@ -122,41 +128,6 @@ class InterpolateNoiseBetter : public InterpolateNoise {
 
     double inoise(double time);
     double operator[](double time);
-};
-
-
-// correlated-Gaussian class
-
-class GaussSample {
-    public:
-        GaussSample *prev, *next;
-        
-        double time;
-        double value;
-};
-
-class ExpGaussNoise : public Noise {
-    private:
-        GaussSample **ptbuffer;
-        int buffersize;
-        int bufferlevel;
-    
-        GaussSample *first, *last;
-        
-        double samplingtime;
-        double lapsetime;
-        
-        double lambda;
-        double normalize;
-    
-    public:
-        ExpGaussNoise(double samplinginterval, double lapseinterval, double foldingtime, double spectraldensity);
-        ~ExpGaussNoise();
-    
-        void reset();
-    
-        double enoise(double time);
-        double operator[](double time);
 };
 
 #endif /* _LISASIM_NOISE_H_ */
