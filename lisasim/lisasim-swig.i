@@ -100,17 +100,6 @@ class InterpolateNoiseBetter : public InterpolateNoise {
     double inoise(double time);
 };
 
-class ExpGaussNoise : public Noise {
-public:
-    
-    ExpGaussNoise(double samplinginterval, double lapseinterval, double foldingtime, double spectraldensity);
-    ~ExpGaussNoise();
-    
-    void reset();
-
-    double enoise(double time);
-};
-
 /* -------- Wave objects -------- */
 
 class Wave;
