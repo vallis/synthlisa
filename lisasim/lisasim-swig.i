@@ -119,6 +119,8 @@ class InterpolateNoise : public Noise {
     
     void reset();
     double noise(double time);
+
+    void setinterp(int window);
 };
 
 /* -------- Wave objects -------- */
