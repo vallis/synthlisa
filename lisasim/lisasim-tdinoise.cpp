@@ -1,4 +1,3 @@
-#include "lisasim.h"
 #include "lisasim-lisa.h"
 #include "lisasim-noise.h"
 #include "lisasim-tdinoise.h"

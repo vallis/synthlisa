@@ -1,4 +1,4 @@
-#include "lisasim.h"
+//#include "lisasim.h"
 #include "lisasim-noise.h"
 
 #include "nr.h"

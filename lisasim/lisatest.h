@@ -1,3 +1,6 @@
+#ifndef _LISATEST_H_
+#define _LISATEST_H_
+
 // All taken from the standard Montana LISAconstants.h
 
 // Physical constants: c (m/s), G (mks), AU (m), yr (s), Msun (kg), kpc (m), Gpc (m)
@@ -40,3 +43,5 @@
 #define M1 (0.5*Msun)
 #define M2 (0.033*Msun)
 #define r (0.1*kpc)
+
+#endif /*  _LISATEST_H_ */

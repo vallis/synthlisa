@@ -1,4 +1,4 @@
-#include "lisasim.h"
+#include "lisasim-wave.h"
 
 Wave::Wave(double d, double a, double p) {
     dec = d;

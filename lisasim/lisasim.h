@@ -1,29 +1,13 @@
 #ifndef _LISASIM_H_
 #define _LISASIM_H_
 
-#include "nr.h"
-#include "nrutil.h"
+#include "lisasim-wave.h"
+#include "lisasim-tdinoise.h"
+#include "lisasim-tdi.h"
+#include "lisasim-tdifast.h"
+#include "lisasim-noise.h"
+#include "lisasim-lisa.h"
+#include "lisasim-tens.h"
 
-class Tensor : public Mat_IO_DP {
-    public:
-
-    Tensor();
-    
-    void seteuler(double d, double a, double p);
-    
-    void setproduct(Tensor &fac1, Tensor &fac2);
-                                
-    void settranspose();
-};
-
-class Vector : public Vec_IO_DP {
-    public:
-    
-    Vector();
-    
-    void setproduct(Tensor &mat, Vector &vec);
-
-    double dotproduct(Vector &vec);
-};
 
 #endif /* _LISASIM_H_ */

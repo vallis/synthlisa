@@ -1,6 +1,8 @@
 #ifndef _LISASIM_WAVE_H_
 #define _LISASIM_WAVE_H_
 
+#include "lisasim-tens.h"
+
 class Wave {
     public:
 

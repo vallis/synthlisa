@@ -1,4 +1,4 @@
-#include "lisasim.h"
+#include "lisasim-tens.h"
 
 Tensor::Tensor() : Mat_IO_DP(0.0,3,3) {}
 

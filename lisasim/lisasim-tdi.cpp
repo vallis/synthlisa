@@ -1,5 +1,3 @@
-#include "lisasim.h"
-#include "lisasim-lisa.h"
 #include "lisasim-tdi.h"
 
 // double TDI::psi(int arm, double t) {

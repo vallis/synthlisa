@@ -1,4 +1,3 @@
-#include "lisasim.h"
 #include "lisasim-lisa.h"
 
 // --- generic LISA class --------------------------------------------------------------

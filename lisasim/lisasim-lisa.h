@@ -1,7 +1,7 @@
 #ifndef _LISASIM_LISA_H_
 #define _LISASIM_LISA_H_
 
-#include "lisasim.h"
+#include "lisasim-tens.h"
 
 class LISA {
     public:

@@ -1,6 +1,9 @@
 #ifndef _LISASIM_TDIFAST_H_
 #define _LISASIM_TDIFAST_H_
 
+#include "lisasim-tdi.h"
+#include "lisasim-wave.h"
+
 class TDIfast : public TDI {
  public:
 

@@ -1,6 +1,9 @@
 #ifndef _LISASIM_TDINOISE_H_
 #define _LISASIM_TDINOISE_H_
 
+#include "lisasim-lisa.h"
+#include "lisasim-noise.h"
+
 class TDInoise {
     private:
         LISA *lisa;

@@ -1,6 +1,4 @@
-#include "lisasim.h"
-
-
+#include "lisasim-tdifast.h"
 
 
 #define Check(value) (CheckError((value), (__FILE__), (__LINE__)))
