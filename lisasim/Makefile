@@ -45,6 +45,7 @@ HFILES= $(CFILES:.cpp=.h)
 OFILES= $(foreach cfile,$(CFILES),$(BUILD)/$(cfile:.cpp=.o))
 
 # if you include lisasim.h (which includes all the headers), then you should depend on them
+
 lisasim.h: $(HFILES)
 
 GSL_DIR=../contrib-source/GSL-1.4
@@ -58,12 +59,12 @@ $(GSL_OFILES):
 	make -C $(GSL_DIR) libs
 
 # basic compilation step
-$(BUILD)/%.o: %.cpp lisasim.h
+$(BUILD)/%.o: %.cpp $(HFILES)
 	g++ $(OPTIONS) $(GSL_INCLUDE) -c $< -o $@
 
 # clean objects
 objects-clean:
-	-rm -f $(OFILES)
+	rm -f $(OFILES)
 
 # --- build lisaswig ---
 
@@ -98,9 +99,9 @@ $(LIBS)/_lisaswig$(PYTHON_SO): $(OFILES) $(BUILD)/lisasim-swig.o $(BUILD)/lisasi
 	$(CXXSHARED) $(OFILES) $(GSL_OFILES) $(BUILD)/lisasim-swig.o $(BUILD)/lisasim-swig_wrap.o $(IOBJS) $(PYTHON_DLNK) $(CPP_DLLIBS) -o $(LIBS)/_lisaswig$(PYTHON_SO)
 
 lisaswig-clean:
-	-rm -f $(BUILD)/lisasim-swig_wrap.cxx
-	-rm -f $(BUILD)/lisasim-swig.o $(BUILD)/lisasim-swig_wrap.o
-	-rm -f $(LIBS)/lisaswig.py $(LIBS)/lisaswig.pyc $(LIBS)/_lisaswig$(PYTHON_SO)
+	rm -f $(BUILD)/lisasim-swig_wrap.cxx
+	rm -f $(BUILD)/lisasim-swig.o $(BUILD)/lisasim-swig_wrap.o
+	rm -f $(LIBS)/lisaswig.py $(LIBS)/lisaswig.pyc $(LIBS)/_lisaswig$(PYTHON_SO)
 
 # --- build lisasim tool, including tdifast ---
 
@@ -110,8 +111,8 @@ $(BINS)/lisasim: $(BINS) $(BUILD) $(OFILES) $(BUILD)/lisasim-main.o $(BUILD)/lis
 	g++ $(OPTIONS) $(OFILES) $(GSL_OFILES) $(BUILD)/lisasim-main.o $(BUILD)/lisasim-tdifast.o -o $(BINS)/lisasim
 
 lisasim-clean:
-	-rm -f $(BUILD)/lisasim-main.o $(BUILD)/lisasim-tdifast.o
-	-rm -f $(BINS)/lisasim
+	rm -f $(BUILD)/lisasim-main.o $(BUILD)/lisasim-tdifast.o
+	rm -f $(BINS)/lisasim
 
 # --- build lisatest ---
 
@@ -121,8 +122,8 @@ $(BINS)/lisatest-tdi: $(OFILES) $(BUILD)/lisatest-tdi.o
 	g++ $(OPTIONS) $(OFILES) $(GSL_OFILES) $(BUILD)/lisatest-tdi.o -o $(BINS)/lisatest-tdi
 
 lisatest-clean:
-	-rm -f $(BUILD)/lisatest-tdi.o
-	-rm -f $(BINS)/lisatest-tdi
+	rm -f $(BUILD)/lisatest-tdi.o
+	rm -f $(BINS)/lisatest-tdi
 
 # --- build package docs from literate programming ---
 
@@ -154,6 +155,6 @@ $(DOCDIR)/program.pdf: $(DOCDIR) program.tex $(TEXFILES)
 	cd $(DOCBUILD); pdflatex --interaction batchmode program.tex; pdflatex --interaction batchmode program.tex; mv program.pdf ..; cd $(CURDIR)
 
 doc-clean:
-	-rm -rf $(DOCBUILD)/*.htex $(DOCBUILD)/*.ctex $(DOCBUILD)/*.aux $(DOCBUILD)/*.log $(DOCDIR)/*.pdf
+	rm -rf $(DOCBUILD)/*.htex $(DOCBUILD)/*.ctex $(DOCBUILD)/*.aux $(DOCBUILD)/*.log $(DOCDIR)/*.pdf
 
 .PHONEY: clean
