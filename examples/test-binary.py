@@ -125,7 +125,7 @@ circularnoise = TDInoise(circularlisa,stime,2.5e-48,stime,1.8e-37,stime,0*1.1e-2
 
 samples = 2**21  # 2**17 takes 42s on a 1.25GHz G4
                  # the graph however was done with stime = 16 and samples = 2**21
-
+                 # and test-montana.py also needs 2**21
 patches = 16
 
 # "getobsc" (as opposed to "getobs") will display completion and speed date
@@ -165,7 +165,7 @@ sratio = zeros(shape(sspec)[0],typecode='d')
 sratio[1:] = sspec[1:,1] / ispec[1:,1]
 sn2 = 2.0 * sum(sratio[1:])
 
-print "S/N = %f over %f seconds" % [sqrt(sn2),stime*samples]
+print "S/N = %f over %f seconds" % (sqrt(sn2),1.0*stime*samples)
 
 # it is hard to plot the signal meaningfully over noise: plotting
 # twice the signal spectral density on top of the noise spectral

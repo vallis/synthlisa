@@ -1,5 +1,8 @@
 #!/usr/bin/python
 
+# test of laser-noise cancellation with imperfect knowledge of the
+# armlengths: second-generation TDI, additional error budgets
+
 from lisaswig import *
 from Numeric import *
 from lisautils import *
@@ -35,7 +38,7 @@ cleanerTDI = TDInoise(cleanerlisa,
 
 # ok, let's compute everything!
 
-samples = 2**25/stime # on a 1.25GHz G4, 2**18 samples take 36 s
+samples = 2**18/stime # on a 1.25GHz G4, 2**18 samples take 36 s
 windows = 512
 
 [noisenoisy,

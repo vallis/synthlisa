@@ -66,7 +66,8 @@ the temporal and directional dependence of the armlengths).
 2. License terms
 ================
 
-TBD
+Please see license.pdf or license.doc. I would appreciate it if you
+could return me a signed license, if you have not done so yet.
 
 ======================
 3. System requirements
@@ -84,18 +85,19 @@ All this software is rather standard for modern scientific
 workstations; ask you system administrator about it, or download it
 from the sites
 
-- GNU website TBD
+- www.gnu.org
 - www.python.org
 - www.gnuplot.info
 
-The Synthetic LISA Python interface was built using SWIG (SWIG website
-TBD), and it relies on the Python package Numeric (Numeric website
-TBD) to manage large arrays. A recent release of Numeric is included
-in the binary and source distributions; SWIG is needed only to compile
-Synthetic LISA from sources, and it is included in the source
-distribution. (If you already have Numeric and/or SWIG in your system,
-Synthetic LISA might or might not be able to work with them, depending
-on their version; if in doubt, use the versions provided).
+The Synthetic LISA Python interface was built using SWIG
+(www.swig.org), and it relies on the Python package Numeric
+(numpy.sourceforge.net) to manage large arrays. A recent release of
+Numeric is included in the binary and source distributions; SWIG is
+needed only to compile Synthetic LISA from sources, and it is included
+in the source distribution. (If you already have Numeric and/or SWIG
+in your system, Synthetic LISA might or might not be able to work with
+them, depending on their version; if in doubt, use the versions
+provided).
 
 =================================
 4. Installation of source package
@@ -173,6 +175,15 @@ The package compiles fine under RedHat 9.0, which can be installed
 Linux should also have no problems, and might be compatible with our
 binaries.
 
+One compilation caution: it seems that setdir.sh and setdir.csh are
+broken by colored "ls" output. Just do
+
+alias ls="ls --color=none" (bash)
+alias ls="ls --color=none" (csh)
+
+before sourcing setdir.(c)sh, or modify setdir.sh and setdir.csh
+accordingly.
+
 ----------------------------------
 4c.Compilation notes for SunOS 5.8
 ----------------------------------
@@ -185,16 +196,7 @@ synthlisa/Makefile, synthlisa/contrib-source/Makefile, and
 synthlisa/lisasim/Makefile to reflect the location of your GNU make
 and tar.
 
-Second, replace the file lisasim/lisasim-tdinoise.h with
-lisasim/lisasim-tdinoise-sun.h:
-
-mv lisasim/lisasim-tdinoise-sun.h lisasim/lisasim-tdinoise.h
-
-which fixes a strange bug that seems to come from the interaction of
-gcc with Python (at least for the versions I'm using, 3.2.2 and
-2.2.3). I'm trying to look into this.
-
-Third, on Suns grep does not seem to have the "-A" option, and I have
+Second, on Suns grep does not seem to have the "-A" option, and I have
 not been able to find a fix so far. Replace the "GREPA=grep -A 1" line
 in synthlisa/contrib-source/Makefile with "GREPA=grep"; this, however,
 will break one of the Makefiles. To correct the problem, do first
@@ -302,7 +304,6 @@ Synthetic LISA session. A good sequence of examples to examine is the following:
 - test-tdiequal-X.py
 - test-tdiequal.py
 - test-tdibadmass.py
-- test-loadnoise.py  TBD
 
 You will see that after some standard
 library-loading incantations,
@@ -381,10 +382,10 @@ use them!
 9. Asking for help
 ==================
 
-Please refer to the Synthetic LISA distribution site at the Open
-Channel Foundation (www.openchannelfoundation.org/TBD) to report bugs,
-request features, ask for explanations, and generally interact with
-other Synthetic LISA designers and with other users.
+Please refer to the forthcoming Synthetic LISA distribution site at
+the Open Channel Foundation (www.openchannelfoundation.org) to report
+bugs, request features, ask for explanations, and generally interact
+with other Synthetic LISA designers and with other users.
 
 =============
 10.To do list

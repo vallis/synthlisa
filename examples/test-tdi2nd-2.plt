@@ -9,10 +9,14 @@ set logscale y;
 set format x "10^{%L}"; 
 set format y "10^{%L}";
 
-plot   "data/tdi2nd-X1.txt"           using 1:2 title 'X1, synthLISA' with lines;
-replot "data/tdi2nd-X1-nolaser.txt"   using 1:2 title 'X1, synthLISA, no laser noise' with lines;
+#unset key;
+
+set xrange [4e-4:2.5e-1];
+
+plot "data/tdi2nd-X1-nolaser.txt"   using 1:2 title 'X1, synthLISA, no laser noise' with lines;
+replot   "data/tdi2nd-X1.txt"           using 1:2 title 'X1, synthLISA, nominal laser noise' with lines;
 
 set size 0.8,0.8; set ylabel 2,0;
-set terminal postscript eps enhanced color;
+set terminal postscript eps enhanced color "Times" 18;
 set output "eps/test-tdi2nd-X1.eps";
 replot;

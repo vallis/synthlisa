@@ -29,6 +29,6 @@ set trange [1e-10:99];
 replot 0.5,t notitle;
 
 set size 0.8,0.8; set ylabel 2,0;
-set terminal postscript eps enhanced "Times" 18 color;
+set terminal postscript eps enhanced color "Times" 18 "Times" 18;
 set output "eps/test-interpolation.eps";
 replot;

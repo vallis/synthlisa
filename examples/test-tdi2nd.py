@@ -2,6 +2,10 @@
 
 # test of laser-noise cancellation for first- and second-generation TDI observables
 
+# note: the plotting scripts test-tdi2nd.plt, test-tdi2nd-2.plt,
+# test-tdi2nd-3.plt, test-tdi2nd-4.plt, all use the output of this Python script
+# to show different aspects of the result
+
 # this script demonstrates the generation of 1st- and 2nd-generation
 # TDI time series, and in particular:
 # - creating the appropriate LISA geometry objects
@@ -42,11 +46,12 @@ nolaserTDI = TDInoise(eccentriclisa,
                       stime, 1.8e-37, # optical-path noise parameters
                       stime, 0.0)     # laser frequency noise parameters
 
-# how many samples do we need? one year at 1 s we need 31,536,000
+# how many samples do we need? to do one year at 1 s we need 31,536,000
 # samples, or about 2**25. It's a bit much, both memory wise and
 # CPU wise (on a Mac G4 1.25 GHz, I get about 13,000 samples/s)
 
-samples = 2**25 / stime
+# samples = 2**25 / stime
+samples = 2**18 / stime
 
 patches = 256
 

@@ -17,6 +17,6 @@ plot "data/tdiequal-X-theory.txt"  using 1:2 title 'X, theory' with lines;
 replot   "data/tdiequal-X-sampled.txt" using 1:2 title 'X, synthLISA' with lines;
 
 set size 0.8,0.8; set ylabel 2,0;
-set terminal postscript eps enhanced "Times" 18 color;
+set terminal postscript eps enhanced color "Times" 18 "Times" 18;
 set output "eps/test-tdiequal-X.eps";
 replot;
