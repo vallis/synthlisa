@@ -735,6 +735,8 @@ MeasureLISA::MeasureLISA(LISA *clean,double starm,double sdarm,int swin) {
     // create InterpolateNoise objects for the arm determination noises
     // we need triple retardations (septuple for 2nd-generation TDI)
 
+    if (swin == -1) swin = 2;
+
     double pbtarm = 8.0 * lighttime + (2.0 * swin + 1.0) * starm;
 
     // we use plain uncorrelated white noise, for the moment
