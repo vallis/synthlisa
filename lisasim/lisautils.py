@@ -65,9 +65,14 @@ def pdg(series):
 
 def wpdg(series,detrend=0):
     samples = shape(series)[0]
-    pdlen = (samples-1)/2.0
 
-    window = 1.0 - abs(arange(0,samples,typecode='d') - pdlen) / (pdlen)
+    #pdlen = (samples-1)/2.0
+    #window = 1.0 - abs(arange(0,samples,typecode='d') - pdlen) / (pdlen)
+
+    # try Blackman
+    wrange = arange(0,samples,typecode='d') / (samples - 1.0);
+    window = 0.42 - 0.5 * cos(2*math.pi*wrange) + 0.08 * cos(4*math.pi*wrange)
+
     weight = samples * sum(window ** 2)
 
     # detrending
@@ -117,6 +122,25 @@ def nopwpdg(series,patches,detrend=0):
     opwpdgram[:] /= 1.0*patches
 
     return opwpdgram
+
+def whiten(series,patches=1):
+    samples = shape(series)[0]
+
+    patlen = samples / patches
+    
+    for j in range(0,patches-1):
+        integ = 0.0
+
+        for i in range(0,patlen):
+            next = series[j*patlen+i]
+            series[j*patlen+i] = integ
+            integ = integ+next
+
+def darken(spectrum,stime):
+    samples = shape(spectrum)[0]
+
+    for cnt in range(1,samples):
+        spectrum[cnt,1] = spectrum[cnt,1] * (2*sin(math.pi*spectrum[cnt,0]*stime))**2.0
 
 # make it so that "time" is an observable
 
