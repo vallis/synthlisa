@@ -41,9 +41,9 @@ $(LIBS)/lisautils.py: lisautils.py
 CFILES= lisasim-lisa.cpp lisasim-noise.cpp lisasim-tdi.cpp lisasim-tdisignal.cpp lisasim-tdinoise.cpp lisasim-tens.cpp lisasim-wave.cpp
 
 # each of these cpp files has a header
-HFILES= $(CFILES:.cpp=.h)
+HFILES= $(CFILES:.cpp=.h) lisasim-retard.h
 
-# lisasim.h depends on all the headers
+# lisasim.h depends on all the headers; but the dependence does not seem to "get through"
 lisasim.h: $(HFILES)
 
 # we build the object files in the build directory
@@ -70,7 +70,7 @@ SWIG= $(PLADIR)/bin/swig -w402
 
 # build the swig wrapper from the swig interface
 # this is a multiple target operation; it also builds $(LIBS)/lisaswig.py
-$(BUILD)/lisasim-swig_wrap.cxx $(LIBS)/lisaswig.py: lisasim-swig.i lisasim-typemaps.i lisasim.h
+$(BUILD)/lisasim-swig_wrap.cxx $(LIBS)/lisaswig.py: lisasim-swig.i lisasim-typemaps.i $(HFILES)
 	$(SWIG) -c++ -python lisasim-swig.i
 	mv lisasim-swig_wrap.cxx $(BUILD)
 	mv lisaswig.py $(LIBS)
