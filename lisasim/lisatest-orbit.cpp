@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include "lisasim.h"
 
-// compares the CircularRotating and MontanaEccentric LISA models
+// compares the CircularRotating and EccentricInclined LISA models
 
 int main(int argc, char **argv) {
     // take as only input the number of positions to sample throughout the year
@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
 
     // need to pass the initial azimuthal position of the guiding center and the initial orientation of the spacecraft
 
-    MontanaEccentric thlisa(0.0,0.0);
+    EccentricInclined thlisa(0.0,0.0);
 
     ofstream dout("distances.txt");
     ofstream myout("circular.txt");

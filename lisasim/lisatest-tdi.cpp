@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
     // --- definition of LISA and TDI
 
     CircularRotating mylisa(0.0,3.0*M_PI/2.0,-1.0);    
-    // MontanaEccentric mylisa(0.0,0.0);
+    // EccentricInclined mylisa(0.0,0.0);
     
     TDIsignal mytdi(&mylisa,&mybinary);
  
