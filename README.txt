@@ -18,6 +18,7 @@ In this file:
 4. Installation of source package
    4a. Compilation notes for Mac OS X
    4b. Compilation notes for Linux RedHat 9.0
+   4c. Compilation notes for SunOS 5.8
 5. Installation of binary package
 6. Running the examples
 7. Synthetic LISA usage
@@ -171,6 +172,45 @@ The package compiles fine under RedHat 9.0, which can be installed
 (and usually is) with X, Python and gnuplot. Other recent versions of
 Linux should also have no problems, and might be compatible with our
 binaries.
+
+----------------------------------
+4c.Compilation notes for SunOS 5.8
+----------------------------------
+
+A similar procedure might apply to other close versions of SunOS.
+
+First of all, the default "make" and "tar" on Suns is usually not
+GNU. You should change the "MAKE=make" and "GNUTAR=tar" lines in the
+synthlisa/Makefile, synthlisa/contrib-source/Makefile, and
+synthlisa/lisasim/Makefile to reflect the location of your GNU make
+and tar.
+
+Second, replace the file lisasim/lisasim-tdinoise.h with
+lisasim/lisasim-tdinoise-sun.h:
+
+mv lisasim/lisasim-tdinoise-sun.h lisasim/lisasim-tdinoise.h
+
+which fixes a strange bug that seems to come from the interaction of
+gcc with Python (at least for the versions I'm using, 3.2.2 and
+2.2.3). I'm trying to look into this.
+
+Third, on Suns grep does not seem to have the "-A" option, and I have
+not been able to find a fix so far. Replace the "GREPA=grep -A 1" line
+in synthlisa/contrib-source/Makefile with "GREPA=grep"; this, however,
+will break one of the Makefiles. To correct the problem, do first
+
+make contribs
+
+and then edit the file SunOS-5.8/include/Makefile.python, replacing
+the "CPP_DLLIBS..." line with
+
+CPP_DLLIBS = -L/usr/local/lib -lstdc++ -lgcc
+
+Then you can do
+
+make lisaswig
+
+and you should be all set.
 
 =================================
 5. Installation of binary package
