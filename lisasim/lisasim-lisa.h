@@ -42,72 +42,84 @@ const double Omega3 = 3.0 * Omega;
 // generic LISA class
 
 class LISA {
-    protected:
-        // guessL is needed by the generic version of armlength()
-        // it needs to be initialized by the constructor of all the derived
-        // LISA classes that do not define armlength
+ private:
+    double it, rt;
+    double trb, tra;
+
+ protected:
+    // guessL is needed by the generic version of armlength()
+    // it needs to be initialized by the constructor of all the derived
+    // LISA classes that do not define armlength
     
-        double guessL[4];
+    double guessL[4];
+	
+ public:
+    LISA() {};
 
-    public:
-        LISA() {};
-        virtual ~LISA() {};
+    virtual ~LISA() {};
 
-        virtual void reset() {};
+    virtual void reset() {};
 
-	// will return pointer to itself; overridden by NoisyLISA, which returns the basic LISA
+    // will return pointer to itself; overridden by NoisyLISA, which returns the basic LISA
 
-	virtual LISA *thislisa() {
-	    return this;
-	}
+    virtual LISA *thislisa() {
+	return this;
+    }
 
-        // generic version of putn; uses (delayed) differences of putp, calling
-        // armlength to get the right delay
+    // generic version of putn; uses (delayed) differences of putp, calling
+    // armlength to get the right delay
 
-        virtual void putn(Vector &n, int arm, double t);
+    virtual void putn(Vector &n, int arm, double t);
 
-        // putp should never be called for base LISA
+    // putp should never be called for base LISA
 
-        virtual void putp(Vector &p, int craft, double t) = 0;
+    virtual void putp(Vector &p, int craft, double t) = 0;
 
-        // generic version of armlength: will use putp iteratively to find
-        // the delay corresponding to a photon trajectory backward from t
-        // along "arm"
+    // generic version of armlength: will use putp iteratively to find
+    // the delay corresponding to a photon trajectory backward from t
+    // along "arm"
 
-        virtual double armlength(int arm, double t);
+    virtual double armlength(int arm, double t);
 
-	// if we don't have anything better, return just armlength
+    // if we don't have anything better, return just armlength
 
-	virtual double armlengthbaseline(int arm, double t) {
-	    return armlength(arm,t);
-	}
+    virtual double armlengthbaseline(int arm, double t) {
+	return armlength(arm,t);
+    }
 
-	virtual double armlengthaccurate(int arm, double t) {
-	    return 0.0;
-	}
+    virtual double armlengthaccurate(int arm, double t) {
+	return 0.0;
+    }
 
-        // these extra methods are needed to load arrays (not Vector objects)
-        // with the spacecraft positions and links
+    // these extra methods are needed to load arrays (not Vector objects)
+    // with the spacecraft positions and links
 
-        virtual void putn(double n[], int arm, double t) {
-            Vector temp;
+    virtual void putn(double n[], int arm, double t) {
+	Vector temp;
             
-            putn(temp, arm, t);
+	putn(temp, arm, t);
             
-            n[0] = temp[0];
-            n[1] = temp[1];
-            n[2] = temp[2];
-	}
+	n[0] = temp[0];
+	n[1] = temp[1];
+	n[2] = temp[2];
+    }
         
-        virtual void putp(double p[], int craft, double t) {
-            Vector temp;
+    virtual void putp(double p[], int craft, double t) {
+	Vector temp;
             
-            putp(temp, craft, t);
+	putp(temp, craft, t);
             
-            p[0] = temp[0];
-            p[1] = temp[1];
-            p[2] = temp[2];
-	}
+	p[0] = temp[0];
+	p[1] = temp[1];
+	p[2] = temp[2];
+    }
+
+    virtual void newretardtime(double t);
+
+    virtual double retardedtime();
+
+    virtual void retard(int ret);
+    virtual void retard(LISA *anotherlisa,int ret);
 };
 
 class OriginalLISA : public LISA {
