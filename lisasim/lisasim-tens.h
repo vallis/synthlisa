@@ -11,6 +11,10 @@ class Vector {
  public:
     Vector() {};
 
+    Vector(double a) {
+	c[0] = a; c[1] = a; c[2] = a;
+    }
+
     double& operator[](int i) {
 	return c[i];
     };
@@ -40,6 +44,11 @@ class Tensor {
     
  public:
     Tensor() {};
+
+    Tensor(double a) {
+	for(int i=0;i<9;i++)
+	    c[i] = a;
+    }
     
     double* operator[](int i) {
 	return c + i*3;

@@ -1,6 +1,6 @@
 #include <math.h>
 
-#include "lisasim-tens.h"
+#include "lisasim-tens2.h"
 
 // Vector member functions
 
