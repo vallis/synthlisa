@@ -171,7 +171,7 @@ from time import time
 def dotime(i,snum,inittime,lasttime):
     currenttime = int(time()) - inittime
 
-    if currenttime - lasttime > 2:
+    if currenttime - lasttime > 2 and i > 0:
         percdone = int((100.0*i)/snum)
         timeleft = int(((1.0 * currenttime) / i) * (snum-i))
 
@@ -273,3 +273,28 @@ def readbinary(filename,length):
     file.close()
     # then reshape the buffer if needed
     return buffer
+
+# the class anyLISA allows the use of any LISA class as the physical
+# LISA, and any python function as the armlength function; the
+# constructor is simply anyLISA(mylisa,func), where func(arm,time) must
+# return the values of the armlength, which is used for both armlength()
+# and armlengthbaseline()
+
+from lisaswig import AnyLISA
+
+class anyLISA(AnyLISA):
+    def __init__(self,whichlisa,armf):
+        AnyLISA.__init__(self,whichlisa)
+        self.armfunc = armf
+
+    def armlength(self,arm,time):
+        return self.armfunc(arm,time)
+
+    def armlengthbaseline(self,arm,time):
+        return self.armfunc(arm,time)
+
+    def armlengthaccurate(self,arm,time):
+        return 0.0
+
+    def __del__(self):
+        AnyLISA.__del__(self)
