@@ -82,7 +82,7 @@ class Noise {
 // dimensioned interpolated noise
 
 class InterpolateNoise : public Noise {
-    private:
+    protected:
         BufferNoise *buffernoise;
 
         // use time in seconds
@@ -104,9 +104,26 @@ class InterpolateNoise : public Noise {
 
         void reset();
         
-        double inoise(double time);
-        double operator[](double time);
+        virtual double inoise(double time);
+        virtual double operator[](double time);
 };
+
+class InterpolateNoiseBetter : public InterpolateNoise {
+ private:
+    double sinc(double time);
+    double window(double time);
+
+    int semiwindow;
+    double semiconst;
+
+ public:
+    InterpolateNoiseBetter(double sampletime,double prebuffer,double density,double exponent,int swindow);
+    InterpolateNoiseBetter(double *noisebuf,long samples,double sampletime,double prebuffer,double norm,int swindow);
+
+    double inoise(double time);
+    double operator[](double time);
+};
+
 
 // correlated-Gaussian class
 

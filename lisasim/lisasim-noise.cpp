@@ -478,3 +478,64 @@ double ExpGaussNoise::operator[](double time) {
     return(normalize * newone->value);
 }
 
+// --- windowed-sinc interpolation ------------------------------------------------
+
+InterpolateNoiseBetter::InterpolateNoiseBetter(double sampletime,double prebuffer,double density,double exponent,int swindow) : InterpolateNoise(sampletime,prebuffer,density,exponent) {
+    semiwindow = swindow;
+    semiconst = M_PI / swindow;
+}
+
+InterpolateNoiseBetter::InterpolateNoiseBetter(double *noisebuf,long samples,double sampletime,double prebuffer,double norm,int swindow) : InterpolateNoise(noisebuf,samples,sampletime,prebuffer,norm) {
+    semiwindow = swindow;
+    semiconst = M_PI / swindow;
+}
+
+inline double InterpolateNoiseBetter::sinc(double time) {
+    if(time==0.0)
+	return 1.0;
+    else
+	return ( sin(M_PI * time)/(M_PI * time) );
+}
+
+inline double InterpolateNoiseBetter::window(double time) {
+    return ( 0.54 + 0.46 * cos(time * semiconst) );
+}
+
+double InterpolateNoiseBetter::inoise(double time) {
+    double ctime = time / samplingtime;
+    double itime = floor(ctime);
+
+    long index;
+    
+    if (itime > maxitime) {
+        cout << "InterpolateNoise::inoise() accessing index larger than maximum allowed" << endl;
+        abort();
+    } else {
+        index = long(itime) + prebuffertime;
+    }
+
+    // or should I implement this with a tolerance?
+
+    if (itime == ctime) {
+	return ( normalize * (*buffernoise)[index] );
+    } else {
+	double interp = 0.0;
+	double t;
+
+	// here we work with integer bin abscissae
+
+	for(int i=0;i<semiwindow;i++) {
+	    t = ctime - itime + i;
+	    interp += sinc(t) * window(t) * (*buffernoise)[index-i];
+	    
+	    t = -(1.00 - (ctime - itime)) - i;
+	    interp += sinc(t) * window(t) * (*buffernoise)[index+1+i];
+	}
+	
+	return ( normalize * interp );
+    }
+}
+
+double InterpolateNoiseBetter::operator[](double time) {
+    return inoise(time);
+}
