@@ -144,16 +144,21 @@ InterpolateNoise::InterpolateNoise(double st, double pbt, double sd, double ex, 
 
     prebuffertime = pbt;
     maxtime = samplingtime * (LONG_MAX - 1) - prebuffertime;    
+    lasttime = 0.0;
 
     setfilter(ex);
     setnorm(sd,ex);
 
     interp = 0;
+    timewindow = 0.0;
     setinterp(win);
 
-    long buffersize = 2;
-    while (buffersize < long(prebuffertime/samplingtime))
-	buffersize *= 2;
+    // what about we set this to exactly what requested?
+    long buffersize = long(prebuffertime/samplingtime);
+
+    // long buffersize = 2;
+    // while (buffersize < long(prebuffertime/samplingtime))
+    //     buffersize *= 2;
 
     // WhiteNoise object
 
@@ -175,12 +180,14 @@ InterpolateNoise::InterpolateNoise(double *nb,long sl,double st,double pbt,doubl
     nyquistf = 0.5 / st;
 
     prebuffertime = pbt;
-    maxtime = samplingtime * (LONG_MAX - 1) - prebuffertime;    
+    maxtime = samplingtime * (LONG_MAX - 1) - prebuffertime;
+    lasttime = 0.0;
 
     setfilter(ex);
     setnormsampled(sd,ex);
 
     interp = 0;
+    timewindow = 0.0;
     setinterp(win);
 
     // SampledNoise object
@@ -197,6 +204,11 @@ InterpolateNoise::~InterpolateNoise() {
     delete thefilter;
     delete getnoise;
 }
+
+void InterpolateNoise::reset() {
+    thenoise->reset();
+    lasttime = 0.0;
+};
 
 void InterpolateNoise::setfilter(double ex) {
     if (ex == 0.00) {
@@ -248,16 +260,79 @@ void InterpolateNoise::setinterp(int window) {
     } else {
 	interp = new LagrangeInterpolator(window);
     }
+
+    // Here we set the window of interpolation times that will be
+    // accessible going back from the last requested time.  We need to
+    // be careful if we're changing the interpolation scheme
+    // dynamically.
+
+    double tw = prebuffertime - 2.0 * window * samplingtime;
+
+    if (timewindow > 0.0 && tw > timewindow) {
+	lasttime = lasttime + (tw - timewindow);
+    }
+
+    timewindow = tw;
 }
+
+// should update the paper to say that the earliest accessible time
+// actually depends on the interpolation scheme!
 
 double InterpolateNoise::operator[](double time) {
     if (time > maxtime) {
-        cout << "InterpolateNoise::[]: time requested (" << time << ") too large" << endl;
+        cout << "InterpolateNoise::[]: time requested (" << time <<
+	    ") too large" << endl;
         abort();
+    } else if (lasttime - time > timewindow) {
+	cout << "InterpolateNoise::[]: time requested (" << time <<
+	    ") too old, last was " << lasttime << endl;
+	abort();
     } else {
+	if (time > lasttime) {
+	    lasttime = time;
+	}
+
 	double rind = (time + prebuffertime) / samplingtime;
 	double dind = rind - floor(rind);
-	long ind = long(rind);
+
+	// the floor is to make sure we can handle negative indices
+	// correctly
+	long ind = long(floor(rind));
+
+	return normalize * (*interp)(*thenoise,ind,dind);
+    }
+}
+
+double InterpolateNoise::noise(double timebase,double timecorr) {
+    double time = timebase + timecorr;
+
+    if (time > maxtime) {
+        cout << "InterpolateNoise::[]: time requested (" << time << ") too large" << endl;
+        abort();
+    } else if (lasttime - time > timewindow) {
+	cout << "InterpolateNoise::[]: time requested (" << time << ") too old" << endl;
+	abort();
+    } else {
+	if (time > lasttime) {
+	    lasttime = time;
+	}
+
+	double rindbase = (timebase + prebuffertime) / samplingtime;
+	double dindbase = rindbase - floor(rindbase);
+
+	double rindcorr = timecorr / samplingtime;
+	double dindcorr = rindcorr - floor(rindcorr);
+
+        double rind = rindbase + rindcorr + floor(dindbase + dindcorr);
+	double dind = dindbase + dindcorr - floor(dindbase + dindcorr);
+
+	// the floor is to make sure we can handle negative indices
+	// correctly
+	long ind = long(floor(rind));
+
+	/* debug: cout << " rb " << rindbase << " db " << dindbase
+	     << " rc " << rindcorr << " dc " << dindcorr
+	     << " r  " << rind << " d " << dind << " i " << ind << endl; */
 
 	return normalize * (*interp)(*thenoise,ind,dind);
     }

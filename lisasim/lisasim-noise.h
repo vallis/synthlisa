@@ -141,6 +141,9 @@ class NoFilter : public Filter {
     };
 };
 
+// these filters should be causal; they pose a problem only if the
+// length of the filter is longer than the bufferlength
+
 class IntFilter : public Filter {
  private:
     double alpha;
@@ -195,7 +198,7 @@ class MakeNoise {
 
     double operator[](long pos) {
 	if(pos < earliest) {
-	    cout << "MakeNoise::[] trying to access noise element (" << pos << ") before oldest kept." << endl;
+	    cout << "MakeNoise::[]: trying to access noise element (" << pos << ") before oldest kept." << endl;
 	    abort();
 	} else if (pos > latest) {
 	    for(int i=latest+1;i<=pos;i++) {
@@ -274,6 +277,10 @@ class Noise {
     virtual double noise(double time) {
 	return (*this)[time];
     };
+    
+    virtual double noise(double timebase,double timecorr) {
+	return noise(timebase + timecorr);
+    };
 };
 
 // dimensioned interpolated noise
@@ -285,6 +292,9 @@ class InterpolateNoise : public Noise {
 
     double prebuffertime;
     double maxtime;
+
+    double timewindow;
+    double lasttime;
 
     double normalize;
   
@@ -305,15 +315,15 @@ class InterpolateNoise : public Noise {
 
     virtual ~InterpolateNoise();
     
-    void reset() {
-	thenoise->reset();
-    };
+    void reset();
 
     double operator[](double time);
 
     double noise(double time) {
 	return (*this)[time];
     };
+
+    double noise(double timebase,double timecorr);
 
     // expose the setinterp method so it becomes possible to change
     // the interpolation window dynamically for a noise object
