@@ -78,7 +78,7 @@ class BufferNoise {
 class GetNoise {
  public:
     virtual void reset() {};
-    virtual void operator()(BufferNoise &x,long pos) {};
+    virtual void operator()(BufferNoise &x,long pos) = 0;
 };
 
 class WhiteNoise : public GetNoise {
@@ -131,7 +131,7 @@ class SampledNoise : public GetNoise {
 
 class Filter {
  public:
-    virtual void operator()(BufferNoise &x,BufferNoise &y,long pos) {};
+    virtual void operator()(BufferNoise &x,BufferNoise &y,long pos) = 0;
 };
 
 class NoFilter : public Filter {
@@ -219,7 +219,7 @@ class MakeNoise {
 
 class Interpolator {
  public:
-    virtual double operator()(MakeNoise &y,long ind,double dind);
+    virtual double operator()(MakeNoise &y,long ind,double dind) = 0;
 };
 
 class NearestInterpolator : public Interpolator {
