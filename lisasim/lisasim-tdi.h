@@ -37,6 +37,10 @@ class TDI {
 	virtual double Ym(double t);
 	virtual double Zm(double t);
 
+	virtual double Xmlock1(double t);
+	virtual double Xmlock2(double t);
+	virtual double Xmlock3(double t);
+
 	virtual double X1(double t);
 	virtual double X2(double t);
 	virtual double X3(double t);
@@ -47,6 +51,39 @@ class TDI {
 	virtual double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t) {return 0.0;};
 	virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t) {return 0.0;};
 
+};
+
+class retardtime {
+ private:
+    LISA *lisa;
+
+    double it, rt;
+    double trb, tra;
+
+ public:
+    retardtime(LISA *l, double t) : lisa(l), it(t), rt(t), trb(0.0), tra(0.0) {};
+    
+    double retardedtime() {
+	return rt;
+    };
+
+    void retard(int ret) {
+	if (ret != 0) {
+	    trb += lisa->armlengthbaseline(ret,rt);  
+	    tra += lisa->armlengthaccurate(ret,rt);
+
+	    rt = (it - trb) - tra;
+	}
+    };
+
+    void retard(LISA *anotherlisa, int ret) {
+	if (ret != 0) {
+	    trb += anotherlisa->armlengthbaseline(ret,rt);  
+	    tra += anotherlisa->armlengthaccurate(ret,rt);
+
+	    rt = (it - trb) - tra;
+	}
+    };
 };
 
 #endif /* _LISASIM_TDI_H_ */

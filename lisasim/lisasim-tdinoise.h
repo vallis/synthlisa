@@ -43,6 +43,10 @@ class TDInoise : public TDI {
 
 	void setphlisa(LISA *mylisa);
 
+	// lock all the laser noises to one of them; use negative "master" for starred lasers
+
+	void lock(int master);
+
 	// reset all noises
 
         void reset();

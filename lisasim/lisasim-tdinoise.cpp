@@ -101,6 +101,92 @@ void TDInoise::setphlisa(LISA *mylisa) {
     phlisa = mylisa;
 }
 
+class zLockNoise : public Noise {
+ private:
+    int slave;
+
+    Noise *masterpm, *slavepm, *masterc, *slavec;
+
+ public:
+    zLockNoise(int recv,Noise *mpm,Noise *spm,Noise *mc,Noise *sc)
+	: slave(recv), masterpm(mpm), slavepm(spm), masterc(mc), slavec(sc) {};
+
+    virtual ~zLockNoise() {
+	delete slavec;
+    };
+
+    double operator[](double t) {
+	if (slave > 0) {
+	    // in this case master is starred, slave is not
+	    return (*masterc)[t] - (*masterpm)[t] - (*slavepm)[t];
+	} else {
+	    // in this case master is not starred, slave is
+	    return (*masterc)[t] + (*masterpm)[t] + (*slavepm)[t];
+	}
+    };
+
+    double noise(double time) {
+	return (*this)[time];
+    };
+};
+
+class yLockNoise : public Noise {
+ private:
+    int slave, arm;
+
+    LISA *lisa;
+
+    Noise *slavepm, *shot, *masterc, *slavec;
+
+ public:
+    yLockNoise(int recv,int link,LISA *l,Noise *spm,Noise *sh,Noise *mc,Noise *sc)
+	: slave(recv), arm(link), lisa(l), slavepm(spm), shot(sh), masterc(mc), slavec(sc) {};
+
+    virtual ~yLockNoise() {
+	delete slavec;
+    };
+
+    double operator[](double t) {
+	if (slave > 0) {
+	    // since the slave is not starred, the link is positive (cyclic)
+	    return (*masterc)[t - lisa->armlength(arm,t)] - 2.0 * (*slavepm)[t] + (*shot)[t];
+	} else {
+	    // the slave is starred, the link is anticyclic
+	    return (*masterc)[t - lisa->armlength(arm,t)] + 2.0 * (*slavepm)[t] + (*shot)[t];
+	}
+    };
+
+    double noise(double time) {
+	return (*this)[time];
+    };
+};
+
+// locking procedure: use negative numbers for starred lasers
+
+void TDInoise::lock(int master) {
+    int mastera = abs(master);
+    int slaveb = (mastera % 3) + 1;
+    int slavec = (slaveb % 3) + 1;
+
+    // first lock the laser on the same bench
+
+    if(master > 0) {
+	cs[mastera] = new zLockNoise(-mastera,pm[ mastera],pms[mastera],c[ mastera],cs[mastera]);
+    } else {
+	c[ mastera] = new zLockNoise( mastera,pms[mastera],pm[ mastera],cs[mastera],c[ mastera]);
+    }
+
+    // now lock across to the other benches
+
+    cs[slaveb] = new yLockNoise(-slaveb,-slavec,phlisa,pms[slaveb],shot[mastera][slaveb],c[ mastera],cs[slaveb]);
+    c[ slavec] = new yLockNoise( slavec, slaveb,phlisa,pm[ slavec],shot[mastera][slavec],cs[mastera],c[ slavec]);
+
+    // finally, lock the lasers on the back of the other benches
+
+    c[ slaveb] = new zLockNoise( slaveb,pms[slaveb],pm[slaveb],cs[slaveb],c[slaveb]);
+    cs[slavec] = new zLockNoise(-slavec,pm[slavec],pms[slavec],c[slavec],cs[slavec]);
+}
+
 TDInoise::~TDInoise() {
     if(allocated) {
 	// allow for one noise object to be contained in multiple pointers
@@ -159,11 +245,15 @@ void TDInoise::reset() {
     if(phlisa != lisa) phlisa->reset();
 }
 
-void retardone(LISA *lisa,int ret,double t,double *retardedtime,double *totalretardbaseline,double *totalretardaccurate) {
-    *totalretardbaseline += lisa->armlengthbaseline(ret,*retardedtime);  
-    *totalretardaccurate += lisa->armlengthaccurate(ret,*retardedtime);
+// this is a debugging function, which appears in lisasim-swig.i
 
-    *retardedtime = t - *totalretardbaseline - *totalretardaccurate;
+double retardation(LISA *lisa,int ret1,int ret2,int ret3,int ret4,int ret5,int ret6,int ret7,int ret8,double t) {
+    retardtime myrt(lisa,t);
+
+    myrt.retard(ret8); myrt.retard(ret7); myrt.retard(ret6); myrt.retard(ret5);
+    myrt.retard(ret4); myrt.retard(ret3); myrt.retard(ret2); myrt.retard(ret1);
+
+    return myrt.retardedtime();
 }
 
 double TDInoise::y(int send, int slink, int recv, int ret1, int ret2, int ret3, double t) {
@@ -175,37 +265,29 @@ double TDInoise::y(int send, int slink, int recv, int ret1, int ret2, int ret3, 
 
     // this recursive retardation procedure assumes smart TDI...
 
-    double retardedtime = t;
+    retardtime myrt(lisa,t);
 
-    double totalretardbaseline = 0.0;
-    double totalretardaccurate = 0.0;
+    myrt.retard(ret7); myrt.retard(ret6); myrt.retard(ret5);
+    myrt.retard(ret4); myrt.retard(ret3); myrt.retard(ret2); myrt.retard(ret1);
 
-    if(ret7 != 0) retardone(lisa,ret7,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
-    if(ret6 != 0) retardone(lisa,ret6,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
-    if(ret5 != 0) retardone(lisa,ret5,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
-    if(ret4 != 0) retardone(lisa,ret4,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
-    if(ret3 != 0) retardone(lisa,ret3,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
-    if(ret2 != 0) retardone(lisa,ret2,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
-    if(ret1 != 0) retardone(lisa,ret1,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
-
-    double retardlaser = retardedtime;
+    double retardedtime = myrt.retardedtime();
 
     if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2)) {
         // cyclic combination
-
         // if introducing error in the determination of the armlengths, it should not enter
         // the following (physical) retardation of the laser noise, so we use the phlisa object
 
-	retardone(phlisa,link,t,&retardlaser,&totalretardbaseline,&totalretardaccurate);
+	myrt.retard(phlisa,link);
+	double retardlaser = myrt.retardedtime();
 
         return( (*cs[send])[retardlaser] - 2.0 * (*pm[recv])[retardedtime]  - (*c[recv])[retardedtime]  + 
                 (*shot[send][recv])[retardedtime] );
     } else {
         // anticyclic combination
-
         // ditto here
 
-	retardone(phlisa,-link,t,&retardlaser,&totalretardbaseline,&totalretardaccurate);
+	myrt.retard(phlisa,-link);
+	double retardlaser = myrt.retardedtime();
 
         return( (*c[send])[retardlaser]  + 2.0 * (*pms[recv])[retardedtime] - (*cs[recv])[retardedtime] +
                 (*shot[send][recv])[retardedtime] );
@@ -222,19 +304,12 @@ double TDInoise::z(int send, int slink, int recv, int ret1, int ret2, int ret3, 
     // this recursive retardation procedure assumes smart TDI...
     // (and the correct order in the retardation expressions)
 
-    double retardedtime = t;
+    retardtime myrt(lisa,t);
 
-    double totalretardbaseline = 0.0;
-    double totalretardaccurate = 0.0;
+    myrt.retard(ret8); myrt.retard(ret7); myrt.retard(ret6); myrt.retard(ret5);
+    myrt.retard(ret4); myrt.retard(ret3); myrt.retard(ret2); myrt.retard(ret1);
 
-    if(ret8 != 0) retardone(lisa,ret8,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
-    if(ret7 != 0) retardone(lisa,ret7,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
-    if(ret6 != 0) retardone(lisa,ret6,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
-    if(ret5 != 0) retardone(lisa,ret5,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
-    if(ret4 != 0) retardone(lisa,ret4,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
-    if(ret3 != 0) retardone(lisa,ret3,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
-    if(ret2 != 0) retardone(lisa,ret2,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
-    if(ret1 != 0) retardone(lisa,ret1,t,&retardedtime,&totalretardbaseline,&totalretardaccurate);
+    double retardedtime = myrt.retardedtime();
 
     if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2)) {
         // cyclic combination
@@ -288,15 +363,6 @@ Noise *stdlasernoise(LISA *lisa,double stlaser, double sdlaser) {
     double pbtlaser = 8.0 * lighttime(lisa);
 
     return new InterpolateNoise(stlaser, pbtlaser, sdlaser, 0.0);
-}
-
-Noise *newstdlasernoise(LISA *lisa,double stlaser, double sdlaser, int window) {
-    // create laser noise objects
-    // quadruple retardations are needed for the C's (octuple for 2nd-gen TDI)
-
-    double pbtlaser = 8.0 * lighttime(lisa) + window * stlaser;
-
-    return new InterpolateNoiseBetter(stlaser,pbtlaser,sdlaser,0.0,window);
 }
 
 TDInoise *stdnoise(LISA *mylisa) {
