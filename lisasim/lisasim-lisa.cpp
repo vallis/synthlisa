@@ -459,3 +459,7 @@ double NoisyLISA::armlength(int arm, double t) {
     else
         return(cleanlisa->armlength(arm,t) + (*downerror[-arm])[t]);
 }
+
+LISA *stdlisa() {
+  return new OriginalLISA(Lstd,Lstd,Lstd);
+}

@@ -247,4 +247,6 @@ class NoisyLISA : public LISA {
 	}
 };
 
+extern LISA *stdlisa();
+
 #endif /* _LISASIM_LISA_H_ */
