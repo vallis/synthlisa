@@ -46,9 +46,23 @@ class IntNoise : public RingNoise {
         double filter(long pos);
 };
 
+// the following are the dimensioned noises that are used in the TDInoise class
+// we make them descendants of a generic Noise class that defines only the [] override
+// 
+
+class Noise {
+    public:
+        Noise() {};
+        virtual ~Noise() {};
+
+        virtual void reset() {};
+
+        virtual double operator[](double time) = 0;
+};
+
 // dimensioned interpolated noise
 
-class InterpolateNoise {
+class InterpolateNoise : public Noise {
     private:
         RingNoise *buffernoise;
 
@@ -84,7 +98,7 @@ class GaussSample {
         double value;
 };
 
-class ExpGaussNoise {
+class ExpGaussNoise : public Noise {
     private:
         GaussSample **ptbuffer;
         int buffersize;
