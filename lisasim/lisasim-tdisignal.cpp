@@ -1,7 +1,7 @@
 #include "lisasim-tdisignal.h"
 
 TDIsignal::TDIsignal(LISA *mylisa, Wave *mywave) {
-    lisa = mylisa;
+    lisa = mylisa->thislisa();
     phlisa = mylisa;
     
     wave = mywave;
@@ -14,6 +14,8 @@ TDIsignal::TDIsignal(LISA *mylisa, LISA *physlisa, Wave *mywave) {
     wave = mywave;
 }
 
+// the argument t is actually redundant here!
+
 double TDIsignal::psi(Vector &lisan, double t, double twave) {
     Tensor cwave;
     wave->putwave(cwave,twave);
@@ -24,9 +26,11 @@ double TDIsignal::psi(Vector &lisan, double t, double twave) {
     return(0.5 * lisan.dotproduct(tmp));
 }
 
+// the lisa used here should be the physical one, not the nominal one (02/13/04)
+
 double TDIsignal::retard(int craft, double t) {
     Vector lisap;
-    lisa->putp(lisap,craft,t);
+    phlisa->putp(lisap,craft,t);
     
     return(-lisap.dotproduct(wave->k));
 }
