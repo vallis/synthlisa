@@ -1,4 +1,5 @@
 #include "lisasim.h"
+#include "lisasim-lisa.h"
 
 // --- generic LISA class --------------------------------------------------------------
 
@@ -24,6 +25,39 @@ double LISA::armlength(int arm, double t) {
         diff[i] = arm1[i] - arm2[i];
         
     return(sqrt(diff.dotproduct(diff)));
+}
+
+// --- OriginalLISA LISA class ---------------------------------------------------------
+
+// we take positive and negative arguments to return L and L'
+
+OriginalLISA::OriginalLISA(double lengths[]) {
+    // convert from seconds to years
+
+    for(int i=1;i<4;i++)
+        L[i] = 3.17098E-8 * lengths[i];
+}
+
+double OriginalLISA::armlength(int arm, double t) {
+    return( L[abs(arm)] );
+}
+
+// --- ModifiedLISA LISA class ---------------------------------------------------------
+
+ModifiedLISA::ModifiedLISA(double lengths[],double lengthsp[]) {
+    // convert from seconds to years
+
+    for(int i=1;i<4;i++) {
+        L[i]  = 3.17098E-8 * lengths[i];
+        Lp[i] = 3.17098E-8 * lengthsp[i];        
+    }
+}
+
+double ModifiedLISA::armlength(int arm, double t) {
+    if (arm > 0)
+        return(L[arm]);
+    else
+        return(Lp[-arm]);
 }
 
 // --- CircularRotating LISA class -----------------------------------------------------

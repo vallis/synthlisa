@@ -1,3 +1,6 @@
+#ifndef _LISASIM_TDINOISE_H_
+#define _LISASIM_TDINOISE_H_
+
 class TDInoise {
     private:
         LISA *lisa;
@@ -9,9 +12,6 @@ class TDInoise {
         InterpolateNoise *shot[4][4];
 
         ExpGaussNoise *c[4], *cs[4];
-
-        double y(int send, int link, int recv, int ret1, int ret2, int ret3, double t);
-        double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, double t);
         
     public:
 
@@ -19,6 +19,11 @@ class TDInoise {
 
         TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser, double claser);
         ~TDInoise();
+
+        // leave these here so we can show the cancellation of laser noise
+
+        double y(int send, int link, int recv, int ret1, int ret2, int ret3, double t);
+        double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, double t);
 
         double X(double t);
         double Y(double t);
@@ -34,3 +39,5 @@ class TDInoise {
         
         double E(double t);
 };
+
+#endif /* _LISASIM_TDINOISE_H_ */

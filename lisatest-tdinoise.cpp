@@ -4,6 +4,7 @@
 #include <time.h>
 
 #include "lisasim.h"
+#include "lisasim-lisa.h"
 #include "lisasim-noise.h"
 #include "lisasim-tdinoise.h"
 
@@ -44,10 +45,12 @@ int main(int argc, char **argv) {
 //    ofstream yout("noise-Y.txt");
 //    ofstream zout("noise-Z.txt");
 
-//    ofstream aout("noise-alpha.txt");
+    ofstream aout("noise-alpha.txt");
 
-//    ofstream pout("noise-P.txt");
-//    ofstream eout("noise-E.txt");
+    ofstream pout("noise-P.txt");
+    ofstream eout("noise-E.txt");
+    
+    ofstream y21out("noise-y21.txt");
     
     // set this to a fraction of dstep to oversample by interpolation
     // (see the results on the spectra!)
@@ -59,9 +62,23 @@ int main(int argc, char **argv) {
 //        yout << mytdinoise.Y(sstep * i) << endl;
 //        zout << mytdinoise.Z(sstep * i) << endl;
 
-//        aout << mytdinoise.alpha(sstep * i) << endl;
+        aout << mytdinoise.alpha(sstep * i) << endl;
 
-//        pout << mytdinoise.P(sstep * i) << endl;
-//        eout << mytdinoise.E(sstep * i) << endl;
+        pout << mytdinoise.P(sstep * i) << endl;
+        eout << mytdinoise.E(sstep * i) << endl;
+
+        y21out << mytdinoise.y(3, 2, 1, 0, 0, 0, sstep*i) << endl;
+    }
+    
+    MontanaEccentric thlisa(0.0,0.0);
+    
+    TDInoise thtdinoise(&thlisa,dstep,2.5e-48,dstep,1.8e-37,dstep,1.1e-26,1e-2);
+
+    ofstream xunout("noise-X-unequal.txt");
+    ofstream y21unout("noise-y21-unequal.txt");
+
+    for(int i=0;i<samples;i++) {
+        xunout << thtdinoise.X(sstep * i) << endl;
+        y21unout << thtdinoise.y(3, 2, 1, 0, 0, 0, sstep*i) << endl;        
     }
 }

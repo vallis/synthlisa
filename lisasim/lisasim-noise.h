@@ -1,3 +1,6 @@
+#ifndef _LISASIM_NOISE_H_
+#define _LISASIM_NOISE_H_
+
 // global seed for random number generator
 
 extern int idum;
@@ -101,3 +104,5 @@ class ExpGaussNoise {
 
     double operator[](double time);
 };
+
+#endif /* _LISASIM_NOISE_H_ */
