@@ -165,8 +165,7 @@ InterpolateNoise::InterpolateNoise(double st, double pbt, double sd, double ex, 
 // - number of samples
 // - sampling time
 // - requested prebuffer time
-// - the one-sided power spectral density, given as sd*(f/Hz)^ex,
-//   where sd is in Hz^-1, and ex is either 0.00, -2.00, or 2.00.
+// - normalization factor
 // - the noise exponent ex, which determines the filtering
 
 InterpolateNoise::InterpolateNoise(double *nb,long sl,double st,double pbt,double sd,double ex,int win) {
@@ -177,7 +176,7 @@ InterpolateNoise::InterpolateNoise(double *nb,long sl,double st,double pbt,doubl
     maxtime = samplingtime * (LONG_MAX - 1) - prebuffertime;    
 
     setfilter(ex);
-    setnorm(sd,ex);
+    setnormsampled(sd,ex);
     setinterp(win);
 
     // SampledNoise object
@@ -215,6 +214,19 @@ void InterpolateNoise::setnorm(double sd, double ex) {
         normalize = sqrt(sd) * sqrt(nyquistf) / (2.00 * M_PI * samplingtime);
     } else if (ex == -2.00) {
         normalize = sqrt(sd) * sqrt(nyquistf) * (2.00 * M_PI * samplingtime);
+    } else {
+        cout << "InterpolateNoise::InterpolateNoise: noise spectral shape f^" << ex << " not implemented. Defaulting to no filtering." << endl;
+        normalize = sqrt(sd) * sqrt(nyquistf);
+    }
+}
+
+void InterpolateNoise::setnormsampled(double sd, double ex) {
+    if (ex == 0.00) {
+        normalize = sd;                // we're just normalizing
+    } else if (ex == 2.00) {
+        normalize = sd / samplingtime; // we're differentiating
+    } else if (ex == -2.00) {
+        normalize = sd * samplingtime; // we're integrating
     } else {
         cout << "InterpolateNoise::InterpolateNoise: noise spectral shape f^" << ex << " not implemented. Defaulting to no filtering." << endl;
         normalize = sqrt(sd) * sqrt(nyquistf);

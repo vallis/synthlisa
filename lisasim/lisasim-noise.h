@@ -296,6 +296,7 @@ class InterpolateNoise : public Noise {
 
     void setfilter(double ex);
     void setnorm(double sd, double ex);
+    void setnormsampled(double sd, double ex);
     void setinterp(int window);
 
  public:
