@@ -77,6 +77,24 @@ DP gasdev()
         }
 }
 
+// --- SampledNoise ----------------------------------------------------
+
+SampledNoise::SampledNoise(double *nb, long samples) {
+    noisebuffer = nb;
+
+    maxsamples = samples;
+}
+
+double SampledNoise::operator[](long pos) {
+    if (pos > maxsamples) {
+      cout << "SampledNoise::[] accessing index larger than available" << endl;
+      abort();
+    }
+
+    return noisebuffer[pos];
+}
+
+
 // --- "Ring" classes --------------------------------------------------
 
 //  default constructor for RingNoise
@@ -165,7 +183,26 @@ double IntNoise::filter(long pos) {
 
 // --- dimensioned-noise classes --------------------------------------------------
 
-// constructor: need to pass the sampling time (in secs), the requested prebuffer time
+// constructor based on SampledNoise: need pointer to noise buffer, number of samples, sampling time,
+// requested prebuffer time (probably a multiple of some nominal armlength), and the one-sided power spectral density
+
+InterpolateNoise::InterpolateNoise(double *noisebuf,long samples,double st,double pbt,double sd) {
+    samplingtime = st;
+    nyquistf = 1.00 / (2*st);
+
+    // compute the prebuffer offset
+
+    prebuffertime = long(floor(pbt / samplingtime)) + 1;
+
+    // the corresponding maximum sample time that can be accessed is
+    
+    maxitime = samples - prebuffertime - 1;    
+
+    buffernoise = new SampledNoise(noisebuf,samples);
+    normalize = sqrt(sd) * sqrt(nyquistf);
+}
+
+// constructor based on RingNoise: need to pass the sampling time (in secs), the requested prebuffer time
 // (probably a multiple of some nominal armlength), and the one-sided power spectral density,
 // given as sd*(f/Hz)^ex, where sd is in Hz^-1, and ex is either 0.00, -2.00, or 2.00.
 // The corresponding ringnoise object is then allocated automatically
@@ -220,7 +257,7 @@ double InterpolateNoise::inoise(double time) {
     long index;
     
     if (itime > maxitime) {
-        cout << "InterpolateNoise::inoise() accessing index larger than LONG_MAX" << endl;
+        cout << "InterpolateNoise::inoise() accessing index larger than maximum allowed" << endl;
         abort();
     } else {
         index = long(itime) + prebuffertime;

@@ -1,13 +1,32 @@
 #ifndef _LISASIM_NOISE_H_
 #define _LISASIM_NOISE_H_
 
+class BufferNoise {
+    public:
+       virtual void reset() {};
+
+       virtual double operator[](long pos) = 0;
+};
+
+class SampledNoise : public BufferNoise {
+    private:
+        double *noisebuffer;
+
+	long maxsamples;
+
+    public:
+        SampledNoise(double *nb, long samples);
+
+	double operator[](long pos);
+};
+
 // global seed for random number generator
 
 extern int idum;
 
 // current implementation limits the total number of total samples to MAX_LONG
 
-class RingNoise {
+class RingNoise : public BufferNoise {
     public:
         long buffersize;
         long earliest, latest;
@@ -64,7 +83,7 @@ class Noise {
 
 class InterpolateNoise : public Noise {
     private:
-        RingNoise *buffernoise;
+        BufferNoise *buffernoise;
 
         // use time in seconds
 
@@ -79,7 +98,8 @@ class InterpolateNoise : public Noise {
         double normalize;
 
     public:
-        InterpolateNoise(double st, double pbt, double sd, double ex);
+        InterpolateNoise(double sampletime,double prebuffer,double density,double exponent);
+	InterpolateNoise(double *noisebuf,long samples,double sampletime,double prebuffer,double density);
         ~InterpolateNoise();
 
         void reset();
