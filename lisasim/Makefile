@@ -107,7 +107,7 @@ lisaswig-clean:
 lisasim: $(BINS)/lisasim
 
 $(BINS)/lisasim: $(BINS) $(BUILD) $(OFILES) $(BUILD)/lisasim-main.o $(BUILD)/lisasim-tdifast.o
-	g++ $(OPTIONS) $(OFILES) $(BUILD)/lisasim-main.o $(BUILD)/lisasim-tdifast.o -o $(BINS)/lisasim
+	g++ $(OPTIONS) $(OFILES) $(GSL_OFILES) $(BUILD)/lisasim-main.o $(BUILD)/lisasim-tdifast.o -o $(BINS)/lisasim
 
 lisasim-clean:
 	-rm $(BUILD)/lisasim-main.o $(BUILD)/lisasim-tdifast.o
@@ -118,7 +118,7 @@ lisasim-clean:
 lisatest: $(BINS)/lisatest-tdi
 
 $(BINS)/lisatest-tdi: $(OFILES) $(BUILD)/lisatest-tdi.o
-	g++ $(OPTIONS) $(OFILES) $(BUILD)/lisatest-tdi.o -o $(BINS)/lisatest-tdi
+	g++ $(OPTIONS) $(OFILES) $(GSL_OFILES) $(BUILD)/lisatest-tdi.o -o $(BINS)/lisatest-tdi
 
 lisatest-clean:
 	-rm $(BUILD)/lisatest-tdi.o

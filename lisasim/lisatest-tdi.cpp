@@ -1,6 +1,7 @@
 #include <iostream.h>
 #include <math.h>
 #include <unistd.h>
+#include <fstream>
 #include "lisasim.h"
 #include "lisatest.h"
 

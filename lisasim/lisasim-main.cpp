@@ -1,6 +1,7 @@
 #include <iostream>
 #include <math.h>
 #include <unistd.h>
+#include <fstream>
 #include "lisasim.h"
 
 // a rather longwinded way to unwind the phase...
