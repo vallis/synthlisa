@@ -41,6 +41,8 @@ class TDInoise {
         double P(double t);
         
         double E(double t);
+
+        double Xm(double t);
 };
 
 #endif /* _LISASIM_TDINOISE_H_ */

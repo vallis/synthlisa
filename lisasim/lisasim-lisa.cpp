@@ -3,11 +3,12 @@
 // --- generic LISA class --------------------------------------------------------------
 
 // This is the generic version of "armlength", which takes differences between positions
+// generalized to take negative arguments, but it will still give the same answer
 
 double LISA::armlength(int arm, double t) {
     Vector arm1, arm2;
     
-    switch(arm) {
+    switch(abs(arm)) {
         case 1:
             putp(arm1,2,t); putp(arm2,3,t);
             break;
@@ -28,13 +29,61 @@ double LISA::armlength(int arm, double t) {
 
 // --- OriginalLISA LISA class ---------------------------------------------------------
 
-// we take positive and negative arguments to return L and L'
-
-OriginalLISA::OriginalLISA(double lengths[]) {
+OriginalLISA::OriginalLISA(double L1,double L2,double L3) {
     // convert from seconds to years
 
-    for(int i=1;i<4;i++)
-        L[i] = 3.17098E-8 * lengths[i];
+    L[1] = 3.17098E-8 * L1;
+    L[2] = 3.17098E-8 * L2;
+    L[3] = 3.17098E-8 * L3;
+    
+    // construct the p vectors with the required lengths;
+                
+    double dL = sqrt(2.0 * (L[2]*L[2] + L[3]*L[3]) - L[1]*L[1]);
+    double dth = -acos((L[2]*L[2] + L[3]*L[3] - L[1]*L[1])/(2.0 * L[2] * L[3]));
+    double th3 = acos((3.0*L[2]*L[2] + L[3]*L[3] - L[1]*L[1])/(2.0 * L[2] * dL));
+    
+    Vector tp1, tp2, tp3;
+    
+    tp1[0] = 0.0;                   tp1[1] = 0.0;                 tp1[2] = 0.0;
+    tp2[0] = L[3] * cos(dth + th3); tp2[1] = L[3] * sin(dth+th3); tp2[2] = 0.0;
+    tp3[0] = L[2] * cos(th3);       tp3[1] = L[2] * sin(th3);     tp3[2] = 0.0;
+
+    // align them so that p1 + p2 + p3 = 0
+    // need to do only the x axis, the others are guaranteed
+    
+    double xoffset = (tp1[0] + tp2[0] + tp3[0]) / 3.0;
+
+    // now assign them to initp; reflect axes and exchange 2<>3 so that for equal arms we get the
+    // initp values used in CircularRotating
+    
+    initp[1][0] = -(tp1[0] - xoffset); initp[1][1] = -tp1[1]; initp[1][2] = -tp1[2];
+    initp[2][0] = -(tp3[0] - xoffset); initp[2][1] = -tp3[1]; initp[2][2] = -tp3[2];
+    initp[3][0] = -(tp2[0] - xoffset); initp[3][1] = -tp2[1]; initp[3][2] = -tp2[2];
+
+    // now compute the corresponding n's as differences of p's, and normalize
+    
+    for(int i=0;i<3;i++) {
+        initn[1][i] = initp[2][i] - initp[3][i];
+        initn[2][i] = initp[3][i] - initp[1][i];
+        initn[3][i] = initp[1][i] - initp[2][i];                
+    }
+        
+    for(int j=1;j<4;j++) {
+        double norm = sqrt(initn[j][0]*initn[j][0] + initn[j][1]*initn[j][1] + initn[j][2]*initn[j][2]);
+        
+        for(int i=0;i<3;i++)
+            initn[j][i] /= norm;
+    }
+}
+
+void OriginalLISA::putn(Vector &n,int arm,double t) {
+    for(int i=0;i<3;i++)
+        n[i] = initn[arm][i];
+}
+
+void OriginalLISA::putp(Vector &p,int craft,double t) {
+    for(int i=0;i<3;i++)
+        p[i] = initp[craft][i];
 }
 
 double OriginalLISA::armlength(int arm, double t) {
@@ -43,20 +92,80 @@ double OriginalLISA::armlength(int arm, double t) {
 
 // --- ModifiedLISA LISA class ---------------------------------------------------------
 
-ModifiedLISA::ModifiedLISA(double lengths[],double lengthsp[]) {
-    // convert from seconds to years
+ModifiedLISA::ModifiedLISA(double arm1,double arm2,double arm3) : OriginalLISA(arm1,arm2,arm3) {
+    // computing everything in years...
+
+    double Omega = 2.0 * M_PI;
 
     for(int i=1;i<4;i++) {
-        L[i]  = 3.17098E-8 * lengths[i];
-        Lp[i] = 3.17098E-8 * lengthsp[i];        
+        int crafta = (i + 1 < 4) ? i + 1 : i - 2;
+        int craftb = (i + 2 < 4) ? i + 2 : i - 1;
+
+        double La = sqrt(initp[crafta].dotproduct(initp[crafta]));
+        double Lb = sqrt(initp[craftb].dotproduct(initp[craftb]));
+
+        // see Mathematica file armlength.nb for this expression
+
+        sagnac[i] = La * Lb * sqrt(1.0 - (La*La + Lb*Lb - L[i]*L[i])*(La*La + Lb*Lb - L[i]*L[i]) / (4.0 * La*La * Lb*Lb)) * Omega;
+
+        Lc[i]  = L[i] + sagnac[i];
+        Lac[i] = L[i] - sagnac[i];
+
+        cout.precision(8);
+        cout << "Light times on arm " << i << ": " << Lc[i] / 3.17098E-8 << " " << Lac[i] / 3.17098E-8 << endl;
     }
 }
 
+// this does not have to be so general, because the arm vectors are static up to a rotation.
+// Still, ModifiedLISA should not need the n's often, and this putn can probably be adapted
+// for a generic LISA
+
+void ModifiedLISA::putn(Vector &n,int arms,double t) {
+    int arm = abs(arms);
+
+    int crafta = (arm + 1 < 4) ? (arm + 1) : (arm - 2);
+    int craftb = (arm + 2 < 4) ? (arm + 2) : (arm - 1);
+
+    if(arms < 0) {
+        int swap = crafta;
+        crafta = craftb;
+        craftb = swap;
+    }
+
+    // this is consistent with pa(t) = pb(t-L(t;b->a)) + L(t;b->a) n
+    // for instance, p_1 = p_2 + n_3
+
+    Vector pa, pb;
+
+    putp(pa,crafta,t);
+    putp(pb,craftb,t-armlength(arms,t));
+
+    for(int i=0;i<3;i++)
+        n[i] = pa[i] - pb[i];
+    
+    // normalize to a unit vector
+
+    double norm = sqrt(n[0]*n[0] + n[1]*n[1] + n[2]*n[2]);    
+                
+    for(int i=0;i<3;i++)
+        n[i] /= norm;
+}
+
+// implement simple LISA rotation in xy plane with period of a year
+
+void ModifiedLISA::putp(Vector &p,int craft,double t) {
+    const double twopi = 2.0*M_PI;
+    
+    p[0] = cos(twopi*t) * initp[craft][0] - sin(twopi*t) * initp[craft][1];
+    p[1] = sin(twopi*t) * initp[craft][0] + cos(twopi*t) * initp[craft][1];
+    p[2] = initp[craft][2];
+}
+
 double ModifiedLISA::armlength(int arm, double t) {
-    if (arm > 0)
-        return(L[arm]);
+    if(arm > 0)
+        return(Lc[arm]);
     else
-        return(Lp[-arm]);
+        return(Lac[-arm]);
 }
 
 // --- CircularRotating LISA class -----------------------------------------------------
@@ -145,6 +254,7 @@ void CircularRotating::putp(Vector &p,int craft,double t) {
 }
 
 // The length of arms is fixed to L for this model
+// It will work also with negative arm arguments
 
 double CircularRotating::armlength(int arm, double t) {
     return L;

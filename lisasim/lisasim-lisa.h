@@ -15,9 +15,16 @@ class LISA {
         virtual void putn(Vector &n, int arm, double t) = 0;
         virtual void putp(Vector &p, int craft, double t) = 0;
 
+        virtual double armlength(int arm, double t);
+
+        // these extra methods are needed to load arrays (not Vector objects)
+        // with the spacecraft positions and links
+
         virtual void putn(double n[], int arm, double t) {
             Vector temp;
+            
             putn(temp, arm, t);
+            
             n[0] = temp[0];
             n[1] = temp[1];
             n[2] = temp[2];
@@ -25,47 +32,49 @@ class LISA {
         
         virtual void putp(double p[], int craft, double t) {
             Vector temp;
+            
             putp(temp, craft, t);
+            
             p[0] = temp[0];
             p[1] = temp[1];
             p[2] = temp[2];
 	}
-	  
-        virtual double armlength(int arm, double t);
 };
-
-// use the following two classes only for TDInoise
 
 class OriginalLISA : public LISA {
+    protected:
+
+    double L[4];
+    
+    Vector initn[4];
+    Vector initp[4];
+        
     public:
     
-    double L[4];
-
     // accept the armlength in seconds
 
-    OriginalLISA(double armlength[]);
+    OriginalLISA(double arm1,double arm2,double arm3);
 
-    // we need to define these, but we leave them empty for the moment
+    virtual void putn(Vector &n, int arm, double t);
+    virtual void putp(Vector &p, int craft, double t);
 
-    void putn(Vector &n, int arm, double t) {}
-    void putp(Vector &p, int craft, double t) {}
-
-    double armlength(int arm, double t);
+    virtual double armlength(int arm, double t);
 };
 
-class ModifiedLISA : public LISA {
+// for the moment, use the following class only for TDInoise
+
+class ModifiedLISA : public OriginalLISA {
     public:
     
-    double L[4], Lp[4];
+    double sagnac[4];
+    double Lc[4], Lac[4];
 
     // accept the armlength in seconds
 
-    ModifiedLISA(double armlength[],double armlengthp[]);
+    ModifiedLISA(double arm1,double arm2,double arm3);
 
-    // we need to define these, but we leave them empty for the moment
-
-    void putn(Vector &n, int arm, double t) {}
-    void putp(Vector &p, int craft, double t) {}
+    void putn(Vector &n, int arm, double t);
+    void putp(Vector &p, int craft, double t);
 
     double armlength(int arm, double t);
 };
@@ -96,7 +105,6 @@ class CircularRotating : public LISA {
         void settime(double t);
 
         void putn(Vector &n,int arm,double t);
-
         void putp(Vector &p,int craft,double t);
         
         double armlength(int arm, double t);

@@ -5,6 +5,8 @@
 #include <cmath>
 #include <stdlib.h>
 
+#include <float.h>
+
 // --- uniform random number generator --------------------------------------------------
 
 // from numerical recipes is C++:
@@ -281,12 +283,35 @@ ExpGaussNoise::~ExpGaussNoise() {
     delete ptbuffer;
 }
 
+double safeexp(double e) {
+    if(e > -20.0)
+        return exp(e);
+    else
+        return 0.0;
+}
+
 double ExpGaussNoise::operator[](double time) {
+    const double alloweddelta = 1.0e-12;
+    
     GaussSample *current = first;
 
+    double debug = 0.0;
+    
+    if (normalize != 0.0 && last->time > 48.00)
+        debug = 0.0;
+
+    if (debug != 0.0)
+        cout << "Accessing " << time << endl;
+
     while(current->time <= time) {
-        if(current->time == time) {
+ //       if (debug != 0.0)
+ //           cout << "Checking " << current->time << endl;
+    
+        if(fabs(current->time - time) < alloweddelta) {
             // we already have the sample
+
+        if (debug != 0.0)
+            cout << "I have the sample! " << normalize * current->value << endl;
     
             return(normalize * current->value);
         }
@@ -294,8 +319,20 @@ double ExpGaussNoise::operator[](double time) {
         current = current->next;
         if(!current) break;
     };
+
+    if(current && fabs(current->time - time) < alloweddelta) {
+            // we already have the sample
+
+        if (debug != 0.0)
+            cout << "I have the sample! " << normalize * current->value << endl;
+    
+            return(normalize * current->value);
+        } 
     
     // we'll need a new sample
+    
+    if (debug != 0.0)
+        cout << "Creating new sample at " << time << endl;
     
     GaussSample *newone = ptbuffer[bufferlevel];
     ptbuffer[bufferlevel] = 0;
@@ -313,7 +350,10 @@ double ExpGaussNoise::operator[](double time) {
         // create a new sample using the "last" rule
         // remember that lambda is negative
 
-        double r = exp(lambda * (time - last->time));
+        double r = safeexp(lambda * (time - last->time));
+
+        if (debug != 0.0)
+            cout << "Using advance rule from " << last->time << ", r=" << r << endl;
 
         newone->time = time;  
         newone->value = sqrt(1 - r*r) * gasdev() + r * (last->value);
@@ -325,10 +365,16 @@ double ExpGaussNoise::operator[](double time) {
         
         last->next = newone;
         last = newone;
+
+        if (debug != 0.0)
+            cout << "New sample is " << normalize * newone->value << endl;
         
         // since we added at the end, purge from the beginning
 
         while(time - first->time > lapsetime) {
+        if (debug != 0.0)
+            cout << "Purging " << first->time << endl;
+            
             bufferlevel = bufferlevel + 1;
             ptbuffer[bufferlevel] = first;
             
@@ -341,7 +387,10 @@ double ExpGaussNoise::operator[](double time) {
         if(!previous) {
             // we're at the beginning of the chain!
 
-            double r = exp(lambda * (current->time - time));
+            double r = safeexp(lambda * (current->time - time));
+
+            if (debug != 0.0)
+                cout << "Using backward rule from " << current->time << ", r=" << r << endl;
 
             newone->time = time;  
             newone->value = sqrt(1 - r*r) * gasdev() + r * (current->value);
@@ -351,13 +400,19 @@ double ExpGaussNoise::operator[](double time) {
 
             first->prev = newone;
             first = newone;
+
+            if (debug != 0.0)
+                cout << "New sample is " << normalize * newone->value << endl;
         } else {
             // we're in between! "current" holds the larger time, "previous" the smaller
             // create a new sample using the "bridge" rule
             // remember that lambda is negative
         
-            double r1 = exp(lambda * (time - previous->time));
-            double r2 = exp(lambda * (current->time - time));
+            double r1 = safeexp(lambda * (time - previous->time));
+            double r2 = safeexp(lambda * (current->time - time));
+
+            if (debug != 0.0)
+                cout << "Using between rule from " << previous->time << ", " << current->time << "; r=" << r1 << "," << r2 << endl;
 
             newone->time = time;
             newone->value = sqrt( (1 - r1*r1) * (1 - r2*r2) / (1 - r1*r1*r2*r2) ) * gasdev() + 
@@ -371,6 +426,9 @@ double ExpGaussNoise::operator[](double time) {
         
             previous->next = newone;
             current->prev = newone;
+            
+            if (debug != 0.0)
+                cout << "New sample is " << normalize * newone->value << endl;
         }
     }
     

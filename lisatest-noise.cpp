@@ -33,9 +33,9 @@ int main(int argc, char **argv) {
 
     idum = -time(0);
 
-    RingNoise myrnoise(256);
-    DiffNoise mydnoise(256);
-    IntNoise myinoise(256, 0.9999);
+    // RingNoise myrnoise(256);
+    // DiffNoise mydnoise(256);
+    // IntNoise myinoise(256, 0.9999);
 
     // this is the nominal time interval of the noises
 
@@ -45,37 +45,37 @@ int main(int argc, char **argv) {
     InterpolateNoise proofnoise(dstep,256.0,2.5e-48,-2.0);
     InterpolateNoise shotnoise(dstep,256.0,1.8e-37,2.0);
 
-    ExpGaussNoise expnoise(dstep,20.00,1.00/0.01,1.1e-26);
+    // ExpGaussNoise expnoise(dstep,20.00,1.00/0.01,1.1e-26);
 
     // set this to a fraction of dstep to oversample by interpolation
     // (see the results on the spectra!)
 
-    double sstep = 1.0;
+    double sstep = 0.1;
 
-    ofstream rout("noise-white.txt");
-    ofstream dout("noise-diff.txt");
-    ofstream iout("noise-int.txt");    
+    // ofstream rout("noise-white.txt");
+    // ofstream dout("noise-diff.txt");
+    // ofstream iout("noise-int.txt");    
 
     ofstream lout("noise-laser.txt");
     ofstream pout("noise-proof.txt");
     ofstream sout("noise-shot.txt");
 
-    ofstream eout("noise-exp.txt");
+    // ofstream eout("noise-exp.txt");
 
     for(int i=0;i<samples;i++) {
-        rout << myrnoise[i] << endl;
-        dout << mydnoise[i] << endl;
-        iout << myinoise[i] << endl;
+    //    rout << myrnoise[i] << endl;
+    //    dout << mydnoise[i] << endl;
+    //    iout << myinoise[i] << endl;
         
         lout << lasernoise[sstep * i] << endl;
         pout << proofnoise[sstep * i] << endl;
         sout << shotnoise[sstep * i] << endl;
 
-        eout << expnoise[sstep * i] << endl;
+    //    eout << expnoise[sstep * i] << endl;
     } 
 
     // out-of-order test
-
+/*
     double *doublebuffer = new double[samples];
 
     ExpGaussNoise expnoise2(dstep,20.00,1.00/0.01,1.1e-26);
@@ -121,4 +121,5 @@ int main(int argc, char **argv) {
 
     for(int i=0;i<samples;i++)
         eout5 << expnoise5[sstep * i] << endl;
+*/
 }

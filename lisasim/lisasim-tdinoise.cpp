@@ -7,6 +7,7 @@ TDInoise::TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, 
 
     // to estimate size of noisebuffer, take an armlength at time zero,
     // and add 10%; need to convert from years to seconds (we use the factor from lisasim-tdi.cpp)
+    // ah, this might not work for OriginalLISA and strange geometries
 
     double lighttime = 1.10 * (lisa->armlength(1,0.0) / 3.17098E-8);
 
@@ -38,8 +39,8 @@ TDInoise::TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, 
     double pbtlaser = 4.0 * lighttime;
     
      for(int craft = 1; craft <= 3; craft++) {
-        c[craft] = new ExpGaussNoise(stlaser,pbtlaser,stlaser/claser,sdlaser);
-        cs[craft] = new ExpGaussNoise(stlaser,pbtlaser,stlaser/claser,sdlaser);
+        c[craft] = new ExpGaussNoise(stlaser,pbtlaser,1/claser,sdlaser);
+        cs[craft] = new ExpGaussNoise(stlaser,pbtlaser,1/claser,sdlaser);
     }
 }
 
@@ -68,46 +69,89 @@ TDInoise::~TDInoise() {
     }
 }
 
-double TDInoise::y(int send, int link, int recv, int ret1, int ret2, int ret3, double t) {
-    double retardedtime = t;
-    
-    // need to convert retardations to seconds; conversion factor from lisasim-wave
-    
-    if(ret1) retardedtime -= 3.1536E7 * lisa->armlength(ret1,t);
-    if(ret2) retardedtime -= 3.1536E7 * lisa->armlength(ret2,t);
-    if(ret3) retardedtime -= 3.1536E7 * lisa->armlength(ret3,t);
+double TDInoise::y(int send, int slink, int recv, int ret1, int ret2, int ret3, double t) {
+//    cout << "Doing y(" << send << "," << slink << "," << recv << "," << ret1 << "," << ret2 << "," << ret3 << ")" << endl;
 
-    double retardlaser = retardedtime - 3.1536E7 * lisa->armlength(link,t);
+    int link = abs(slink);
+
+    // need to convert retardations to seconds; conversion factor from lisasim-wave
+    // but armlength takes a time in years (when it does)
+
+    // this recursive retardation procedure assumes smart TDI...
+
+    double retardedtime = t;
+
+    if(ret3 != 0) retardedtime -= 3.1536E7 * lisa->armlength(ret3, 3.17098E-8 * retardedtime);
+    if(ret2 != 0) retardedtime -= 3.1536E7 * lisa->armlength(ret2, 3.17098E-8 * retardedtime);    
+    if(ret1 != 0) retardedtime -= 3.1536E7 * lisa->armlength(ret1, 3.17098E-8 * retardedtime);
 
     if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2)) {
         // cyclic combination
+
+        // if introducing error in the determination of the armlengths, it should not enter
+        // the following (physical) retardation of the laser noise
+
+        double retardlaser = retardedtime - 3.1536E7 * lisa->armlength(link,3.17098E-8 * retardedtime);
+
+        cout.precision(16);
+
+        if(t==0.00 && recv==1) {
+//            cout << "y(" << send << "," << slink << "," << recv << "," << ret1 << "," << ret2 << "," << ret3 << "); " << "-c(1," << retardedtime << "): " << -(*c[recv])[retardedtime] << endl; 
+        }
 
         return( (*cs[send])[retardlaser] - 2.0 * (*pm[recv])[retardedtime]  - (*c[recv])[retardedtime]  + 
                 (*shot[send][recv])[retardedtime] );
     } else {
         // anticyclic combination
 
+        // ditto here
+
+        double retardlaser = retardedtime - 3.1536E7 * lisa->armlength(-link,3.17098E-8 * retardedtime);
+
+        cout.precision(16);
+
+        if(t==0.00 && send==1) {
+//            cout << "y(" << send << "," << slink << "," << recv << "," << ret1 << "," << ret2 << "," << ret3 << "); " << "c(1," << retardlaser << "): " << (*c[send])[retardlaser] << endl; 
+        }
+
         return( (*c[send])[retardlaser]  + 2.0 * (*pms[recv])[retardedtime] - (*cs[recv])[retardedtime] +
                 (*shot[send][recv])[retardedtime] );
     }
 }
 
-double TDInoise::z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, double t) {
-    double retardedtime = t;
-    
-    // need to convert retardations to seconds; conversion factor from lisasim-wave
-    
-    if(ret1) retardedtime -= 3.1536E7 * lisa->armlength(ret1,t);
-    if(ret2) retardedtime -= 3.1536E7 * lisa->armlength(ret2,t);
-    if(ret3) retardedtime -= 3.1536E7 * lisa->armlength(ret3,t);
-    if(ret4) retardedtime -= 3.1536E7 * lisa->armlength(ret4,t);
+double TDInoise::z(int send, int slink, int recv, int ret1, int ret2, int ret3, int ret4, double t) {
+    int link = abs(slink);
 
+//    cout << "Doing z(" << send << "," << slink << "," << recv << "," << ret1 << "," << ret2 << "," << ret3 << "," << ret4 << ")" << endl;
+
+    // need to convert retardations to seconds; conversion factor from lisasim-wave
+
+    // this recursive retardation procedure assumes smart TDI...
+    // (and the correct order in the retardation expressions)
+
+    double retardedtime = t;
+
+    if(ret4 != 0) retardedtime -= 3.1536E7 * lisa->armlength(ret4,3.17098E-8 * retardedtime);
+    if(ret3 != 0) retardedtime -= 3.1536E7 * lisa->armlength(ret3,3.17098E-8 * retardedtime);
+    if(ret2 != 0) retardedtime -= 3.1536E7 * lisa->armlength(ret2,3.17098E-8 * retardedtime);    
+    if(ret1 != 0) retardedtime -= 3.1536E7 * lisa->armlength(ret1,3.17098E-8 * retardedtime);
+
+    cout.precision(16);
+    
     if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2)) {
         // cyclic combination
+
+        if(t==0.00 && recv==1) {
+//            cout << "z(" << send << "," << slink << "," << recv << "," << ret1 << "," << ret2 << "," << ret3 << "," << ret4 << "); " << "-c(1," << retardedtime << "): " <<  -(*c[recv])[retardedtime] << endl; 
+        }
 
         return( (*cs[recv])[retardedtime] - 2.0 * (*pms[recv])[retardedtime] - (*c[recv])[retardedtime] );
     } else {
         // anticyclic combination
+
+        if(t==0.00 && recv==1) {
+//            cout << "z(" << send << "," << slink << "," << recv << "," << ret1 << "," << ret2 << "," << ret3 << "," << ret4 << "); " << "c(1," << retardedtime << "):" << (*c[recv])[retardedtime] << endl; 
+        }
 
         return( (*c[recv])[retardedtime]  + 2.0 * (*pm[recv])[retardedtime]  - (*cs[recv])[retardedtime] );
     }
@@ -301,3 +345,22 @@ double TDInoise::E(double t) {
             z(3, 2, 1, 1, 1, 0, 0, t) -
             z(2, 3, 1, 1, 1, 0, 0, t) ) );
 };
+
+double TDInoise::Xm(double t) {
+    return( y(1,-3, 2, 3, 2,-2, t) -
+            y(1, 2, 3,-2,-3, 3, t) +
+            y(2, 3, 1, 2,-2, 0, t) -
+            y(3,-2, 1,-3, 3, 0, t) +
+            y(1, 2, 3,-2, 0, 0, t) -
+            y(1,-3, 2, 3, 0, 0, t) + 
+            y(3,-2, 1, 0, 0, 0, t) -
+            y(2, 3, 1, 0, 0, 0, t) +
+    0.5 * (-z(3,-2, 1, 2,-2,-3, 3, t) +
+            z(3,-2, 1,-3, 3, 0, 0, t) +
+            z(3,-2, 1, 2,-2, 0, 0, t) -
+            z(3,-2, 1, 0, 0, 0, 0, t) ) +
+    0.5 * ( z(2, 3, 1, 2,-2,-3, 3, t) -
+            z(2, 3, 1,-3, 3, 0, 0, t) -
+            z(2, 3, 1, 2,-2, 0, 0, t) +
+            z(2, 3, 1, 0, 0, 0, 0, t) ) );
+}
