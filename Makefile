@@ -25,3 +25,8 @@ contribs:
 lisaswig:
 	cd lisasim; $(MAKE) all
 
+# add the parallel-execution functionality (requires MPI)
+
+lisapar:
+	cd contrib-source; $(MAKE) pypar
+	cd lisasim; $(MAKE) lisapar

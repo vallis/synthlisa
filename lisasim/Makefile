@@ -37,6 +37,11 @@ lisautils: $(LIBS)/lisautils.py
 $(LIBS)/lisautils.py: lisautils.py
 	cp lisautils.py $(LIBS)/.
 
+lisapar: $(LIBS)/lisapar.py
+
+$(LIBS)/lisapar.py: lisapar.py
+	cp lisapar.py $(LIBS)/.
+
 # get ready to compile basic lisasim objects
 CFILES= lisasim-lisa.cpp lisasim-noise.cpp lisasim-tdi.cpp lisasim-tdisignal.cpp lisasim-tdinoise.cpp lisasim-tens.cpp lisasim-wave.cpp
 
