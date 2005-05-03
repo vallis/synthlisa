@@ -6,7 +6,7 @@
 %include typemaps.i
 
 %{
-#include "arrayobject.h"
+#include "Numeric/arrayobject.h"
 
 #define ISCONTIGUOUS(m) ((m)->flags & CONTIGUOUS)
 
