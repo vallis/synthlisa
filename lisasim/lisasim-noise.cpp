@@ -11,7 +11,7 @@ using namespace std;
 
 // from contrib-source/GSL-1.4
 
-#include "gsl_rng.h"
+#include "GSL/gsl_rng.h"
 
 // for seedrandgen
 

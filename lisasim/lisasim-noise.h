@@ -5,7 +5,7 @@
 using namespace std;
 
 #include <limits.h>
-#include "gsl_rng.h"
+#include "GSL/gsl_rng.h"
 
 // the class structure used by the noise classes is somewhat complex
 // but it is very efficient and very extendable
