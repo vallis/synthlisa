@@ -1,0 +1,52 @@
+2004/07/28 1.2 lisasim-retard.h
+Second version of CacheLISA, based on home-grown hashed map. Better.
+
+2004/07/28 1.1 lisasim-retard.h
+First version of CacheLISA, based on STL map; not very fast
+
+2004/07/28 1.4 lisautils.py
+Made getobsc print final speed report
+
+2004/07/28 1.10 lisasim.h
+Added lisasim-retard.h include
+
+2004/07/28 1.6 lisasim-tdisignal.cpp
+Fixed nominal-physical LISA exchange bug. Changed from retardtime
+mechanism to LISA retard calls
+
+2004/07/28 1.15 lisasim-tdinoise.cpp
+Fixed nominal-physical LISA exchange bug. Changed from retardtime
+mechanism to LISA retard calls
+
+2004/07/28 1.11 lisasim-tdi.cpp
+Moved retardtime mechanism to base LISA class methods, added zeta1,
+zeta2, zeta3 definitions
+
+2004/07/28 1.8 lisasim-tdi.h
+Moved retardtime mechanism to base LISA class methods
+
+2004/07/28 1.19 lisasim-swig.i
+Added CacheLISA interface; added zeta1, zeta2, zeta3 to TDI interface
+
+2004/07/28 1.16 lisasim-lisa.h
+Moved retardtime mechanism to base LISA class methods, to facilitate
+overloading in a CacheLISA class.
+
+2004/07/28 1.17 lisasim-lisa.cpp
+Moved retardtime mechanism to base LISA class methods, to facilitate
+overloading in a CacheLISA class. Corrected buffering of noise in
+NoisyLISA to 8 lighttimes.
+
+2004/07/28 1.19 Makefile
+Corrected lisasim-swig_wrap.cxx dependency on headers; added
+lisasim-retard.h to headers
+
+2004/07/26 1.18 lisasim-swig.i
+Revised public interface, added public method noise to Noise
+
+2004/07/26 1.3 lisautils.py
+Added nonoverlapping-windowed periodogram, zerotime option for getobs,
+fixed bug in triangular window
+
+2004/07/14 all files
+This history starts with Release 1.0 of Synthetic LISA
