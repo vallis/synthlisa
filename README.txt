@@ -1,12 +1,12 @@
-==============================
-Synthetic LISA, v. 1.0 (alpha)
-==============================
+==================================
+Synthetic LISA, v. 1.2, 2005-05-06
+==================================
 
-by Michele Vallisneri and John Armstrong
+by M. Vallisneri and J. W. Armstrong
 Jet Propulsion Laboratory, Caltech
 4800 Oak Grove Dr., Pasadena CA 91109
 
-contact: vallis@vallis.org
+contact: Michele Vallisneri, vallis@vallis.org
 
 ---------------------------------------------
 In this file:
@@ -31,20 +31,32 @@ In this file:
 0. Quickstart
 =============
 
-- Unpack ("tar zxvf") the distribution, do "make all" (if you are
-  compiling from sources).
+- I assume you have Python >= 2.3, GNU gcc, GNU Make, and Gnuplot (if
+  you want to plot).
 
-- Run "source setdir.sh" or "source setdir.csh" (depending on your
-  shell; you'll need to do this every time you want to work with
-  Synthetic LISA).
+- Unpack the Synthetic LISA distribution (synthLISA-1.2.tar.gz) and cd
+  to it; download recent versions of Numeric and SWIG from
+  www.vallis.org/syntheticlisa into the unpacked Synthetic LISA
+  distribution directory.
 
-- Go to the example directory, run a few of the Python (*.py) scripts
-  ("python scriptname.py") and plot their results ("gnuplot -persist
-  scriptname.plt").
+- Run "./default-install.sh". This will install Numeric, SWIG, and
+  Synthetic LISA locally, into "lib", "bin", "include", and "share"
+  within the Synthetic LISA distribution directory. If you don't get
+  any fatal errors, you're set. Otherwise, I'm afraid you'll have to
+  read all the installation instructions below.
+
+- If you're running csh/tcsh, do "source bin/synthlisa-setdir.csh"; if you're
+  running bash, do "source bin/synthlisa-setdir.sh". This will set the correct
+  path for Numeric and Synthetic LISA. [The path needs to be set each
+  time you open a new shell session and want to use Synthetic LISA.]
+
+- Now you can go to the "examples" directory, run a few of the Python
+  (*.py) scripts ("python scriptname.py") and plot their results
+  ("gnuplot -persist scriptname.plt").
 
 - Read the tutorial in Section 7, the documentation (synthlisa.pdf),
   and the user discussions and feedback on the Synthetic LISA
-  distribution website (OCF website, TBD).
+  distribution website (which is being set up...)
 
 This was quick, what did you expect? For more detail, read on.
 
@@ -67,210 +79,292 @@ the temporal and directional dependence of the armlengths).
 ================
 
 Please see license.pdf or license.doc. I would appreciate it if you
-could return me a signed license, if you have not done so yet.
+could send me a signed copy of the license.
 
 ======================
 3. System requirements
 ======================
 
-The Synthetic LISA library was developed for UNIX platforms that
-provide the GNU C/C++ compilers (gcc), GNU make, and the standard GNU
-utilities (tar, grep, sed, etc.) In addition, the Python interface
-requires Python >= v2.2, and the example scripts use gnuplot (and of
-course X11) to plot spectra. If you download a binary distribution for
-your system, you will not need the compilers, but you will still need
-Python and gnuplot.
+The Synthetic LISA library was developed for (and is known to work on)
+UNIX platforms that include the GNU gcc compilers, GNU make, and
+Python >= v2.3. The Synthetic LISA scripts included in the directory
+"examples" are accompanied by Gnuplot scripts to plot their results,
+although any plotting package can certainly be substituted with little
+work. This said, it should be possible to install Synthetic LISA on
+any platform with a working installation of Python and of a
+standards-compliant C/C++ compiler.
 
-All this software is rather standard for modern scientific
-workstations; ask you system administrator about it, or download it
-from the sites
+Synthetic LISA relies on the Python package Numerical Python
+("Numeric") to manage large arrays. Numeric can be downloaded from
+numeric.scipy.org; Synthetic LISA is known to work with versions >=
+23.1.
+
+In addition, if you want to modify the Synthetic LISA code you will
+need SWIG to regenerate Python wrappers. SWIG can be downloaded from
+www.swig.org; Synthetic LISA is known to compile with versions >=
+1.3.20.
+
+If you need the GNU tools, Python, or Gnuplot, please see
 
 - www.gnu.org
 - www.python.org
 - www.gnuplot.info
 
-The Synthetic LISA Python interface was built using SWIG
-(www.swig.org), and it relies on the Python package Numeric
-(numpy.sourceforge.net) to manage large arrays. A recent release of
-Numeric is included in the binary and source distributions; SWIG is
-needed only to compile Synthetic LISA from sources, and it is included
-in the source distribution. (If you already have Numeric and/or SWIG
-in your system, Synthetic LISA might or might not be able to work with
-them, depending on their version; if in doubt, use the versions
-provided).
-
 =================================
-4. Installation of source package
+4. Installation of Synthetic LISA
 =================================
 
-To compile Synthetic LISA from sources, you will need to unpack the
-tar.gz archive in a directory of your choice,
+To install and use Synthetic LISA from the source distribution
+(synthLISA-1.2.tar.gz) you need a working installation of Python and
+of a Python-interoperable C/C++ compiler, preferably gcc. The setup of
+these is not discussed in this document.
 
-> cd mydirectory
-> tar zxvf synthlisa-source-version.tar.gz
+--------------------------------
+4a.Installing Numeric (required)
+--------------------------------
 
-Then run
+Numeric might already be installed on your system, as you can check by
+doing
 
-> make all
+> python
+> import Numeric
 
-this will first create the Python packages SWIG and Numeric from the
-tar archives contained in contrib-source (don't worry about compiler
-warnings), and then compile the Synthetic LISA library.
+No response is a good response. If Numeric is not available, you'll
+get "ImportError: No module named Numeric".
+
+You might also be able to install Numeric using a standard
+distribution tool for your system, such as rpm, apt-get, or Fink. In
+either case, skip the instructions to follow, although you might still
+want to reinstall Numeric if the current version is old or incomplete.
+
+Download the most recent platform-independent (Numeric-**.*.tar.gz)
+version of Numeric from numeric.scipy.org, or directly from
+SourceForce.
+
+http://sourceforge.net/project/showfiles.php?group_id=1369&package_id=1351
+
+Unpack the distribution in a directory of your choice (you might have
+a different version number).
+
+> tar ztvf Numeric-23.8.tar.gz
+
+At this point, you have two choices: if you have administrator access
+to your workstation, you can install Numeric to the system-wide Python
+"site-packages" directory; if not, or if you prefer not to modify the
+system-wide directories, you can install locally to your home
+directory, or to another directory.
+
+Numeric is installed system-wide by cd'ing to the unpacked directory
+and running
+
+> python setup.py install
+
+To get sufficient privileges for the install you may need to work as
+root (use "su"), or you may just need to prefix the "python setup.py
+install" command by "sudo"; the latter is the correct procedure on OS
+X.
+
+Numeric is installed locally by running
+
+> python setup.py install --prefix=[userdir]
+
+where you should replace [userdir] by the directory where you want to
+install: it could be "/home/yourname", or
+"/home/yourname/numeric". The setup process will create directories
+"lib" and "include" within [userdir].
+
+All done, but if you encounter any problems with this process (I hope
+not!)  you should refer to the documentation at
+numeric.scipy.org. More generally, a description of the python
+"setup.py" (distutils) installation process can be found at
+
+http://www.python.org/doc/current/inst/inst.html
+
+--------------------------------------------------------------------
+4b.Installing SWIG (required to modify and recompile Synthetic LISA)
+--------------------------------------------------------------------
+
+SWIG might already be installed on your system, as you can check by
+trying
+
+> swig -version
+
+If you get an error, you probably don't have swig.
+
+You might also be able to install SWIG using a standard
+distribution tool for your system, such as rpm, apt-get, or Fink. In
+either case, skip the instructions to follow, although you might still
+want to reinstall SWIG if the current version is old or incomplete.
+
+Download the most recent platform-independent (swig-*.*.*.tar.gz)
+version of SWIG from www.swig.org, or directly from
+
+http://www.swig.org/download.html
+
+Unpack it in a directory of your choice (you might have a different
+version number).
+
+> tar ztvf swig-1.3.24.tar.gz
+
+As for Numeric, you have two choices: system-wide installation (files
+will go to /usr/local), or local installation.
+
+System-wide installation is achieved by cd'ing to the unpacked SWIG
+directory and running
+
+> ./configure
+> make
+> make install
+
+after securing the required privileges. Local installation is achieved
+by running
+
+> ./configure --prefix=[userdir]
+> make
+> make install
+
+where you should replace [userdir] by the directory where you want to
+install (it could "/home/yourname", or "/home/yourname/numeric"). The
+setup process will create directories "bin" and "share" within
+[userdir].
+
+All done, but if you encounter any problems with this step (I sure
+hope not!) you should refer to the documentation at www.swig.org.
+
+----------------------------
+4c.Installing Synthetic LISA
+----------------------------
+
+If you're reading this file, you have already unpacked the Synthetic
+LISA distribution. Again, you have the choice of installing
+system-wide or locally. In addition, if you have installed Numeric
+locally, you'll need to tell the Synthetic LISA installer where it can
+be found.
+
+So we have four cases:
+
+- System-wide Synthetic LISA with system-wide Numeric: run
+
+> python setup.py install
+
+- System-wide Synthetic LISA with local Numeric installed in
+  [numericdir]: run
+
+> python setup.py install --with-numeric=[numericdir]
+
+- Local Synthetic LISA with system-wide Numeric: run
+
+> python setup.py install --prefix=[synthlisadir]
+
+- Local Synthetic LISA with local Numeric installed in [numericdir}: run
+
+> python setup.py install --prefix=[synthlisadir] --with-numeric=[numericdir]
+
+In the last two options, you should replace [synthlisadir] by the
+directory where you want to install. This could be "/home/yourname",
+or it might be convenient to install to the very directory where you
+have unpacked Synthetic LISA, using "--prefix=`pwd`").
 
 In the unlikely event (ehm) that you should get compilation errors
 (probably due to differences between your compiler or standard C++
 libraries and those used in developing Synthetic LISA), please see
-section 9 ("Asking for help") and we'll try to sort them out. Even
-better, if you are able to sort them out, we'd love to hear about it,
-to improve future versions.
+section 9 ("Asking for help") and I'll try to sort them out. Even
+better, if you are able to sort them out, I'd love to hear about it,
+to improve future distributions.
 
 After compilation is done, set the Python path as described in the
-next section, and you're ready to go.
+next section, and you're ready to go. If you need to recompile
+Synthetic LISA after modifying it, see section 4e.
+
+--------------------------
+4d.Setting the Python path
+--------------------------
+
+To use Numeric and Synthetic LISA, the Python interpreter needs to
+know where they can be found. If you have performed system-wide
+installs, this will be the case automatically. But if you have
+performed local installs, you will need to change the value of the
+system variable PYTHONPATH.
+
+For your convenience, the Synthetic LISA installs creates scripts to
+do this, which can be found in the "bin" directory of the Synthetic
+LISA installation. If you're running csh/tcsh, do "source
+bin/synthlisa-setdir.csh"; if you're running bash, do "source
+bin/synthlisa-setdir.sh".
+
+The PYTHONPATH needs to be set each time you open a new shell session
+and want to work with Numeric or Synthetic LISA. If you want this job
+to be done automatically, you can call the correct synthlisa-setdir
+script to your .cshrc, .profile, or .login file.
 
 ---------------------------------
-4a.Compilation notes for Mac OS X
+4e.Recompiling and Synthetic LISA
 ---------------------------------
 
-This software was developed under Mac OS X, so we thought we'd give a
-few pointers to other Mac addicts. We're giving you a binary
-distribution, but it's always good to be able to recompile from
-scratch.
+All the Synthetic LISA files that you may want to modify are in the
+subdirectory "lisasim". Unless you are changing only the C/C++ LISA
+sources (and not the headers, or the SWIG interface
+"lisasim/lisasim-swig.i"), you will need to have installed SWIG (as
+described in section 4b, or by other means).
 
-First, a couple of bugs that you need to fix (you'll need
-administrator privileges: then "sudo" your commands to get access to
-protected files). These are based on the standard distribution of
-Development Tools from Apple (on some computers, obtained by clicking
-the "pkg" within the "Applications/Installers" directory), so other
-distributions, such as fink, might not have them.
+If SWIG was installed system-wide, and you can access it by simply
+typing "swig", then you can just use the "python setup.py" commands
+given above.
 
-- In Jaguar, there is a bug in
-  /usr/include/gcc/darwin/3.1/g++-v3/cmath that will undo the
-  definition of isnan. To fix it, comment out the line #undef
-  isnan. In Panther, the file to change is
-  /usr/include/gcc/darwin/3.3/c++/cmath.
+Otherwise, you will need to tell "setup.py" where to find the swig
+executable, by adding "--with-swig=[swigdir]/bin/swig" to the "python
+setup.py" commands given above. Yes, you must pass the fully qualified
+swig executable name, not just the swig directory (I have my
+reasons...).
 
-- In Jaguar, malloc.h does not exist (and packages will go looking for
-  it). "touch" it in your compilation directory to create a dummy,
-  empty version. Panther seems to have the file.
+If you do not want to install yet, but just build, replace "install"
+with "build" in the "python setup.py" commands.
 
-- In Jaguar, there is a bug in /usr/lib/python2.2/config/Makefile,
-  where the architecture flag "LDFLAGS= -arch i386 -arch ppc" should
-  be replaced with "LDFLAGS= -arch ppc". This bug might prevent the
-  compilation of some Python libraries (although it does not seem to
-  interfere with the current versions of Swig and Numeric).
+=======================
+5. System-specifc notes
+=======================
 
-If you're wondering where to find the required software, X11 is
-distributed by Apple for Jaguar, and it is standard in Panther; Python
-gets installed with Apple's Development tools; and you can get gnuplot
-(and many other things) from fink.sourceforge.net, or from
-http://www.lee-phillips.org/info/Macintosh/gnuplot.html, and probably
-in other places, as well.
+-------------------------------------
+5a.Mac OS X
+-------------------------------------
 
-------------------------------
-4b.Compilation notes for Linux
-------------------------------
+First of all, at this time LISA is known to work correct with Panther
+(OS X 10.3), although Tiger (OS X 10.4) should have no problems.
 
-The package compiles fine under RedHat 9.0, which can be installed
-(and usually is) with X, Python and gnuplot. Other recent versions of
-Linux should also have no problems, and might be compatible with our
-binaries.
+Panther has a recent enough version of Python; gcc is included in the
+Apple Development Tools (on your OS X CD, or already installed); you
+can get gnuplot from fink.sourceforge.net, or from
 
-One compilation caution: it seems that setdir.sh and setdir.csh are
-broken by colored "ls" output. Just do
+http://www.lee-phillips.org/info/Macintosh/gnuplot.html
 
-alias ls="ls --color=none" (bash)
-alias ls="ls --color=none" (csh)
+and probably in other places, as well; if X11 is not installed, you can get it from
 
-before sourcing setdir.(c)sh, or modify setdir.sh and setdir.csh
-accordingly.
+http://www.apple.com/downloads/macosx/apple/x11formacosx.html
 
-----------------------------------
-4c.Compilation notes for SunOS 5.8
-----------------------------------
+--------
+5b.Linux
+--------
 
-A similar procedure might apply to other close versions of SunOS.
+The package compiles fine under RedHat Enterprise Linux WS 4, which
+can be installed (and usually is) with X, Python and gnuplot. There
+should be no problems also with RedHat Enterprise Linux ES 4 and
+Fedora Core 3, which are very similar.
 
-First of all, the default "make" and "tar" on Suns is usually not
-GNU. You should change the "MAKE=make" and "GNUTAR=tar" lines in the
-synthlisa/Makefile, synthlisa/contrib-source/Makefile, and
-synthlisa/lisasim/Makefile to reflect the location of your GNU make
-and tar.
-
-Second, on Suns grep does not seem to have the "-A" option, and I have
-not been able to find a fix so far. Replace the "GREPA=grep -A 1" line
-in synthlisa/contrib-source/Makefile with "GREPA=grep"; this, however,
-will break one of the Makefiles. To correct the problem, do first
-
-make contribs
-
-and then edit the file SunOS-5.8/include/Makefile.python, replacing
-the "CPP_DLLIBS..." line with
-
-CPP_DLLIBS = -L/usr/local/lib -lstdc++ -lgcc
-
-Then you can do
-
-make lisaswig
-
-and you should be all set.
-
-=================================
-5. Installation of binary package
-=================================
-
-If your platform is among those for which a binary distribution is
-provided and you wish to use it, you will need to unpack the tar.gz
-archive in a directory of your choice,
-
-> cd mydirectory
-> tar zxvf synthlisa-binary-platform-version.tar.gz
-
-[do not type ">", which denotes the command prompt, and replace
-"mydirectory", "platform", and "version" as appropriate]. Before each
-Synthetic LISA session, you will need to set the Python path by going
-to the main "synthlisa" directory, and running
-
-> source setdir.csh (if you use csh or tcsh)
-
-or
-
-> source setdir.sh (if you use bash or sh)
-
-You can check that the installation works correctly by entering the
-Python interactive shell,
-
-> python
-
-and then, at the Python prompt, typing
-
-python> from lisaswig import *
-
-[again, "python>" denotes the Python prompt]. If Python does not
-complain, you're all set.
-
-If the library cannot be found, it might be that the identification
-string for your operating system, given by the shell command
-
-> echo `uname -s`-`uname -r`
-
-(for instance, "Linux-2.4.20-24.9") is slightly different from the
-library directory, of similar name, within the main synthlisa
-directory. You can try renaming that directory to the identification
-string for your system, but if you keep having problems, it might be
-that the binary distribution is incompatible with your system. In that
-case, you should compile Synthetic LISA from sources (and then perhaps
-make the result available to the community; see section 8).
+Other recent versions of Linux should also have no problems, as long
+as Python >= 2.3. (For instance, RedHat 9.0 has Python 2.2.2, which
+needs to be upgraded to work with Synthetic LISA.)
 
 =======================
 6. Running the examples
 =======================
 
 The best way to learn about Synthetic LISA is to study the example
-scripts, found in the directory "examples". The files ending in ".py"
-are the Python scripts that run the simulations; these will produce
-output (usually noise or signal spectra) as ASCII ".txt" files, in the
-"data" directory; the files ending in ".plt" are gnuplot scripts that
-will plot the results; and the files ending in ".eps", in the "eps"
+scripts, found in the subdirectory "examples" in the Synthetic LISA
+distribution directory. The files ending in ".py" are the Python
+scripts that run the simulations; these will produce output (usually
+noise or signal spectra) as ASCII ".txt" files, in the "data"
+directory; the files ending in ".plt" are gnuplot scripts that will
+plot the results; while the files ending in ".eps", in the "eps"
 directory, are the resulting postscript plots (view them with
 ghostview or a similar utility).
 
@@ -294,19 +388,19 @@ script. If they run too fast (and you want better detail), increase
 =======================
 
 A general description of the formulation, implementation, and usage of
-SyntheticLISA can be found in the document "synthlisa.pdf" included
-with the package.
+SyntheticLISA can be found in the documents "synthlisa.pdf" and
+"manual.pdf" included with the package.
 
 Study the example scripts to learn about the basic syntax of a
-Synthetic LISA session. A good sequence of examples to examine is the following:
+Synthetic LISA session. A good sequence of examples to examine is the
+following:
 
 - test-proofnoise.py
 - test-tdiequal-X.py
 - test-tdiequal.py
 - test-tdibadmass.py
 
-You will see that after some standard
-library-loading incantations,
+You will see that after some standard library-loading incantations,
 
 > from lisaswig import *
 > from Numeric import *
@@ -332,7 +426,7 @@ are a sampling time, in seconds, and a spectral density, as described
 in synthlisa.pdf]. Next, we can get (say) 16384 values of the TDI
 observable X, at times starting from 0, and separated by 0.1 seconds:
 
-> noiseX = getobs(16384,0.1,originalTDI.X)
+> noiseX = getobsc(16384,0.1,originalTDI.X)
 
 Now "noiseX" is a Numeric array of length 16384, which can be written
 to disk as an ASCII file,
@@ -360,20 +454,19 @@ element is a pair of frequency (in seconds), and noise density (in
 8. User involvement
 ===================
 
-Although we regard the current version of Synthetic LISA as a very
-usable and useful product in its current version, we are aware that
+Although I regard the current version of Synthetic LISA as a very
+usable and useful product in its current version, I am aware that
 its eventual impact is strongly dependent on the involvement of users.
 
 There are many aspects that users can help (and help themselves) with:
 
-- Pointing out bugs so that we can fix them
+- Pointing out bugs so that I can fix them
 
 - Requesting new features and/or improvements
 
-- Providing binary distributions and/or compilation tricks and fixes
-  for additional systems
+- Providing compilation tricks and fixes for additional systems
 
-To this purpose, we have set up the Synthetic LISA webpage on the Open
+To this purpose, a Synthetic LISA webpage is being set up on the Open
 Channel Foundation website (www.openchannelfoundation.org) with a user
 forum, bug report forms, and other tools for interaction. Be sure to
 use them!
@@ -399,12 +492,8 @@ A partial list of planned improvements and upgrades:
 
 - More Wave models
 
-- Caching of the LISA and Noise classes for improved speed
-
-- Support for the Numarray (the successor to Numeric)
-
 - Support for the LISA Mock Data Format
 
-Throughout these changes, we shall strive to keep the Synthetic LISA
+Throughout these changes, I shall strive to keep the Synthetic LISA
 interface backward compatible, so that your scripts and applications
-will continue to be useful as you updgrade SynthLISA.
+will continue to be useful as you updgrade Synthetic LISA.
