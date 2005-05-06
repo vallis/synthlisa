@@ -123,7 +123,7 @@ circularnoise = TDInoise(circularlisa,stime,2.5e-48,stime,1.8e-37,stime,0*1.1e-2
 # one year of data is approx 2**25 samples; we use getobs to produce the signals
 # and the noises
 
-samples = 2**21  # 2**17 takes 42s on a 1.25GHz G4
+samples = 2**17  # 2**17 takes 42s on a 1.25GHz G4
                  # the graph however was done with stime = 16 and samples = 2**21
                  # and test-montana.py also needs 2**21
 patches = 16

@@ -50,8 +50,8 @@ nolaserTDI = TDInoise(eccentriclisa,
 # samples, or about 2**25. It's a bit much, both memory wise and
 # CPU wise (on a Mac G4 1.25 GHz, I get about 13,000 samples/s)
 
-# samples = 2**25 / stime
-samples = 2**18 / stime
+samples = 2**25 / stime
+#samples = 2**18 / stime
 
 patches = 256
 

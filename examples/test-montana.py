@@ -1,9 +1,10 @@
 #!/usr/bin/python
 
 # test of the Synthetic LISA TDI output for a monochromatic binary
-# against the output of the LISA Simulator (www.physics.montana.edu/lisa)
-# note: this test needs the data file "tdibinary-X-circ.bin",
-# to be downloaded separately
+# against the output of the LISA Simulator
+# (www.physics.montana.edu/lisa) note: this test needs the data file
+# "tdibinary-X-circ.bin", to be downloaded separately from
+# www.vallis.org/software/tdibinary-X-montana.bin
 
 # it also needs "test-binary.py" to have been run with samples = 2**21
 # and stime = 16
