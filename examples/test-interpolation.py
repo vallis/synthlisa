@@ -30,7 +30,7 @@ lasernoise8 = InterpolateNoise(1.0,256.0,1.0,0.0,16)
 
 # get "samples" values of the noises, at times separated by "stime"
 
-samples = 2**18 # 2**18 takes 23s on a 1.25GHz G4
+samples = 2**18 # 2**20 takes 23s on a 1.25GHz G4
 sstep = 0.1
 
 patches = 512
