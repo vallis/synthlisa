@@ -1,3 +1,10 @@
+2005/05/06 Release 1.2, beta version
+
+Changes from 1.0 to 1.2 include
+
+- 
+
+
 2004/07/28 1.2 lisasim-retard.h
 Second version of CacheLISA, based on home-grown hashed map. Better.
 
@@ -48,5 +55,5 @@ Revised public interface, added public method noise to Noise
 Added nonoverlapping-windowed periodogram, zerotime option for getobs,
 fixed bug in triangular window
 
-2004/07/14 all files
-This history starts with Release 1.0 of Synthetic LISA
+2004/07/14 Release 1.0
+This history starts here.
