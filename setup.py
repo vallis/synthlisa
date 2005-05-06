@@ -68,10 +68,11 @@ if not os.path.isfile(lisasim_cppfile) or not os.path.isfile(lisasim_pyfile) \
 if lisasim_cppfile not in source_files:
     source_files.append(lisasim_cppfile)
 
-# Create the setdir.sh and setdir.csh scripts
+# Create the setdir.sh and setdir.csh scripts; they will be recreated
+# each time setup.py is run, but it does not matter.
 
-setdir_sh = open('lisasim/setdir.sh','w')
-setdir_csh = open('lisasim/setdir.csh','w')
+setdir_sh = open('lisasim/synthlisa-setdir.sh','w')
+setdir_csh = open('lisasim/synthlisa-setdir.csh','w')
 
 pythonpath = ''
 
@@ -112,12 +113,12 @@ else:
     numeric_hfiles = get_python_inc()
 
 if pythonpath:
-    setdir_scripts = ['lisasim/setdir.sh','lisasim/setdir.csh']
+    setdir_scripts = ['lisasim/synthlisa-setdir.sh','lisasim/synthlisa-setdir.csh']
 else:
     setdir_scripts = []
 
 setup(name = 'synthLISA',
-      version = '1.2',
+      version = '1.2 (2005/05/06)',
       description = 'Synthetic LISA Simulator',
 
       author = 'Michele Vallisneri',
@@ -125,7 +126,7 @@ setup(name = 'synthLISA',
       url = 'http://www.vallis.org/syntheticlisa',
       
       package_dir = {'' : 'lisasim'},
-      py_modules = ['lisautils','lisapar','lisaswig'],
+      py_modules = ['lisautils','lisaswig'],
 
       scripts = setdir_scripts,
 
