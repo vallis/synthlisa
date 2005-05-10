@@ -118,7 +118,7 @@ else:
     setdir_scripts = []
 
 setup(name = 'synthLISA',
-      version = '1.2 (2005/05/06)',
+      version = '1.2',
       description = 'Synthetic LISA Simulator',
 
       author = 'Michele Vallisneri',
