@@ -4,6 +4,7 @@ include license.pdf
 include synthlisa.pdf
 include manual.pdf
 include default-install.sh
+include cygwin-install.sh
 include lisasim/*.cpp
 include lisasim/*.h
 include lisasim/*.i
