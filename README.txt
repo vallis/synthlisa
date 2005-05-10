@@ -17,8 +17,8 @@ In this file:
 3. System requirements
 4. Installation of source package
    4a. Compilation notes for Mac OS X
-   4b. Compilation notes for Linux RedHat 9.0
-   4c. Compilation notes for SunOS 5.8
+   4b. Compilation notes for Linux
+   4c. Compilation notes for Windows (cygwin)
 5. Installation of binary package
 6. Running the examples
 7. Synthetic LISA usage
@@ -32,18 +32,20 @@ In this file:
 =============
 
 - I assume you have Python >= 2.3, GNU gcc, GNU Make, and Gnuplot (if
-  you want to plot).
+  you want to plot). If you use Cygwin, you also need the Cygwin SWIG
+  package.
 
 - Unpack the Synthetic LISA distribution (synthLISA-1.2.tar.gz) and cd
   to it; download recent versions of Numeric and SWIG from
   www.vallis.org/syntheticlisa into the unpacked Synthetic LISA
   distribution directory.
 
-- Run "./default-install.sh". This will install Numeric, SWIG, and
-  Synthetic LISA locally, into "lib", "bin", "include", and "share"
-  within the Synthetic LISA distribution directory. If you don't get
-  any fatal errors, you're set. Otherwise, I'm afraid you'll have to
-  read all the installation instructions below.
+- Run "./default-install.sh" ("./cygwin-install.sh" if you use
+  Cygwin). This will install Numeric, SWIG, and Synthetic LISA
+  locally, into "lib", "bin", "include", and "share" within the
+  Synthetic LISA distribution directory. If you don't get any fatal
+  errors, you're set. Otherwise, I'm afraid you'll have to read all
+  the installation instructions below.
 
 - If you're running csh/tcsh, do "source bin/synthlisa-setdir.csh"; if you're
   running bash, do "source bin/synthlisa-setdir.sh". This will set the correct
@@ -87,12 +89,14 @@ could send me a signed copy of the license.
 
 The Synthetic LISA library was developed for (and is known to work on)
 UNIX platforms that include the GNU gcc compilers, GNU make, and
-Python >= v2.3. The Synthetic LISA scripts included in the directory
-"examples" are accompanied by Gnuplot scripts to plot their results,
-although any plotting package can certainly be substituted with little
-work. This said, it should be possible to install Synthetic LISA on
-any platform with a working installation of Python and of a
-standards-compliant C/C++ compiler.
+Python >= v2.3. If you are running Windows (any version), you can set
+up a reasonable Unix platform using Cygwin (www.cygwin.com). The
+Synthetic LISA scripts included in the directory "examples" are
+accompanied by Gnuplot scripts to plot their results, although any
+plotting package can certainly be substituted with little work. This
+said, it should be possible to install Synthetic LISA on any platform
+with a working installation of Python and of a standards-compliant
+C/C++ compiler.
 
 Synthetic LISA relies on the Python package Numerical Python
 ("Numeric") to manage large arrays. Numeric can be downloaded from
@@ -132,7 +136,7 @@ doing
 No response is a good response. If Numeric is not available, you'll
 get "ImportError: No module named Numeric".
 
-You might also be able to install Numeric using a standard
+You might also be able to install Numeric system-wide using a standard
 distribution tool for your system, such as rpm, apt-get, or Fink. In
 either case, skip the instructions to follow, although you might still
 want to reinstall Numeric if the current version is old or incomplete.
@@ -191,8 +195,10 @@ trying
 
 If you get an error, you probably don't have swig.
 
-You might also be able to install SWIG using a standard
-distribution tool for your system, such as rpm, apt-get, or Fink. In
+You might also be able to install SWIG system-wide using a standard
+distribution tool for your system, such as rpm, apt-get, Fink, or
+Cygwin's setup.exe (if you are using Cygwin, *definitely* install SWIG
+using setup.exe; I have not been able to compile it from scratch.)  In
 either case, skip the instructions to follow, although you might still
 want to reinstall SWIG if the current version is old or incomplete.
 
@@ -320,16 +326,17 @@ reasons...).
 If you do not want to install yet, but just build, replace "install"
 with "build" in the "python setup.py" commands.
 
-=======================
-5. System-specifc notes
-=======================
+========================
+5. System-specific notes
+========================
 
 -------------------------------------
 5a.Mac OS X
 -------------------------------------
 
-First of all, at this time LISA is known to work correct with Panther
-(OS X 10.3), although Tiger (OS X 10.4) should have no problems.
+First of all, at this time LISA is known to work correctly with
+Panther (OS X 10.3), although Tiger (OS X 10.4) should have no
+problems.
 
 Panther has a recent enough version of Python; gcc is included in the
 Apple Development Tools (on your OS X CD, or already installed); you
@@ -350,9 +357,40 @@ can be installed (and usually is) with X, Python and gnuplot. There
 should be no problems also with RedHat Enterprise Linux ES 4 and
 Fedora Core 3, which are very similar.
 
+The packages compiles fine also under Debian Sarge (which should
+become 3.1).
+
 Other recent versions of Linux should also have no problems, as long
 as Python >= 2.3. (For instance, RedHat 9.0 has Python 2.2.2, which
 needs to be upgraded to work with Synthetic LISA.)
+
+------------------------------------------
+4c. Compilation notes for Windows (cygwin)
+------------------------------------------
+
+Synthetic LISA is known to work correctly with Cygwin 1.5.16-1, under
+Windows ME (but I don't see why other flavors of Windows should have
+more problems.) You will need a reasonably complete installation of
+Cygwin, including certain standard utilities (tar, sharutils,
+binutils, autoconf), the GCC compilers, Python, and SWIG (you should
+use the version obtained through the Cygwin setup.exe rather than
+trying to compile your own).
+
+I wouldn't hope to get a stellar performance from your processor under
+Windows/Cygwin. But it works...
+
+Also, do yourself a favor:  escape the strictures of the Windows shell
+by installing rxvt (through Cygwin's setup.exe), and configuring it as
+per
+
+http://c2.com/cgi/wiki?BetterCygwinTerminal
+
+Under rxvt, it's even possible to run Cygwin's emacs (but first do "export
+TERM=rxvt").
+
+Good luck, and if you are more of a Windows wizard than I am, perhaps
+you can give me some suggestions, or even compile Synthetic LISA under
+ActiveState Python and some other compiler than GCC...
 
 =======================
 6. Running the examples
