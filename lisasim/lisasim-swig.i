@@ -45,6 +45,9 @@ class CircularRotating : public LISA {
     double genarmlength(int arms, double t);
 };
 
+/* I am not sure with the following two what I should do about the
+   ownership of the clean/base LISA pointer */
+
 %feature("director") AnyLISA;
 class AnyLISA : public LISA {
  public:
@@ -58,6 +61,13 @@ class AnyLISA : public LISA {
     virtual double armlengthbaseline(int arm, double t);
     virtual double armlengthaccurate(int arm, double t);
 };
+
+%feature("shadow") PyLISA::PyLISA {
+    def __init__(self, *args):
+        self.initargs = args
+        _swig_setattr(self, PyLISA, 'this', _lisaswig.new_PyLISA(*args))
+        _swig_setattr(self, PyLISA, 'thisown', 1)
+}
 
 %apply PyObject* PYTHONFUNC { PyObject *func };
 
@@ -83,6 +93,13 @@ class EccentricInclined : public LISA {
     
     double genarmlength(int arm, double t);
 };
+
+%feature("shadow") NoisyLISA::NoisyLISA {
+    def __init__(self, *args):
+        self.initargs = args
+        _swig_setattr(self, NoisyLISA, 'this', _lisaswig.new_NoisyLISA(*args))
+        _swig_setattr(self, NoisyLISA, 'thisown', 1)
+}
 
 class NoisyLISA : public LISA {
 public:
@@ -133,6 +150,13 @@ class LinearLISA : public LISA {
     double armlengthaccurate(int arm, double t);
 };
 
+%feature("shadow") CacheLISA::CacheLISA {
+    def __init__(self, *args):
+        self.initargs = args
+        _swig_setattr(self, CacheLISA, 'this', _lisaswig.new_CacheLISA(*args))
+        _swig_setattr(self, CacheLISA, 'thisown', 1)
+}
+
 class CacheLISA : public LISA {
 public:
     CacheLISA(LISA *basic);
@@ -143,6 +167,13 @@ public:
     double armlengthbaseline(int arm, double t);
     double armlengthaccurate(int arm, double t);
 };
+
+%feature("shadow") MeasureLISA::MeasureLISA {
+    def __init__(self, *args):
+        self.initargs = args
+        _swig_setattr(self, MeasureLISA, 'this', _lisaswig.new_MeasureLISA(*args))
+        _swig_setattr(self, MeasureLISA, 'thisown', 1)
+}
 
 class MeasureLISA : public LISA {
  public:
@@ -165,6 +196,9 @@ class Noise {
 
     virtual double noise(double timebase,double timecorr);
 };
+
+/* Who gets ownership of the Numpy arrays? Should I worry about this
+   and fix it with %feature("shadow")? Maybe so. */
 
 %apply double *NUMPY_ARRAY_DOUBLE { double *noisebuf };
 
@@ -196,6 +230,9 @@ class SimpleMonochromatic : public Wave {
 public:
     SimpleMonochromatic(double freq, double phi, double gamma, double amp, double d, double a, double p);
 };
+
+/* Who gets ownership of the Numpy arrays? Should I worry about this
+   and fix it with %feature("shadow")? Maybe so. */
 
 %apply double *NUMPY_ARRAY_DOUBLE { double *hpa };
 %apply double *NUMPY_ARRAY_DOUBLE { double *hca };
@@ -263,6 +300,17 @@ public:
     virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
 };
 
+/* We're holding on to the constructor args so that the LISA object
+   won't get destroyed if they fall out of scope: we may still need
+   them! */
+
+%feature("shadow") TDIquantize::TDIquantize {
+    def __init__(self, *args):
+        self.initargs = args
+        _swig_setattr(self, TDIquantize, 'this', _lisaswig.new_TDIquantize(*args))
+        _swig_setattr(self, TDIquantize, 'thisown', 1)
+}
+
 class TDIquantize : public TDI {
  public:
     TDIquantize(TDI *bt,double qlev,int qbits,int qsat);
@@ -272,10 +320,28 @@ class TDIquantize : public TDI {
     virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
 };
 
-
 %apply double PYTHON_SEQUENCE_DOUBLE[ANY] {double stproof[6], double sdproof[6], double stshot[6], double sdshot[6], double stlaser[6], double sdlaser[6], double claser[6]}
 
 %apply Noise *PYTHON_SEQUENCE_NOISE[ANY] {Noise *proofnoise[6], Noise *shotnoise[6], Noise *lasernoise[6]}
+
+/* We're holding on to the constructor args so that the LISA/Noise
+   objects won't get destroyed if they fall out of scope: we may still
+   need them! */
+
+%feature("shadow") TDInoise::TDInoise {
+    def __init__(self, *args):
+        self.initargs = args
+        _swig_setattr(self, TDInoise, 'this', _lisaswig.new_TDInoise(*args))
+        _swig_setattr(self, TDInoise, 'thisown', 1)
+}
+
+/* Same for physical LISA objects */
+
+%feature("shadow") TDInoise::setphlisa {
+    def setphlisa(*args):
+        self.phlisa = args
+        return _lisaswig.TDInoise_setphlisa(*args)
+}
 
 class TDInoise : public TDI {
 public:
@@ -298,6 +364,17 @@ public:
     virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
 };
 
+/* We're holding on to the constructor args so that the LISA/Noise
+   objects won't get destroyed if they fall out of scope: we may still
+   need them! */
+
+%feature("shadow") TDIaccurate::TDIaccurate {
+    def __init__(self, *args):
+        self.initargs = args
+        _swig_setattr(self, TDIaccurate, 'this', _lisaswig.new_TDIaccurate(*args))
+        _swig_setattr(self, TDIaccurate, 'thisown', 1)
+}
+
 class TDIaccurate : public TDInoise {
  public:
     TDIaccurate(LISA *mylisa, Noise *proofnoise[6],Noise *shotnoise[6],Noise *lasernoise[6]);
@@ -307,6 +384,17 @@ class TDIaccurate : public TDInoise {
     double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t);
     double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
 };
+
+/* We're holding on to the constructor args so that the LISA/Wave
+   objects won't get destroyed if they fall out of scope: we may still
+   need them for TDInoise! */
+
+%feature("shadow") TDIsignal::TDIsignal {
+    def __init__(self, *args):
+        self.initargs = args
+        _swig_setattr(self, TDIsignal, 'this', _lisaswig.new_TDIsignal(*args))
+        _swig_setattr(self, TDIsignal, 'thisown', 1)
+}
 
 class TDIsignal : public TDI {
 public:
