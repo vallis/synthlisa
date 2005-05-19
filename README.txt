@@ -1,6 +1,6 @@
-==================================
-Synthetic LISA, v. 1.2, 2005-05-06
-==================================
+====================================
+Synthetic LISA, v. 1.2.1, 2005-05-19
+====================================
 
 by M. Vallisneri and J. W. Armstrong
 Jet Propulsion Laboratory, Caltech
@@ -35,7 +35,7 @@ In this file:
   you want to plot). If you use Cygwin, you also need the Cygwin SWIG
   package.
 
-- Unpack the Synthetic LISA distribution (synthLISA-1.2.tar.gz) and cd
+- Unpack the Synthetic LISA distribution (synthLISA-1.2.1.tar.gz) and cd
   to it; download recent versions of Numeric and SWIG from
   www.vallis.org/syntheticlisa into the unpacked Synthetic LISA
   distribution directory.
@@ -119,7 +119,7 @@ If you need the GNU tools, Python, or Gnuplot, please see
 =================================
 
 To install and use Synthetic LISA from the source distribution
-(synthLISA-1.2.tar.gz) you need a working installation of Python and
+(synthLISA-1.2.1.tar.gz) you need a working installation of Python and
 of a Python-interoperable C/C++ compiler, preferably gcc. The setup of
 these is not discussed in this document.
 

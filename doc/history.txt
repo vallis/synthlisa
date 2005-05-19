@@ -1,4 +1,11 @@
+2005/05/19 Release 1.2.1, beta version
+
+Fixed persistence problem for LISA/Noise/Wave objects passed to TDI
+constructors. Using SWIG's %feature("addtofunc") to inject Python code
+(that saves arguments) into Python shadow class constructors.
+
 2005/05/06 Release 1.2, beta version
+Current state of the art; sent to various people on 05/09
 
 Changes from 1.0 to 1.2 include
 
