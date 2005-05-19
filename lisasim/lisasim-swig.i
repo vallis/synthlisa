@@ -7,6 +7,12 @@
 
 %include lisasim-typemaps.i
 
+%define initsave(theclass)
+%feature("addtofunc") theclass::theclass {
+        self.initargs = args
+}
+%enddef
+
 /* -------- LISA objects -------- */
 
 class LISA;
@@ -62,12 +68,7 @@ class AnyLISA : public LISA {
     virtual double armlengthaccurate(int arm, double t);
 };
 
-%feature("shadow") PyLISA::PyLISA {
-    def __init__(self, *args):
-        self.initargs = args
-        _swig_setattr(self, PyLISA, 'this', _lisaswig.new_PyLISA(*args))
-        _swig_setattr(self, PyLISA, 'thisown', 1)
-}
+initsave(PyLISA)
 
 %apply PyObject* PYTHONFUNC { PyObject *func };
 
@@ -94,12 +95,7 @@ class EccentricInclined : public LISA {
     double genarmlength(int arm, double t);
 };
 
-%feature("shadow") NoisyLISA::NoisyLISA {
-    def __init__(self, *args):
-        self.initargs = args
-        _swig_setattr(self, NoisyLISA, 'this', _lisaswig.new_NoisyLISA(*args))
-        _swig_setattr(self, NoisyLISA, 'thisown', 1)
-}
+initsave(NoisyLISA)
 
 class NoisyLISA : public LISA {
 public:
@@ -150,12 +146,7 @@ class LinearLISA : public LISA {
     double armlengthaccurate(int arm, double t);
 };
 
-%feature("shadow") CacheLISA::CacheLISA {
-    def __init__(self, *args):
-        self.initargs = args
-        _swig_setattr(self, CacheLISA, 'this', _lisaswig.new_CacheLISA(*args))
-        _swig_setattr(self, CacheLISA, 'thisown', 1)
-}
+initsave(CacheLISA)
 
 class CacheLISA : public LISA {
 public:
@@ -168,12 +159,7 @@ public:
     double armlengthaccurate(int arm, double t);
 };
 
-%feature("shadow") MeasureLISA::MeasureLISA {
-    def __init__(self, *args):
-        self.initargs = args
-        _swig_setattr(self, MeasureLISA, 'this', _lisaswig.new_MeasureLISA(*args))
-        _swig_setattr(self, MeasureLISA, 'thisown', 1)
-}
+initsave(MeasureLISA)
 
 class MeasureLISA : public LISA {
  public:
@@ -304,12 +290,7 @@ public:
    won't get destroyed if they fall out of scope: we may still need
    them! */
 
-%feature("shadow") TDIquantize::TDIquantize {
-    def __init__(self, *args):
-        self.initargs = args
-        _swig_setattr(self, TDIquantize, 'this', _lisaswig.new_TDIquantize(*args))
-        _swig_setattr(self, TDIquantize, 'thisown', 1)
-}
+initsave(TDIquantize)
 
 class TDIquantize : public TDI {
  public:
@@ -328,19 +309,12 @@ class TDIquantize : public TDI {
    objects won't get destroyed if they fall out of scope: we may still
    need them! */
 
-%feature("shadow") TDInoise::TDInoise {
-    def __init__(self, *args):
-        self.initargs = args
-        _swig_setattr(self, TDInoise, 'this', _lisaswig.new_TDInoise(*args))
-        _swig_setattr(self, TDInoise, 'thisown', 1)
-}
+initsave(TDInoise)
 
 /* Same for physical LISA objects */
 
-%feature("shadow") TDInoise::setphlisa {
-    def setphlisa(*args):
+%feature("addtofunc") TDInoise::setphlisa {
         self.phlisa = args
-        return _lisaswig.TDInoise_setphlisa(*args)
 }
 
 class TDInoise : public TDI {
@@ -368,12 +342,7 @@ public:
    objects won't get destroyed if they fall out of scope: we may still
    need them! */
 
-%feature("shadow") TDIaccurate::TDIaccurate {
-    def __init__(self, *args):
-        self.initargs = args
-        _swig_setattr(self, TDIaccurate, 'this', _lisaswig.new_TDIaccurate(*args))
-        _swig_setattr(self, TDIaccurate, 'thisown', 1)
-}
+initsave(TDIaccurate)
 
 class TDIaccurate : public TDInoise {
  public:
@@ -389,12 +358,7 @@ class TDIaccurate : public TDInoise {
    objects won't get destroyed if they fall out of scope: we may still
    need them for TDInoise! */
 
-%feature("shadow") TDIsignal::TDIsignal {
-    def __init__(self, *args):
-        self.initargs = args
-        _swig_setattr(self, TDIsignal, 'this', _lisaswig.new_TDIsignal(*args))
-        _swig_setattr(self, TDIsignal, 'thisown', 1)
-}
+initsave(TDIsignal)
 
 class TDIsignal : public TDI {
 public:
