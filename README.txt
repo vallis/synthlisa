@@ -335,8 +335,7 @@ with "build" in the "python setup.py" commands.
 -------------------------------------
 
 First of all, at this time LISA is known to work correctly with
-Panther (OS X 10.3), although Tiger (OS X 10.4) should have no
-problems.
+Panther (OS X 10.3) and Tiger (OS X 10.4).
 
 Panther has a recent enough version of Python; gcc is included in the
 Apple Development Tools (on your OS X CD, or already installed); you
