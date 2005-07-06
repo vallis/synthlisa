@@ -10,6 +10,9 @@
 
 #define ISCONTIGUOUS(m) ((m)->flags & CONTIGUOUS)
 
+// if the Numeric array is not contiguous, create a contiguous copy;
+// if it is contiguous, use it after increasing its reference count
+
 #define PyArray_CONTIGUOUS(m) (ISCONTIGUOUS(m) ? Py_INCREF(m), m : \
 (PyArrayObject *)(PyArray_ContiguousFromObject((PyObject *)(m), (m)->descr->type_num, 0,0)))
 %}
@@ -42,6 +45,11 @@
     return NULL;
   }
   $1 = (double *)arr->data;
+
+  // this seems a bit strange; why DECREF it after it's been INCREFed
+  // in the PyArray_CONTIGUOUS above? And won't this destroy an
+  // eventual contiguous local copy?
+
   Py_DECREF(arr);  /* Release our local copy of the PyArray */
 }
 
@@ -166,4 +174,76 @@
 	    $1 = 0;
 	}
     }
+}
+
+// return a C++ Vector as a list
+
+// This tells SWIG to treat a Vector & argument with name outvector as
+// an output value.  We'll append the value to the current result which 
+// is guaranteed to be a List object by SWIG.
+
+%typemap(in,numinputs=0) Vector &outvector {
+    Vector *a = new Vector();
+    $1 = a;
+}
+
+%typemap(argout) Vector &outvector {
+    PyObject *t;
+
+    t = PyTuple_New(3);
+
+    PyObject *p0, *p1, *p2;
+
+    p0 = PyFloat_FromDouble((*$1)[0]);
+    p1 = PyFloat_FromDouble((*$1)[1]);
+    p2 = PyFloat_FromDouble((*$1)[2]);
+
+    PyTuple_SetItem(t,0,p0);
+    PyTuple_SetItem(t,1,p1);
+    PyTuple_SetItem(t,2,p2);
+
+    $result = t;
+}
+
+%typemap(freearg) Vector &outvector {
+    delete $1;
+}
+
+%typemap(in,numinputs=0) Tensor &outtensor {
+    Tensor *a = new Tensor();
+    $1 = a;
+}
+
+%typemap(argout) Tensor &outtensor {
+    PyObject *t;
+
+    t = PyTuple_New(3);
+
+    PyObject *p0, *p1, *p2;
+
+    p0 = PyTuple_New(3);
+    p1 = PyTuple_New(3);
+    p2 = PyTuple_New(3);
+
+    PyTuple_SetItem(p0,0,PyFloat_FromDouble((*$1)[0][0]));
+    PyTuple_SetItem(p0,1,PyFloat_FromDouble((*$1)[0][1]));
+    PyTuple_SetItem(p0,2,PyFloat_FromDouble((*$1)[0][2]));
+
+    PyTuple_SetItem(p1,0,PyFloat_FromDouble((*$1)[1][0]));
+    PyTuple_SetItem(p1,1,PyFloat_FromDouble((*$1)[1][1]));
+    PyTuple_SetItem(p1,2,PyFloat_FromDouble((*$1)[1][2]));
+
+    PyTuple_SetItem(p2,0,PyFloat_FromDouble((*$1)[2][0]));
+    PyTuple_SetItem(p2,1,PyFloat_FromDouble((*$1)[2][1]));
+    PyTuple_SetItem(p2,2,PyFloat_FromDouble((*$1)[2][2]));
+
+    PyTuple_SetItem(t,0,p0);
+    PyTuple_SetItem(t,1,p1);
+    PyTuple_SetItem(t,2,p2);
+
+    $result = t;
+}
+
+%typemap(freearg) Tensor &outtensor {
+    delete $1;
 }

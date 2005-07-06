@@ -1,5 +1,7 @@
 /* File : lisasim-swig.i */
 
+/* Do all classes really get directors? I thought only AnyLISA would... */
+
 %module(directors="1") lisaswig
 %{
 #include "lisasim.h"
@@ -24,6 +26,9 @@ public:
 
     OriginalLISA(double arm1,double arm2,double arm3);
 
+    virtual void putn(Vector &outvector, int arm, double t);
+    virtual void putp(Vector &outvector, int craft, double t);
+
     virtual double armlength(int arm, double t);
 };
 
@@ -33,6 +38,8 @@ public:
     // accept the armlength in seconds
     
     ModifiedLISA(double arm1,double arm2,double arm3);
+
+    void putp(Vector &outvector, int craft, double t);
         
     double armlength(int arm, double t);
 };
@@ -42,6 +49,8 @@ class CircularRotating : public LISA {
 	
     CircularRotating(double eta0=0.0,double xi0=0.0,double sw=0.0,double t0=0.0);
     CircularRotating(double myL,double eta0,double xi0,double sw,double t0);
+
+    void putp(Vector &outvector, int craft, double t);
     
     double armlength(int arm, double t);
 
@@ -86,6 +95,8 @@ class EccentricInclined : public LISA {
  public:
 
     EccentricInclined(double eta0 = 0.0,double xi0 = 0.0,double sw = 1.0,double t0=0.0);
+
+    void putp(Vector &outvector,int craft,double t);
     
     double armlength(int arm, double t);
 
@@ -105,6 +116,9 @@ public:
 
     ~NoisyLISA(); 
 
+    void putn(Vector &outvector, int arm, double t);
+    void putp(Vector &outvector, int craft, double t);
+
     double armlength(int arm, double t);
 
     double armlengthbaseline(int arm, double t);
@@ -121,6 +135,9 @@ class NominalLISA : public LISA {
     void setparameters(double l,double cm,double em,double toff);
     void setparameters(double cm,double em,double toff);
     void setparameters3(double l,double cm,double em);
+
+    void putn(Vector &outvector, int arm, double t);
+    void putp(Vector &outvector, int craft, double t);
 
     double armlength(int arm, double t);
 
@@ -140,6 +157,9 @@ class LinearLISA : public LISA {
     
     double armlengtherror(int arm, double t);
 
+    void putn(Vector &outvector, int arm, double t);
+    void putp(Vector &outvector, int craft, double t);
+
     double armlength(int arm, double t);
 
     double armlengthbaseline(int arm, double t);
@@ -152,6 +172,9 @@ class CacheLISA : public LISA {
 public:
     CacheLISA(LISA *basic);
     ~CacheLISA(); 
+
+    void putn(Vector &outvector, int arm, double t);
+    void putp(Vector &outvector, int craft, double t);
 
     double armlength(int arm, double t);
 
@@ -166,6 +189,9 @@ class MeasureLISA : public LISA {
     MeasureLISA(LISA *clean,double starm,double sdarm,int swindow = 1);
     ~MeasureLISA();
         
+    void putn(Vector &outvector, int arm, double t);
+    void putp(Vector &outvector, int craft, double t);
+
     double armlength(int arm, double t);
 
     double armlengthbaseline(int arm, double t);
@@ -205,16 +231,30 @@ class InterpolateNoise : public Noise {
 
 /* -------- Wave objects -------- */
 
-class Wave;
+%nodefault Wave;
+
+class Wave {
+ public:
+    void putwave(Tensor &outtensor, double t);
+
+    virtual double hp(double t);
+    virtual double hc(double t);  
+};
 
 class SimpleBinary : public Wave {
-public:
+ public:
     SimpleBinary(double freq, double initphi, double inc, double amp, double d, double a, double p);
+
+    double hp(double t);
+    double hc(double t);
 };
 
 class SimpleMonochromatic : public Wave {
 public:
     SimpleMonochromatic(double freq, double phi, double gamma, double amp, double d, double a, double p);
+
+    double hp(double t);
+    double hc(double t);
 };
 
 /* Who gets ownership of the Numpy arrays? Should I worry about this
