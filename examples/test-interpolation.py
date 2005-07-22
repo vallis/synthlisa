@@ -7,9 +7,9 @@
 
 # import all the libraries that are needed
 
-from lisaswig import *
+from synthlisa import *
 from Numeric import *
-from lisautils import *
+
 
 # generate the same noise object with:
 

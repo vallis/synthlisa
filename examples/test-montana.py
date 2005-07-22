@@ -11,9 +11,9 @@
 
 # import all the libraries that are needed
 
-from lisaswig import *
+from synthlisa import *
 from Numeric import *
-from lisautils import *
+
 
 # read the product of test-binary.py
 

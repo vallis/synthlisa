@@ -16,9 +16,9 @@
 
 # import all the libraries that are needed
 
-from lisaswig import *
+from synthlisa import *
 from Numeric import *
-from lisautils import *
+
 
 # we use the most realistic LISA geometry model, with eccentric and inclined
 # orbits that give time-changing and direction-dependent armlengths

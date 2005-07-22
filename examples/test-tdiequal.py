@@ -13,9 +13,9 @@
 
 # import all the libraries that are needed
 
-from lisaswig import *
+from synthlisa import *
 from Numeric import *
-from lisautils import *
+
 
 # we create a LISA geometry object corresponding to a stationary LISA
 # with equal armlengths

@@ -2,9 +2,9 @@
 
 import pypar
 
-from lisaswig import *
+from synthlisa import *
 from Numeric import *
-from lisautils import *
+
 from lisapar import *
 
 import math

@@ -12,9 +12,9 @@
 
 # import all the libraries that are needed
 
-from lisaswig import *
+from synthlisa import *
 from Numeric import *
-from lisautils import *
+
 
 # here we create a proof-mass noise object with
 # - noise-generation sampling time 1.0 s

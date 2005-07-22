@@ -3,9 +3,9 @@
 # test of laser-noise cancellation with imperfect knowledge of the
 # armlengths: second-generation TDI, additional error budgets
 
-from lisaswig import *
+from synthlisa import *
 from Numeric import *
-from lisautils import *
+
 
 # create the stationary LISA and standard TDI noise objects
 

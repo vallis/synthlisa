@@ -13,9 +13,9 @@
 
 # import all the libraries that are needed
 
-from lisaswig import *
+from synthlisa import *
 from Numeric import *
-from lisautils import *
+
 
 # we create the stationary LISA (with unequal arms) and the standard
 # TDI noise objects

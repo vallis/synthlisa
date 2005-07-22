@@ -15,9 +15,9 @@
 
 # import all the libraries that are needed
 
-from lisaswig import *
+from synthlisa import *
 from Numeric import *
-from lisautils import *
+
 
 ###################################################
 # creating the GW source from physical parameters #
