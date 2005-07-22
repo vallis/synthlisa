@@ -1,5 +1,9 @@
-from Numeric import *
-from FFT import *
+# these might be replaced with simple imports; otherwise all of
+# Numeric is available within the lisaswig context
+
+import Numeric
+import FFT
+import math
 
 # estimate spectrum
 # patches = 0 gives the unwindowed spectrum
@@ -23,9 +27,9 @@ def spect(series,sampling,patches=1,detrend=0,overlap=1):
         else:
             period = opwpdg(series,patches,detrend)
 
-    pdlen = shape(period)[0]-1
+    pdlen = Numeric.shape(period)[0]-1
 
-    freqs = arange(0,pdlen+1,typecode='d') * (nyquistf / pdlen)
+    freqs = Numeric.arange(0,pdlen+1,typecode='d') * (nyquistf / pdlen)
 
     deltaf = nyquistf / pdlen
    
@@ -33,7 +37,7 @@ def spect(series,sampling,patches=1,detrend=0,overlap=1):
     period[1:pdlen] = period[1:pdlen] / deltaf
     period[pdlen] = 2 * period[pdlen] / deltaf
 
-    spectrum = zeros((pdlen+1,2),typecode='d')
+    spectrum = Numeric.zeros((pdlen+1,2),typecode='d')
 
     spectrum[:,0] = freqs[:]
     spectrum[:,1] = period[:]
@@ -43,13 +47,13 @@ def spect(series,sampling,patches=1,detrend=0,overlap=1):
 # simple periodogram
 
 def pdg(series):
-    samples = shape(series)[0]
+    samples = Numeric.shape(series)[0]
 
     pdlen = samples/2
 
-    fourier = abs(fft(series))
+    fourier = abs(FFT.fft(series))
 
-    pdgram = zeros(pdlen+1,typecode='d')
+    pdgram = Numeric.zeros(pdlen+1,typecode='d')
 
     pdgram[0] = fourier[0]**2
     pdgram[1:pdlen] = fourier[1:pdlen]**2 + fourier[-1:pdlen:-1]**2
@@ -64,16 +68,16 @@ def pdg(series):
 #   we should not modify its value
 
 def wpdg(series,detrend=0):
-    samples = shape(series)[0]
+    samples = Numeric.shape(series)[0]
 
     #pdlen = (samples-1)/2.0
     #window = 1.0 - abs(arange(0,samples,typecode='d') - pdlen) / (pdlen)
 
     # try Blackman
-    wrange = arange(0,samples,typecode='d') / (samples - 1.0);
-    window = 0.42 - 0.5 * cos(2*math.pi*wrange) + 0.08 * cos(4*math.pi*wrange)
+    wrange = Numeric.arange(0,samples,typecode='d') / (samples - 1.0);
+    window = 0.42 - 0.5 * Numeric.cos(2*math.pi*wrange) + 0.08 * Numeric.cos(4*math.pi*wrange)
 
-    weight = samples * sum(window ** 2)
+    weight = samples * Numeric.sum(window ** 2)
 
     # detrending
     if detrend==0:
@@ -90,13 +94,13 @@ def wpdg(series,detrend=0):
 # overlapping-averaged, triangle-windowed periodogram
 
 def opwpdg(series,patches,detrend=0):
-    samples = shape(series)[0]
+    samples = Numeric.shape(series)[0]
     serlen = samples - (samples % (4*patches))
 
     patlen = serlen/patches
     pdlen = patlen/2
 
-    opwpdgram = zeros(pdlen+1,typecode='d')
+    opwpdgram = Numeric.zeros(pdlen+1,typecode='d')
 
     for cnt in range(0,2*patches-1):
         opwpdgram[:] += wpdg(series[cnt*pdlen:(cnt+2)*pdlen],detrend)
@@ -108,13 +112,13 @@ def opwpdg(series,patches,detrend=0):
 # nonoverlapping-averaged, triangle-windowed periodogram
 
 def nopwpdg(series,patches,detrend=0):
-    samples = shape(series)[0]
+    samples = Numeric.shape(series)[0]
     serlen = samples - (samples % (4*patches))
 
     patlen = serlen/patches
     pdlen = patlen/2
 
-    opwpdgram = zeros(pdlen+1,typecode='d')
+    opwpdgram = Numeric.zeros(pdlen+1,typecode='d')
 
     for cnt in range(0,patches):
         opwpdgram[:] += wpdg(series[cnt*patlen:(cnt+1)*patlen],detrend)
@@ -124,7 +128,7 @@ def nopwpdg(series,patches,detrend=0):
     return opwpdgram
 
 def whiten(series,patches=1):
-    samples = shape(series)[0]
+    samples = Numeric.shape(series)[0]
 
     patlen = samples / patches
     
@@ -137,10 +141,10 @@ def whiten(series,patches=1):
             integ = integ+next
 
 def darken(spectrum,stime):
-    samples = shape(spectrum)[0]
+    samples = Numeric.shape(spectrum)[0]
 
     for cnt in range(1,samples):
-        spectrum[cnt,1] = spectrum[cnt,1] * (2*sin(math.pi*spectrum[cnt,0]*stime))**2.0
+        spectrum[cnt,1] = spectrum[cnt,1] * (2*Numeric.sin(math.pi*spectrum[cnt,0]*stime))**2.0
 
 # make it so that "time" is an observable
 
@@ -151,14 +155,14 @@ def time(t):
 # "observables" is a function or a list of functions
 
 def getobs(snum,stime,observables,zerotime=0.0):
-    if len(shape(observables)) == 0:
-        array = zeros(snum,typecode='d')
+    if len(Numeric.shape(observables)) == 0:
+        array = Numeric.zeros(snum,typecode='d')
         for i in arange(0,snum):
             array[i] = observables(zerotime+i*stime)
     else:
-        obslen = shape(observables)[0]
-        array = zeros((snum,obslen),typecode='d')
-        for i in arange(0,snum):
+        obslen = Numeric.shape(observables)[0]
+        array = Numeric.zeros((snum,obslen),typecode='d')
+        for i in Numeric.arange(0,snum):
             for j in range(0,obslen):
                 array[i,j] = observables[j](zerotime+i*stime)
     return array
@@ -196,16 +200,16 @@ def getobsc(snum,stime,observables,zerotime=0.0):
     print "Processing...",
     sys.stdout.flush()
 
-    if len(shape(observables)) == 0:
-        array = zeros(snum,typecode='d')
-        for i in arange(0,snum):
+    if len(Numeric.shape(observables)) == 0:
+        array = Numeric.zeros(snum,typecode='d')
+        for i in Numeric.arange(0,snum):
             array[i] = observables(zerotime+i*stime)
             if i % 1024 == 0:
                 lasttime = dotime(i,snum,inittime,lasttime)
     else:
-        obslen = shape(observables)[0]
-        array = zeros((snum,obslen),typecode='d')
-        for i in arange(0,snum):
+        obslen = Numeric.shape(observables)[0]
+        array = Numeric.zeros((snum,obslen),typecode='d')
+        for i in Numeric.arange(0,snum):
             for j in range(0,obslen):
                 array[i,j] = observables[j](zerotime+i*stime)
             if i % 1024 == 0:
@@ -225,12 +229,12 @@ def getobsc(snum,stime,observables,zerotime=0.0):
 # between the result of map (a sequence) and the numeric array
 
 def getobs2(snum,stime,observables):
-    if len(shape(observables)) == 0:
-        return asarray(map(observables,arange(0,snum*stime,stime)),typecode='d')
+    if len(Numeric.shape(observables)) == 0:
+        return Numeric.asarray(map(observables,Numeric.arange(0,snum*stime,stime)),typecode='d')
     else:
         def mapfun(x):
             return map(lambda y: y(x),observables)
-        return asarray(map(mapfun,arange(0,snum*stime,stime)),typecode='d')
+        return Numeric.asarray(map(mapfun,Numeric.arange(0,snum*stime,stime)),typecode='d')
 
 def writeobs(filename,snum,stime,observables):
     writearray(filename,getobs(snum,stime,observables))
@@ -274,27 +278,17 @@ def readbinary(filename,length):
     # then reshape the buffer if needed
     return buffer
 
-# the class anyLISA allows the use of any LISA class as the physical
-# LISA, and any python function as the armlength function; the
-# constructor is simply anyLISA(mylisa,func), where func(arm,time) must
-# return the values of the armlength, which is used for both armlength()
-# and armlengthbaseline()
+# healpix (need to sort out the license)
 
-from lisaswig import AnyLISA
+import healpix
 
-class anyLISA(AnyLISA):
-    def __init__(self,whichlisa,armf):
-        AnyLISA.__init__(self,whichlisa)
-        self.armfunc = armf
+def hnpix(nside):
+    return healpix.healpix.nside2npix(nside)
 
-    def armlength(self,arm,time):
-        return self.armfunc(arm,time)
-
-    def armlengthbaseline(self,arm,time):
-        return self.armfunc(arm,time)
-
-    def armlengthaccurate(self,arm,time):
-        return 0.0
-
-    def __del__(self):
-        AnyLISA.__del__(self)
+def hn2ec(nside,ipix):
+    (th,ph) = healpix.healpix.pix2ang_nest(nside,ipix)
+    return (math.pi-th,ph)
+    
+def hr2ec(nside,ipix):
+    (th,ph) = healpix.healpix.pix2ang_ring(nside,ipix)
+    return (math.pi-th,ph)
