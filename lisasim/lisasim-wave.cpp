@@ -6,6 +6,34 @@ using namespace std;
 
 #include <math.h>
 
+WaveArray::WaveArray(Wave **warray, int wnum) : wavenum(wnum) {
+	if(wnum < 1) {
+		cout << "WaveArray needs at least one wave object..." << endl;
+		abort();
+	}
+
+	wavearray = new (Wave *)[wnum]; // syntax?
+
+	for(int i=0;i<wnum;i++)
+		wavearray[i] = warray[i];
+}
+
+WaveArray::~WaveArray() {
+	delete wavearray;
+}
+
+Wave *WaveArray::firstwave() {
+	wavecurrent = 0;
+	return wavearray[0];
+}
+
+Wave *WaveArray::nextwave() {
+	if(++wavecurrent < wavenum)
+		return wavearray[wavecurrent];
+	else
+		return 0;
+}
+
 Wave::Wave(double d, double a, double p) {
     dec = d;
     asc = a;
@@ -125,6 +153,34 @@ double SimpleMonochromatic::hc(double t) {
     const double twopi = 2.0*M_PI;
     
     return ac * sin(twopi*f*t);
+}
+
+NoiseWave::NoiseWave(Noise *noisehp, Noise *noisehc, double d, double a, double p) : Wave(d,a,p) {
+    np = noisehp;
+    nc = noisehc;
+
+    allocated = 0;
+}
+
+NoiseWave::NoiseWave(double sampletime, double prebuffer, double density, double exponent, int swindow, double d, double a, double p) : Wave(d,a,p) {
+    np = new InterpolateNoise(sampletime,prebuffer,density,exponent,swindow);
+    nc = new InterpolateNoise(sampletime,prebuffer,density,exponent,swindow);
+
+    allocated = 1;
+}
+
+NoiseWave::NoiseWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double density, double exponent, int swindow, double d, double a, double p) : Wave(d,a,p) {
+    np = new InterpolateNoise(hpa,samples,sampletime,prebuffer,density,exponent,swindow);
+    nc = new InterpolateNoise(hca,samples,sampletime,prebuffer,density,exponent,swindow);
+
+    allocated = 1;
+}
+
+NoiseWave::~NoiseWave() {
+    if(allocated) {
+	delete nc;
+	delete np;
+    }
 }
 
 // --- InterpolateMemory wave class --------------------------------------------------

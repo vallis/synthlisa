@@ -2,8 +2,33 @@
 #define _LISASIM_WAVE_H_
 
 #include "lisasim-tens.h"
+#include "lisasim-noise.h"
 
-class Wave {
+class Wave;
+
+class WaveObject {
+	public:
+		// need a virtual constructor, too?
+		virtual ~WaveObject() {};
+		
+		virtual Wave *firstwave() = 0;
+		virtual Wave *nextwave() = 0;
+};
+
+class WaveArray : public WaveObject {
+	private:
+		Wave **wavearray;
+		int wavenum;
+		int wavecurrent;
+
+	public:
+		WaveArray(Wave **warray, int wnum);
+		~WaveArray();
+
+		Wave *firstwave(), *nextwave();
+};
+
+class Wave : public WaveObject {
     public:
         // position in the sky
         // dec is really beta, the SSB ecliptic latitude
@@ -14,15 +39,17 @@ class Wave {
         // k vector
 
         Vector k;
-	double kArray[3];
+		double kArray[3];
 
         // polarization tensors
     
         Tensor pp, pc;
-	double ppArray[9], pcArray[9];
+		double ppArray[9], pcArray[9];
 
         Wave(double d, double a, double p);
-        virtual ~Wave() {};
+
+		Wave *firstwave() { return this; }
+		Wave *nextwave()  { return 0; }
 
         virtual double hp(double t) = 0;
         virtual double hc(double t) = 0;  
@@ -63,6 +90,25 @@ class SimpleMonochromatic : public Wave {
 
         double hp(double t);
         double hc(double t);
+};
+
+class NoiseWave : public Wave {
+    private:
+        Noise *np, *nc;
+
+	// set this to one if we are allocating noise objects
+
+	int allocated;
+
+    public:
+	NoiseWave(Noise *noisehp, Noise *noisehc, double d, double a, double p);
+	NoiseWave(double sampletime, double prebuffer, double density, double exponent, int swindow, double d, double a, double p);
+	NoiseWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double density, double exponent, int swindow, double d, double a, double p);
+
+	~NoiseWave();
+
+	double hp(double t) { return np->noise(t); };
+	double hc(double t) { return nc->noise(t); };
 };
 
 class InterpolateMemory : public Wave {
