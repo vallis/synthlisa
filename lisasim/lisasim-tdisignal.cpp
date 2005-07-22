@@ -1,6 +1,6 @@
 #include "lisasim-tdisignal.h"
 
-TDIsignal::TDIsignal(LISA *mylisa, Wave *mywave) {
+TDIsignal::TDIsignal(LISA *mylisa, WaveObject *mywave) {
     phlisa = mylisa->physlisa();
     lisa = mylisa;
 
@@ -13,23 +13,14 @@ void TDIsignal::setphlisa(LISA *mylisa) {
 
 // the argument t is actually redundant here!
 
-double TDIsignal::psi(Vector &lisan, double t) {
+double TDIsignal::psi(Wave *nwave, Vector &lisan, double t) {
     Tensor cwave;
-    wave->putwave(cwave,t);
+    nwave->putwave(cwave,t);
     
     Vector tmp;
     tmp.setproduct(cwave,lisan);
 
     return(0.5 * lisan.dotproduct(tmp));
-}
-
-// the lisa used here should be the physical one, not the nominal one (02/13/04)
-
-double TDIsignal::retard(int craft, double t) {
-    Vector lisap;
-    phlisa->putp(lisap,craft,t);
-    
-    return(-lisap.dotproduct(wave->k));
 }
 
 // the y as computed below should now be fully covariant
@@ -45,8 +36,6 @@ double TDIsignal::y(int send, int slink, int recv, int ret1, int ret2, int ret3,
 }
 
 double TDIsignal::y(int send, int slink, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t) {
-    int link = abs(slink);
-
     lisa->newretardtime(t);
 
     lisa->retard(ret7); lisa->retard(ret6); lisa->retard(ret5);
@@ -55,6 +44,8 @@ double TDIsignal::y(int send, int slink, int recv, int ret1, int ret2, int ret3,
     double retardedtime = lisa->retardedtime();
 
     // for the moment, let's not trust the sign of slink, and recompute it
+
+    int link = abs(slink);
 
     if( (link == 3 && recv == 2) || (link == 1 && recv == 3) || (link == 2 && recv == 1) )
 	link = -link;
@@ -65,12 +56,28 @@ double TDIsignal::y(int send, int slink, int recv, int ret1, int ret2, int ret3,
 
     Vector linkn;
     lisa->putn(linkn,link,retardedtime);    
-    
-    double denom = 1.0 - linkn.dotproduct(wave->k);
+
     double retardsignal = retardedtime - phlisa->armlength(link,retardedtime);
 
-    return (( psi(linkn, retardsignal + retard(send, retardsignal)) -
-              psi(linkn, retardedtime + retard(recv, retardedtime)) ) / denom);
+	Vector psend, precv;
+	phlisa->putp(psend,send,retardsignal);
+	phlisa->putp(precv,recv,retardedtime);
+
+	// loop over waves (if there is more than one)
+	// using the WaveObject interface (firstwave, nextwave)
+
+	Wave *nwave = wave->firstwave();
+	double accpsi = 0.0;
+
+	do {
+		double denom = 1.0 - linkn.dotproduct(nwave->k);
+
+		accpsi += (( psi(nwave, linkn, retardsignal - psend.dotproduct(nwave->k)) -
+					 psi(nwave, linkn, retardedtime - precv.dotproduct(nwave->k)) ) / denom);
+
+	} while( (nwave = wave->nextwave()) );
+		
+	return accpsi;
 }
 
 // the next three names are not standard!

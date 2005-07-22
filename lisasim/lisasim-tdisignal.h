@@ -8,14 +8,12 @@
 class TDIsignal : public TDI {
     private:
         LISA *lisa, *phlisa;
-        Wave *wave;
+        WaveObject *wave;
         
-	double psi(Vector &lisan, double t);
-        
-        double retard(int craft, double t);
+	double psi(Wave *nwave, Vector &lisan, double t);
         
     public:
-        TDIsignal(LISA *mylisa, Wave *mywave);
+        TDIsignal(LISA *mylisa, WaveObject *mywave);
 
 	// change the physical LISA
 
