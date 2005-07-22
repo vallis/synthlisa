@@ -3,8 +3,6 @@
 // The following from Scott Ransom's numpy.i (ransom@cfa.harvard.edu)
 // needs arrayobject.h from the Numeric distribution
 
-%include typemaps.i
-
 %{
 #include "Numeric/arrayobject.h"
 
@@ -126,6 +124,39 @@
   $1 = &temp[0];
 }
 
+%typemap(python, in) (Wave **WaveSeq, int WaveNum) {
+  int i;
+
+  // check that we are really getting a sequence (list or tuple)
+
+  if (!PySequence_Check($input)) {
+      PyErr_SetString(PyExc_TypeError,"Expecting a sequence");
+      return NULL;
+  }
+
+  int dim = PySequence_Size($input);
+  Wave **temp = new (Wave *)[dim];
+
+  // convert each element
+
+  for (i = 0; i < dim; i++) {
+      PyObject *o = PySequence_GetItem($input,i);
+      
+      SWIG_ConvertPtr(o, (void **)&temp[i], $descriptor(Wave *), SWIG_POINTER_EXCEPTION);
+  }
+
+  // return pointer to the array
+  
+  $1 = temp;
+  $2 = dim;
+}
+
+// was for Wave **PYTHON_SEQUENCE_WAVE
+
+%typemap(python, freearg) (Wave **WaveSeq, int WaveNum)  {
+   delete $1;
+}
+
 // from the SWIG documentation: input a python function
 
 %typemap(python,in) PyObject* PYTHONFUNC {
@@ -209,6 +240,24 @@
     delete $1;
 }
 
+%typemap(out) Vector {
+    PyObject *t;
+
+    t = PyTuple_New(3);
+
+    PyObject *p0, *p1, *p2;
+
+    p0 = PyFloat_FromDouble($1[0]);
+    p1 = PyFloat_FromDouble($1[1]);
+    p2 = PyFloat_FromDouble($1[2]);
+
+    PyTuple_SetItem(t,0,p0);
+    PyTuple_SetItem(t,1,p1);
+    PyTuple_SetItem(t,2,p2);
+
+    $result = t;
+}
+
 %typemap(in,numinputs=0) Tensor &outtensor {
     Tensor *a = new Tensor();
     $1 = a;
@@ -236,6 +285,36 @@
     PyTuple_SetItem(p2,0,PyFloat_FromDouble((*$1)[2][0]));
     PyTuple_SetItem(p2,1,PyFloat_FromDouble((*$1)[2][1]));
     PyTuple_SetItem(p2,2,PyFloat_FromDouble((*$1)[2][2]));
+
+    PyTuple_SetItem(t,0,p0);
+    PyTuple_SetItem(t,1,p1);
+    PyTuple_SetItem(t,2,p2);
+
+    $result = t;
+}
+
+%typemap(out) Tensor {
+    PyObject *t;
+
+    t = PyTuple_New(3);
+
+    PyObject *p0, *p1, *p2;
+
+    p0 = PyTuple_New(3);
+    p1 = PyTuple_New(3);
+    p2 = PyTuple_New(3);
+
+    PyTuple_SetItem(p0,0,PyFloat_FromDouble($1[0][0]));
+    PyTuple_SetItem(p0,1,PyFloat_FromDouble($1[0][1]));
+    PyTuple_SetItem(p0,2,PyFloat_FromDouble($1[0][2]));
+
+    PyTuple_SetItem(p1,0,PyFloat_FromDouble($1[1][0]));
+    PyTuple_SetItem(p1,1,PyFloat_FromDouble($1[1][1]));
+    PyTuple_SetItem(p1,2,PyFloat_FromDouble($1[1][2]));
+
+    PyTuple_SetItem(p2,0,PyFloat_FromDouble($1[2][0]));
+    PyTuple_SetItem(p2,1,PyFloat_FromDouble($1[2][1]));
+    PyTuple_SetItem(p2,2,PyFloat_FromDouble($1[2][2]));
 
     PyTuple_SetItem(t,0,p0);
     PyTuple_SetItem(t,1,p1);
