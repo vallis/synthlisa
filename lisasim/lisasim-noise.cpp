@@ -180,7 +180,7 @@ InterpolateNoise::InterpolateNoise(double *nb,long sl,double st,double pbt,doubl
     nyquistf = 0.5 / st;
 
     prebuffertime = pbt;
-    maxtime = samplingtime * (LONG_MAX - 1) - prebuffertime;
+    maxtime = samplingtime * (sl - 1) - prebuffertime;
     lasttime = 0.0;
 
     setfilter(ex);
