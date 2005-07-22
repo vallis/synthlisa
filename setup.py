@@ -51,22 +51,35 @@ lisasim_pyfile = 'lisasim/lisaswig.py'
 # Should I clean the swig-generated files when setup.py clean is issued?
 # Better not, since it could engender problems if swig is not available.
 
-if not os.path.isfile(lisasim_cppfile) or not os.path.isfile(lisasim_pyfile) \
-       or newer_group(header_files + [lisasim_isource,lisasim_iheader],
-                      lisasim_cppfile) \
-       or newer_group(header_files + [lisasim_isource,lisasim_iheader],
-                      lisasim_pyfile):
-    try:
-        spawn([swig_bin,
-               '-w402','-c++','-python',
-               '-o',lisasim_cppfile,
-               lisasim_isource])
-    except:
-        print 'Sorry, I am unable to swig the modified ' + lisasim_isource
-        sys.exit(cmd)
+def runswig(source,cppfile,pyfile,deps):
+    if not os.path.isfile(cppfile) or not os.path.isfile(pyfile) \
+           or newer_group(deps,cppfile) or newer_group(deps,pyfile):
+        try:
+            spawn([swig_bin,'-w402','-c++','-python','-o',cppfile,source])
+        except:
+            print 'Sorry, I am unable to swig the modified ' + lisasim_isource
+            sys.exit(cmd)
+
+runswig(lisasim_isource,lisasim_cppfile,lisasim_pyfile,
+        header_files + [lisasim_isource,lisasim_iheader])
 
 if lisasim_cppfile not in source_files:
     source_files.append(lisasim_cppfile)
+
+# Healpix
+
+source_healpix = glob.glob('lisasim/healpix/*.cpp')
+header_healpix = glob.glob('lisasim/healpix/*.h')
+
+healpix_cppfile = 'lisasim/healpix/healpix_wrap.cpp'
+healpix_pyfile = 'lisasim/healpix/healpix.py'
+
+healpix_isource = 'lisasim/healpix/healpix.i'
+
+runswig(healpix_isource,healpix_cppfile,healpix_pyfile,header_healpix)
+
+if healpix_cppfile not in source_healpix:
+    source_healpix.append(healpix_cppfile)
 
 # Create the setdir.sh and setdir.csh scripts; they will be recreated
 # each time setup.py is run, but it does not matter.
@@ -118,21 +131,27 @@ else:
     setdir_scripts = []
 
 setup(name = 'synthLISA',
-      version = '1.2.1',
+      version = '1.2.3',
       description = 'Synthetic LISA Simulator',
 
       author = 'Michele Vallisneri',
       author_email = 'vallis@vallis.org',
       url = 'http://www.vallis.org/syntheticlisa',
+
+      packages = ['synthlisa', 'healpix'],
       
-      package_dir = {'' : 'lisasim'},
-      py_modules = ['lisautils','lisaswig'],
+      package_dir = {'synthlisa' : 'lisasim',
+                     'healpix' : 'lisasim/healpix'},
 
       scripts = setdir_scripts,
 
-      ext_modules = [Extension('_lisaswig',
+      ext_modules = [Extension('synthlisa/_lisaswig',
                                source_files,
                                include_dirs = [numeric_hfiles],
                                depends = header_files
+                               ),
+                     Extension('healpix/_healpix',
+                               source_healpix,
+                               include_dirs = ['lisasim/healpix',numeric_hfiles]
                                )]
-     )
+      )
