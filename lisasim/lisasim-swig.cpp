@@ -8,6 +8,10 @@ using namespace std;
 #include <sys/time.h>
 #include <math.h>
 
+NoiseWave *SampledWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double density, double exponent, int swindow, double d, double a, double p) {
+    return new NoiseWave(hpa,hca,samples,sampletime,prebuffer,density,exponent,swindow,d,a,p);
+}
+
 /* TDI interface (defined in lisasim-swig.cpp) */
 
 /* extern void printtdi(char *filename,TDI *mytdi,int samples,double samplingtime,char *observables);

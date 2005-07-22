@@ -1,8 +1,9 @@
 /* File : lisasim-swig.i */
 
-/* Do all classes really get directors? I thought only AnyLISA would... */
+// Directors are not needed (only for AnyLISA, deprecated)
+// %module(directors="1") lisaswig
 
-%module(directors="1") lisaswig
+%module lisaswig
 %{
 #include "lisasim.h"
 %}
@@ -17,7 +18,13 @@
 
 /* -------- LISA objects -------- */
 
-class LISA;
+%nodefault LISA;
+
+class LISA {
+ public:
+    virtual void putp(Vector &outvector, int arm, double t);
+    virtual void putn(Vector &outvector, int arm, double t);
+};
 
 class OriginalLISA : public LISA {
 public:
@@ -58,23 +65,6 @@ class CircularRotating : public LISA {
     double armlengthaccurate(int arm, double t);
     
     double genarmlength(int arms, double t);
-};
-
-/* I am not sure with the following two what I should do about the
-   ownership of the clean/base LISA pointer */
-
-%feature("director") AnyLISA;
-class AnyLISA : public LISA {
- public:
-    AnyLISA(LISA *clean);
-    virtual ~AnyLISA();
-
-    virtual void reset();
-
-    virtual double armlength(int arm, double t);
-
-    virtual double armlengthbaseline(int arm, double t);
-    virtual double armlengthaccurate(int arm, double t);
 };
 
 initsave(PyLISA)
@@ -212,13 +202,17 @@ class Noise {
 /* Who gets ownership of the Numpy arrays? Should I worry about this
    and fix it with %feature("shadow")? Maybe so. */
 
+initsave(InterpolateNoise)
+
+// should add machinery to infer its own length...
+
 %apply double *NUMPY_ARRAY_DOUBLE { double *noisebuf };
 
 class InterpolateNoise : public Noise {
  public:
     InterpolateNoise(double sampletime,double prebuffer,double density,double exponent,int swindow = 1);
 
-    InterpolateNoise(double *noisebuf,long samples,double sampletime,double prebuffer,double density, double exponent = 0.0, int swindow = 1);
+    InterpolateNoise(double *noisebuf,long samples,double sampletime,double prebuffer,double density, double exponent, int swindow = 1);
 
     ~InterpolateNoise();
     
@@ -231,10 +225,15 @@ class InterpolateNoise : public Noise {
 
 /* -------- Wave objects -------- */
 
+class WaveObject;
+
 %nodefault Wave;
 
-class Wave {
+class Wave : public WaveObject {
  public:
+    Vector k;
+    Tensor pp, pc;
+
     void putwave(Tensor &outtensor, double t);
 
     virtual double hp(double t);
@@ -257,8 +256,34 @@ public:
     double hc(double t);
 };
 
-/* Who gets ownership of the Numpy arrays? Should I worry about this
-   and fix it with %feature("shadow")? Maybe so. */
+initsave(NoiseWave)
+
+%apply double *NUMPY_ARRAY_DOUBLE { double *hpa };
+%apply double *NUMPY_ARRAY_DOUBLE { double *hca };
+
+class NoiseWave : public Wave {
+    public:
+        // with Noise objects, given directly
+	NoiseWave(Noise *noisehp, Noise *noisehc, double d, double a, double p);
+
+        // allocates its own Noise objects
+	NoiseWave(double sampletime, double prebuffer, double density, double exponent, int swindow, double d, double a, double p);
+        
+        // from sampled buffers (using filters and interpolation...)
+	NoiseWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double density, double exponent, int swindow, double d, double a, double p);
+
+	~NoiseWave();
+
+	double hp(double t);
+	double hc(double t);
+};
+
+%newobject SampledWave;
+extern NoiseWave *SampledWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double density, double exponent, int swindow, double d, double a, double p);
+
+// this class is now redundant, since it can be obtained as a special form of NoiseWave...
+
+initsave(InterpolateMemory)
 
 %apply double *NUMPY_ARRAY_DOUBLE { double *hpa };
 %apply double *NUMPY_ARRAY_DOUBLE { double *hca };
@@ -266,13 +291,32 @@ public:
 class InterpolateMemory : public Wave {
 public:
     InterpolateMemory(double *hpa, double *hca, long samples, double samplingtime, double lookback, double d, double a, double p);
+
+    double hp(double t);
+    double hc(double t);
 };
+
+initsave(PyWave)
 
 %apply PyObject* PYTHONFUNC { PyObject *hpf, PyObject *hcf };
 
 class PyWave : public Wave {
   public:
     PyWave(PyObject *hpf, PyObject *hcf, double d, double a, double p);
+
+    double hp(double t);
+    double hc(double t);
+};
+
+initsave(WaveArray)
+
+class WaveArray : public WaveObject {
+	public:
+		WaveArray(Wave **WaveSeq, int WaveNum);
+		~WaveArray();
+
+		Wave *firstwave();
+		Wave *nextwave();
 };
 
 /* -------- TDI objects -------- */
@@ -387,7 +431,6 @@ initsave(TDIaccurate)
 class TDIaccurate : public TDInoise {
  public:
     TDIaccurate(LISA *mylisa, Noise *proofnoise[6],Noise *shotnoise[6],Noise *lasernoise[6]);
-
     ~TDIaccurate();
 
     double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t);
@@ -402,7 +445,7 @@ initsave(TDIsignal)
 
 class TDIsignal : public TDI {
 public:
-    TDIsignal(LISA *mylisa, Wave *mywave);
+    TDIsignal(LISA *mylisa, WaveObject *mywave);
             
     double y(int send, int link, int recv, int ret1, int ret2, int ret3, double t);
 };
