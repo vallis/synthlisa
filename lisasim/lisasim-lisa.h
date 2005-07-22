@@ -479,51 +479,6 @@ class MeasureLISA : public LISA {
     }
 };
 
-class AnyLISA : public LISA {
-    private:
-        LISA *baselisa;
-
-    public:
-        AnyLISA(LISA *base) : baselisa(base) {};
-	virtual ~AnyLISA() {};
-
-        virtual void reset() {
-	    return baselisa->reset();
-	}
-
-       	LISA *physlisa() {
-	    return baselisa;
-	}
-
-        virtual double armlength(int arm, double t) {
-	    return baselisa->armlength(arm,t);
-	}
-
-	virtual double armlengthbaseline(int arm, double t) {
-	    return baselisa->armlengthbaseline(arm,t);
-	}
-
-	virtual double armlengthaccurate(int arm, double t) {
-	    return baselisa->armlengthaccurate(arm,t);
-	}
-	
-        virtual void putn(Vector &n, int arm, double t) {
-            baselisa->putn(n,arm,t);
-        }
-        
-        virtual void putp(Vector &p, int craft, double t) {
-            baselisa->putp(p,craft,t);
-        }
-
-        virtual void putn(double n[], int arm, double t) {
-            baselisa->putn(n,arm,t);
-        }
-        
-        void putp(double p[], int craft, double t) {
-            baselisa->putp(p,craft,t);
-	}
-};
-
 #include <Python.h>
 
 class PyLISA : public LISA {
