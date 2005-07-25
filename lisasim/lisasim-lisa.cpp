@@ -186,11 +186,14 @@ OriginalLISA::OriginalLISA(double L1,double L2,double L3) {
     }
 }
 
-// OriginalLISA does not move; hence no distinction between positive and negative arm
+// OriginalLISA does not move; hence the length (but not the
+// direction!) of positive and negative arms is the same
 
 void OriginalLISA::putn(Vector &n,int arm,double t) {
+    double sign = arm > 0 ? 1.0 : -1.0;
+
     for(int i=0;i<3;i++)
-        n[i] = initn[abs(arm)][i];
+        n[i] = sign * initn[abs(arm)][i];
 }
 
 void OriginalLISA::putp(Vector &p,int craft,double t) {
@@ -381,20 +384,6 @@ double CircularRotating::armlengthaccurate(int arm, double t) {
 
 double CircularRotating::genarmlength(int arm, double t) {
     return LISA::armlength(arm,t);
-}
-
-// call the old putn, but change the sign of n if arm is negative
-
-void CircularRotating::oldputn(Vector &n,int arm,double t) {
-    if (t != rotationtime) settime(t);
-
-    n.setproduct(rotation, initn[abs(arm)]);
-
-    if (arm < 0) {
-        n[0] = -n[0];
-        n[1] = -n[1];
-        n[2] = -n[2];
-    }
 }
 
 // --- EccentricInclined LISA class -----------------------------------------------------
@@ -704,12 +693,6 @@ double LinearLISA::armlengthaccurate(int arm, double t) {
     } else {
 	return dL[2-arm] + dLdt[2-arm]*(t-toffset);
     }
-}
-
-// --- stdlisa function ---------------------------------------------------
-
-LISA *stdlisa() {
-  return new OriginalLISA(Lstd,Lstd,Lstd);
 }
 
 // --- MeasureLISA class -----------------------------------------------------

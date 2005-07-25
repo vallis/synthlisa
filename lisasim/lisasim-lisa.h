@@ -91,6 +91,9 @@ class LISA {
 	return 0.0;
     }
 
+    /// FIX: I should remove all of these overloaded functions, not
+    /// needed anymore now that Jeff's lisafast is not active anymore.
+
     /// Load an array rather than a vector with n (was used in LISAfast).
     virtual void putn(double n[], int arm, double t) {
 	Vector temp;
@@ -140,7 +143,7 @@ class OriginalLISA : public LISA {
  public:
     // accept the armlength in seconds
     
-    OriginalLISA(double arm1,double arm2,double arm3);
+    OriginalLISA(double arm1 = Lstd,double arm2 = Lstd,double arm3 = Lstd);
 
     // OriginalLISA defines optimized (look-up) versions of putn and armlength
     
@@ -160,7 +163,7 @@ class ModifiedLISA : public OriginalLISA {
     public:
         // accept the armlength in seconds
     
-        ModifiedLISA(double arm1,double arm2,double arm3);
+        ModifiedLISA(double arm1 = Lstd,double arm2 = Lstd,double arm3 = Lstd);
 
         // OriginalLISA defines a computed version of armlength
         // however, it uses the base putn
@@ -217,7 +220,6 @@ class CircularRotating : public LISA {
 	double armlengthbaseline(int arm, double t);
 	double armlengthaccurate(int arm, double t);
 
-        void oldputn(Vector &n,int arm,  double t);
         double genarmlength(int arm, double t);
 };
 
@@ -535,7 +537,5 @@ class PyLISA : public LISA {
             baselisa->putp(p,craft,t);
 	}
 };
-
-extern LISA *stdlisa();
 
 #endif /* _LISASIM_LISA_H_ */
