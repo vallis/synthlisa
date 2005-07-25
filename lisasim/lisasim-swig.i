@@ -18,20 +18,46 @@
 
 /* -------- LISA objects -------- */
 
+%feature("docstring") LISA "
+LISA is the base class for all LISA geometries. All derived LISA
+classes must define putn(l,t), putp(i,t), and armlength(l,t). LISA,
+and most of its derived classes, are defined in lisasim-lisa.cpp"
+
+%feature("docstring") LISA::putn "
+LISA.putn(l,t) -> (nlx,nly,nlz) returns a 3-tuple with the SSB
+components (normalized) of arm l (1,2,3,-1,-2,-3) at time t (seconds)."
+
+%feature("docstring") LISA::putp "
+LISA.putp(i,t) -> (pix,piy,piz) returns a 3-tuple with the SSB
+coordinates of spacecraft i (1,2,3) at time t (seconds)."
+
+%feature("docstring") LISA::armlength "
+LISA.armlength(l,t) the armlength (seconds) of LISA link l
+(1,2,3,-1,-2,-3) at time t (seconds)."
+
 %nodefault LISA;
 
 class LISA {
- public:
+  public:
     virtual void putp(Vector &outvector, int arm, double t);
     virtual void putn(Vector &outvector, int arm, double t);
+
+    virtual double armlength(int arm, double t);
 };
 
-class OriginalLISA : public LISA {
-public:
-    
-    // accept the armlength in seconds
+%feature("docstring") OriginalLISA "
+OriginalLISA(L1,L2,L3) returns a static LISA object with armlengths
+given by L1, L2, L3 (in seconds). If omitted, the Li take the standard
+value Lstd.
 
-    OriginalLISA(double arm1,double arm2,double arm3);
+The positions of the spacecraft are chosen so that 1) the baricenter
+is in the SSB origin; 2) piz = 0 for all spacecraft; 3) the spacecraft
+sequence 1 -> 2 -> 3 -> 1 traces a clockwise path, as seen from above;
+p1y = 0."
+
+class OriginalLISA : public LISA {
+  public:
+    OriginalLISA(double arm1 = Lstd,double arm2 = Lstd,double arm3 = Lstd);
 
     virtual void putn(Vector &outvector, int arm, double t);
     virtual void putp(Vector &outvector, int craft, double t);
@@ -39,33 +65,92 @@ public:
     virtual double armlength(int arm, double t);
 };
 
-class ModifiedLISA : public OriginalLISA {
-public:
+%feature("docstring") ModifiedLISA "
+ModifiedLISA(L1,L2,L3) returns a stationary LISA object set equal to
+OriginalLISA(L1,L2,L3) at time 0, but rotating around its baricenter
+(at the SSB origin) with angular speed 2*pi/yr. L1, L2, L3 are given
+in seconds; if omitted, they take the standard value Lstd.
 
-    // accept the armlength in seconds
-    
-    ModifiedLISA(double arm1,double arm2,double arm3);
+Because of the rotation, the armlengths depend on the
+direction of light propagation."
+
+class ModifiedLISA : public OriginalLISA {
+  public:
+    ModifiedLISA(double arm1 = Lstd,double arm2 = Lstd,double arm3 = Lstd);
 
     void putp(Vector &outvector, int craft, double t);
         
     double armlength(int arm, double t);
 };
 
+%feature("docstring") CircularRotating "
+CircularRotating(eta0=0,xi0=0,sw=1,t0=0) and
+CircularRotating(myL,eta0,xi0,sw,t0) return rigid LISA objects where
+the armlengths are equal and constant before aberration is taken into
+account. The parameters eta0 and xi0 are the true anomaly of the LISA
+guiding center and the initial phase of the LISA array at t=t0; sw<0
+will swap spacecraft 2 and 3, so that the spacecraft sequence 1 -> 2
+-> 3 -> 1 goes ccw as seen from above. If given (in which case all
+parameters must be specified), myL is the common armlength; if not
+given, it is set to Lstd.
+
+CircularRotating() is legal and replaces stdlisa(). The LISA
+baricenter moves on a circular orbit in the ecliptic, while the
+constellation rotates around the guiding center with the same angular
+velocity. The orbits follow Krolak et al, PRD 70, 022003 (2004)."
+
 class CircularRotating : public LISA {
- public:
-	
-    CircularRotating(double eta0=0.0,double xi0=0.0,double sw=0.0,double t0=0.0);
-    CircularRotating(double myL,double eta0,double xi0,double sw,double t0);
+  public:
+    CircularRotating(double eta0=0.0, double xi0=0.0, double sw=0.0, double t0=0.0);
+    CircularRotating(double myL, double eta0, double xi0, double sw, double t0);
 
     void putp(Vector &outvector, int craft, double t);
     
     double armlength(int arm, double t);
+
+    // FIX: not clear to me that I want to expose (or even need) the following
 
     double armlengthbaseline(int arm, double t);
     double armlengthaccurate(int arm, double t);
     
     double genarmlength(int arms, double t);
 };
+
+%feature("docstring") EccentricInclined "
+EccentricInclined(eta0=0,xi0=0,sw=1,t0=0) returns a realistic LISA
+geometry modeled up to second order in the eccentricity, following
+Cornish and Rubbo, PRD 67, 022001 (2003), but with the approximate
+parametrization of CircularRotating (eta0 and xi0 true anomaly of
+baricenter and array phase at t0=0; sw<0 swaps spacecraft)." 
+
+class EccentricInclined : public LISA {
+ public:
+    EccentricInclined(double eta0=0.0, double xi0=0.0, double sw=1.0, double t0=0.0);
+    // DEV: do I want an enhanced version that can set myL, as CircularRotating?
+
+    void putp(Vector &outvector,int craft,double t);
+    
+    double armlength(int arm, double t);
+
+    // FIX: not clear to me that I want to expose (or even need) the following
+
+    double armlengthbaseline(int arm, double t);
+    double armlengthaccurate(int arm, double t);
+    
+    double genarmlength(int arm, double t);
+};
+
+%feature("docstring") PyLISA "
+PyLISA(baseLISA,Func) returns a LISA object with physical geometry
+(used for light propagation and GW and noise responses) given by the
+LISA object baseLISA, but with nominal armlengths (as used for the TDI
+delays) given by the Python function Func(i,t) (i=1,2,3,-1,-2,-3, time
+in seconds).
+
+PyLISA attempts to provide a more general (if less efficient)
+mechanism for the nominal-armlength computations previously performed
+with NoisyLISA, NominalLISA, LinearLISA, MeasureLISA (all
+experimental)."
 
 initsave(PyLISA)
 
@@ -75,26 +160,48 @@ class PyLISA : public LISA {
   public:
     PyLISA(LISA *base,PyObject *func);
 
-    double armlength(int arm, double t);
-
-    double armlengthbaseline(int arm, double t);
-    double armlengthaccurate(int arm, double t);
-};
-
-class EccentricInclined : public LISA {
- public:
-
-    EccentricInclined(double eta0 = 0.0,double xi0 = 0.0,double sw = 1.0,double t0=0.0);
-
+    void putn(Vector &outvector, int arm, double t);
     void putp(Vector &outvector,int craft,double t);
-    
+
     double armlength(int arm, double t);
+
+    // FIX: not clear to me that I want to expose (or even need) the following
 
     double armlengthbaseline(int arm, double t);
     double armlengthaccurate(int arm, double t);
-    
-    double genarmlength(int arm, double t);
 };
+
+%feature("docstring") CacheLISA "
+CacheLISA(baseLISA) works by routing all putp-putn calls to the
+baseLISA object, passed on construction. It will however interpose a
+layer of its own making for retard() calls, effectively caching
+chained retardations for the most recently accessed time.
+
+CacheLISA, defined in lisasim-retard.h, might improve performance for
+complicated (or multiple) TDI-variable evaluations, especially when
+performed in conjunction with PyLISA."
+
+initsave(CacheLISA)
+
+class CacheLISA : public LISA {
+  public:
+    CacheLISA(LISA *base);
+    ~CacheLISA();
+
+    void putn(Vector &outvector, int arm, double t);
+    void putp(Vector &outvector, int craft, double t);
+
+    double armlength(int arm, double t);
+
+    // FIX: not clear to me that I want to expose (or even need) the following
+
+    double armlengthbaseline(int arm, double t);
+    double armlengthaccurate(int arm, double t);
+};
+
+// FIX: the following have all rather specific uses, and may be
+//      replaced by the suitable use of PyLISA. I suggest moving them to a
+//      private C++ and interface file.
 
 initsave(NoisyLISA)
 
@@ -146,22 +253,6 @@ class LinearLISA : public LISA {
     void setparameters(double dl[6],double dldt[6]);
     
     double armlengtherror(int arm, double t);
-
-    void putn(Vector &outvector, int arm, double t);
-    void putp(Vector &outvector, int craft, double t);
-
-    double armlength(int arm, double t);
-
-    double armlengthbaseline(int arm, double t);
-    double armlengthaccurate(int arm, double t);
-};
-
-initsave(CacheLISA)
-
-class CacheLISA : public LISA {
-public:
-    CacheLISA(LISA *basic);
-    ~CacheLISA(); 
 
     void putn(Vector &outvector, int arm, double t);
     void putp(Vector &outvector, int craft, double t);
@@ -451,11 +542,6 @@ public:
 };
 
 /* -------- Helper functions -------- */
-
-/* LISA */
-
-%newobject stdlisa;
-extern LISA *stdlisa();
 
 /* Noise */
 
