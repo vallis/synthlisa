@@ -158,6 +158,8 @@ initsave(PyLISA)
 
 class PyLISA : public LISA {
   public:
+    LISA *baseLISA;
+
     PyLISA(LISA *base,PyObject *func);
 
     void putn(Vector &outvector, int arm, double t);
@@ -290,12 +292,37 @@ class Noise {
     virtual double noise(double timebase,double timecorr);
 };
 
-/* Who gets ownership of the Numpy arrays? Should I worry about this
-   and fix it with %feature("shadow")? Maybe so. */
+// FIX: Who gets ownership of the Numpy arrays? Should I worry about
+//      this and fix it with %feature("shadow")? Maybe so.
+//      I wrote to Scott Ransom about it, but never got a response.
+
+%feature("docstring") InterpolateNoise "
+InterpolateNoise(gentime,prebuf,psd,exp,swin=1) and
+InterpolateNoise(array,samples,sampletime,prebuf,norm,filter=0,window=1)
+return a Noise object from either filtered and interpolated
+pseudorandom whitenoise (first form) or from a filtered and
+interpolated array (second form).
+
+For the first form:
+
+- gentime is the time spacing (seconds) of the pseudorandom samples at
+  generation ;
+
+- prebuf (seconds??) sets the minimum interval of buffering of the
+  pseudorandom sequences (after the noise has been requested at time
+  t, the earliest noise value guaranteed to be available will be at
+  time (t-prebuf)
+
+- psd and exp set the one-sided PSD of the filtered pseudorandom noise
+  to psd*(f/Hz)^exp Hz^-1 (currently exp = -2, 0, 2 are implemented);
+
+- wind (> 1) sets the semiwidth of the data window used in Lagrange
+  interpolation (1 yields linear interpolation)."
 
 initsave(InterpolateNoise)
 
-// should add machinery to infer its own length...
+// DEV: Should add machinery to let the typemaps infer the length of
+// the array and pass it on
 
 %apply double *NUMPY_ARRAY_DOUBLE { double *noisebuf };
 
@@ -333,7 +360,7 @@ class Wave : public WaveObject {
 
 class SimpleBinary : public Wave {
  public:
-    SimpleBinary(double freq, double initphi, double inc, double amp, double d, double a, double p);
+    SimpleBinary(double freq, double initphi, double inc, double amp, double elat, double elon, double p);
 
     double hp(double t);
     double hc(double t);
@@ -341,7 +368,7 @@ class SimpleBinary : public Wave {
 
 class SimpleMonochromatic : public Wave {
 public:
-    SimpleMonochromatic(double freq, double phi, double gamma, double amp, double d, double a, double p);
+    SimpleMonochromatic(double freq, double phi, double gamma, double amp, double elat, double elon, double p);
 
     double hp(double t);
     double hc(double t);
@@ -355,13 +382,13 @@ initsave(NoiseWave)
 class NoiseWave : public Wave {
     public:
         // with Noise objects, given directly
-	NoiseWave(Noise *noisehp, Noise *noisehc, double d, double a, double p);
+	NoiseWave(Noise *noisehp, Noise *noisehc, double elat, double elon, double p);
 
         // allocates its own Noise objects
-	NoiseWave(double sampletime, double prebuffer, double density, double exponent, int swindow, double d, double a, double p);
+	NoiseWave(double sampletime, double prebuffer, double density, double exponent, int swindow, double elat, double elon, double p);
         
         // from sampled buffers (using filters and interpolation...)
-	NoiseWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double density, double exponent, int swindow, double d, double a, double p);
+	NoiseWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double density, double exponent, int swindow, double elat, double elon, double p);
 
 	~NoiseWave();
 
@@ -370,7 +397,7 @@ class NoiseWave : public Wave {
 };
 
 %newobject SampledWave;
-extern NoiseWave *SampledWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double density, double exponent, int swindow, double d, double a, double p);
+extern NoiseWave *SampledWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double density, double exponent, int swindow, double elat, double elon, double p);
 
 // this class is now redundant, since it can be obtained as a special form of NoiseWave...
 
@@ -381,7 +408,7 @@ initsave(InterpolateMemory)
 
 class InterpolateMemory : public Wave {
 public:
-    InterpolateMemory(double *hpa, double *hca, long samples, double samplingtime, double lookback, double d, double a, double p);
+    InterpolateMemory(double *hpa, double *hca, long samples, double samplingtime, double lookback, double elat, double elon, double p);
 
     double hp(double t);
     double hc(double t);
@@ -393,7 +420,7 @@ initsave(PyWave)
 
 class PyWave : public Wave {
   public:
-    PyWave(PyObject *hpf, PyObject *hcf, double d, double a, double p);
+    PyWave(PyObject *hpf, PyObject *hcf, double elat, double elon, double p);
 
     double hp(double t);
     double hc(double t);
