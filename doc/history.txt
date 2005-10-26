@@ -1,13 +1,59 @@
+2005/10/26 Release 1.2.4, beta version
+
+Changed dec and asc to beta (= elat) and lambda (= elon) everywhere.
+
+2005/07/21 Release 1.2.3, beta version
+
+Added class-variable access to some Vector and Tensor objects.
+
+Removed AnyLISA (generic armlength class based on SWIG directors).
+
+Created WaveObject, WaveArray, to allow multiple waves (at different
+positions) to be added together within TDIsignal.
+
+Restructured package and module names. Now lisautils imports Numeric
+and FFT explicitly; added master package synthlisa. Changed example
+files accordingly.
+
+Added swigged Healpix C functions in package "healpix".
+
+Added NoiseWave to get hp and hc from Noise objects. Constructors
+allow setting the Noise objects from simple spectral densities (with
+the exponent syntax), and from sampled time series. This supercedes
+InterpolateMemory as the preferred buffered wave, since it allows
+filtering and higher-order interpolation of hp and hc.
+
+Fixed bug (perhaps partially) in the range checks for sampled noise.
+
+Added docstring documentation for LISA classes in SWIG interface;
+cleaned up some method definitions, prepared to remove some LISA
+derived classes.
+
+In lisasim-lisa.(cpp|h), cleaned up constructor calls, fixed bug in
+handling of ccw n[i] in OriginalLISA, removed stdlisa(), replaced by
+CircularRotating().
+
+2005/07/06 Release 1.2.2, beta version
+
+Added SWIG typemap to return three-vectors (class Vector) as Python
+tuples, and three-tensors (class Tensor) as Python tuples-of-tuples;
+correspondingly, added functions putp(craft,time) and putn(craft,time)
+for all the LISA classes, and putwave for all the Wave classes. [Note
+that these take first arguments Vector& and Tensor& in C++, not needed
+in Python where we can return tuples.]
+
+Also, exposed Wave.hp(t) and Wave.hc(t) to Python.
+
 2005/05/19 Release 1.2.1, beta version
 
 Fixed persistence problem for LISA/Noise/Wave objects passed to TDI
 constructors. Using SWIG's %feature("addtofunc") to inject Python code
-(that saves arguments) into Python shadow class constructors.
+(which saves arguments) into Python shadow class constructors.
 
 2005/05/06 Release 1.2, beta version
-Current state of the art; sent to various people on 05/09
+Current state of the art, after clearance; sent to various people on 05/09
 
-Changes from 1.0 to 1.2 include
+Changes from 1.0 to 1.2 include...
 
 - 
 
