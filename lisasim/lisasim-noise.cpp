@@ -291,7 +291,7 @@ double InterpolateNoise::operator[](double time) {
     } else if (lasttime - time > timewindow) {
 	cout << "InterpolateNoise::[]: time requested (" << time <<
 	    ") too old, last was " << lasttime << ", pbt is " << prebuffertime <<
-	    "[" << __FILE__ << ":" << __LINE__ << "]" << endl;
+	    " [" << __FILE__ << ":" << __LINE__ << "]" << endl;
 	abort();
     } else {
 	if (time > lasttime) {
