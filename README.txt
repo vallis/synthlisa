@@ -1,5 +1,5 @@
 ====================================
-Synthetic LISA, v. 1.2.1, 2005-05-19
+Synthetic LISA, v. 1.2.3, 2005-07-22
 ====================================
 
 by M. Vallisneri and J. W. Armstrong
@@ -437,11 +437,10 @@ following:
 - test-tdiequal.py
 - test-tdibadmass.py
 
-You will see that after some standard library-loading incantations,
+You will see that after some standard library-loading incantation,
 
-> from lisaswig import *
+> from synthlisa import *
 > from Numeric import *
-> from lisautils import *
 
 the script goes into creating a hierarchical structure of objects: for
 instance, to get time series of a TDI noise we first need to create a
