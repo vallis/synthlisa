@@ -484,20 +484,25 @@ class MeasureLISA : public LISA {
 #include <Python.h>
 
 class PyLISA : public LISA {
+    public:
+        LISA *baseLISA;
+
+    // FIX: this ugliness removes a warning about armfunc being initialized before baseLISA
+    //      but there should be a better way...
+
     private:
-        LISA *baselisa;
 	PyObject *armfunc;
 
-    public:
-        PyLISA(LISA *base,PyObject *func) : baselisa(base), armfunc(func) {};
+    public: 
+        PyLISA(LISA *base,PyObject *func) : baseLISA(base), armfunc(func) {};
 	virtual ~PyLISA() {};
 
         void reset() {
-	    return baselisa->reset();
+	    return baseLISA->reset();
 	}
 
        	LISA *physlisa() {
-	    return baselisa;
+	    return baseLISA;
 	}
 
         double armlength(int arm, double t) {
@@ -522,19 +527,19 @@ class PyLISA : public LISA {
 	}
 	
         void putn(Vector &n, int arm, double t) {
-            baselisa->putn(n,arm,t);
+            baseLISA->putn(n,arm,t);
         }
         
         void putp(Vector &p, int craft, double t) {
-            baselisa->putp(p,craft,t);
+            baseLISA->putp(p,craft,t);
         }
 
         void putn(double n[], int arm, double t) {
-            baselisa->putn(n,arm,t);
+            baseLISA->putn(n,arm,t);
         }
         
         void putp(double p[], int craft, double t) {
-            baselisa->putp(p,craft,t);
+            baseLISA->putp(p,craft,t);
 	}
 };
 
