@@ -34,14 +34,14 @@ Wave *WaveArray::nextwave() {
 		return 0;
 }
 
-Wave::Wave(double d, double a, double p) {
-    dec = d;
-    asc = a;
+Wave::Wave(double b, double l, double p) {
+    beta = b;
+    lambda = l;
     pol = p;
 
-    kArray[0] = -cos(asc)*cos(dec);
-    kArray[1] = -sin(asc)*cos(dec);
-    kArray[2] = -sin(dec);
+    kArray[0] = -cos(lambda)*cos(beta);
+    kArray[1] = -sin(lambda)*cos(beta);
+    kArray[2] = -sin(beta);
 
     k[0] = kArray[0];
     k[1] = kArray[1];
@@ -54,7 +54,7 @@ Wave::Wave(double d, double a, double p) {
 
     Tensor A, At;
     
-    A.seteuler(dec,asc,pol);
+    A.seteuler(beta,lambda,pol);
 
     At.settranspose(A);
 
@@ -104,7 +104,7 @@ void Wave::putwave(double **h, double t) {
 // full constructor for SimpleBinary; takes frequency in Hertz
 // d and a are (notwithstanding their name, which should be changed) heliocentric ecliptic latitude and longitude
 
-SimpleBinary::SimpleBinary(double freq, double initphi, double inc, double amp, double d, double a, double p) : Wave(d,a,p) {
+SimpleBinary::SimpleBinary(double freq, double initphi, double inc, double amp, double b, double l, double p) : Wave(b,l,p) {
     f = freq;
 
     phi0 = initphi;
@@ -133,7 +133,7 @@ double SimpleBinary::hc(double t) {
 
 // originally written to compare with John's fortran code
 
-SimpleMonochromatic::SimpleMonochromatic(double freq, double phi, double gamma, double amp, double d, double a, double p) : Wave(d,a,p) {
+SimpleMonochromatic::SimpleMonochromatic(double freq, double phi, double gamma, double amp, double b, double l, double p) : Wave(b,l,p) {
     f = freq;
 
     ph = phi;
@@ -155,21 +155,21 @@ double SimpleMonochromatic::hc(double t) {
     return ac * sin(twopi*f*t);
 }
 
-NoiseWave::NoiseWave(Noise *noisehp, Noise *noisehc, double d, double a, double p) : Wave(d,a,p) {
+NoiseWave::NoiseWave(Noise *noisehp, Noise *noisehc, double b, double l, double p) : Wave(b,l,p) {
     np = noisehp;
     nc = noisehc;
 
     allocated = 0;
 }
 
-NoiseWave::NoiseWave(double sampletime, double prebuffer, double density, double exponent, int swindow, double d, double a, double p) : Wave(d,a,p) {
+NoiseWave::NoiseWave(double sampletime, double prebuffer, double density, double exponent, int swindow, double b, double l, double p) : Wave(b,l,p) {
     np = new InterpolateNoise(sampletime,prebuffer,density,exponent,swindow);
     nc = new InterpolateNoise(sampletime,prebuffer,density,exponent,swindow);
 
     allocated = 1;
 }
 
-NoiseWave::NoiseWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double density, double exponent, int swindow, double d, double a, double p) : Wave(d,a,p) {
+NoiseWave::NoiseWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double density, double exponent, int swindow, double b, double l, double p) : Wave(b,l,p) {
     np = new InterpolateNoise(hpa,samples,sampletime,prebuffer,density,exponent,swindow);
     nc = new InterpolateNoise(hca,samples,sampletime,prebuffer,density,exponent,swindow);
 
@@ -185,7 +185,7 @@ NoiseWave::~NoiseWave() {
 
 // --- InterpolateMemory wave class --------------------------------------------------
 
-InterpolateMemory::InterpolateMemory(double *hpa, double *hca, long samples, double samplingtime, double lookback, double d, double a, double p) : Wave(d,a,p) {
+InterpolateMemory::InterpolateMemory(double *hpa, double *hca, long samples, double samplingtime, double lookback, double b, double l, double p) : Wave(b,l,p) {
   hpbuffer = hpa;
   hcbuffer = hca;
 

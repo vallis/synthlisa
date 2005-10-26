@@ -76,18 +76,18 @@ Tensor& Tensor::setproduct(const Tensor &fac1, const Tensor &fac2) {
     return *this;
 }
 
-Tensor& Tensor::seteuler(double d, double a, double p) {
-    c[0] =  cos(p)*sin(a) - cos(a)*sin(d)*sin(p);
-    c[1] = -cos(a)*cos(p)*sin(d) - sin(a)*sin(p);
-    c[2] = -cos(a)*cos(d);
+Tensor& Tensor::seteuler(double b, double l, double p) {
+    c[0] =  cos(p)*sin(l) - cos(l)*sin(b)*sin(p);
+    c[1] = -cos(l)*cos(p)*sin(b) - sin(l)*sin(p);
+    c[2] = -cos(l)*cos(b);
 
-    c[3] = -cos(a)*cos(p) - sin(a)*sin(d)*sin(p);
-    c[4] = -cos(p)*sin(a)*sin(d) + cos(a)*sin(p);
-    c[5] = -cos(d)*sin(a);
+    c[3] = -cos(l)*cos(p) - sin(l)*sin(b)*sin(p);
+    c[4] = -cos(p)*sin(l)*sin(b) + cos(l)*sin(p);
+    c[5] = -cos(b)*sin(l);
     
-    c[6] =  cos(d)*sin(p);
-    c[7] =  cos(d)*cos(p);
-    c[8] = -sin(d);
+    c[6] =  cos(b)*sin(p);
+    c[7] =  cos(b)*cos(p);
+    c[8] = -sin(b);
 
     return *this;
 }

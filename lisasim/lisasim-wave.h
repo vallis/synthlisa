@@ -31,25 +31,25 @@ class WaveArray : public WaveObject {
 class Wave : public WaveObject {
     public:
         // position in the sky
-        // dec is really beta, the SSB ecliptic latitude
-        // asc is really lambda, the SSB ecliptic longitude from the vernal point
+        // beta is the SSB ecliptic latitude
+        // lambda is the SSB ecliptic longitude from the vernal point
 
-        double dec, asc, pol;
+        double beta, lambda, pol;
 
         // k vector
 
         Vector k;
-		double kArray[3];
+	double kArray[3];
 
         // polarization tensors
     
         Tensor pp, pc;
-		double ppArray[9], pcArray[9];
+	double ppArray[9], pcArray[9];
 
-        Wave(double d, double a, double p);
+        Wave(double b, double l, double p);
 
-		Wave *firstwave() { return this; }
-		Wave *nextwave()  { return 0; }
+	Wave *firstwave() { return this; }
+	Wave *nextwave()  { return 0; }
 
         virtual double hp(double t) = 0;
         virtual double hc(double t) = 0;  
@@ -69,7 +69,7 @@ class SimpleBinary : public Wave {
         double i, a, ap, ac;
 
     public:
-        SimpleBinary(double freq, double initphi, double inc, double amp, double d, double a, double p);
+        SimpleBinary(double freq, double initphi, double inc, double amp, double b, double l, double p);
 
         double hp(double t);
         double hc(double t);
@@ -86,7 +86,7 @@ class SimpleMonochromatic : public Wave {
         double gm, ph, ap, ac;
 
     public:
-        SimpleMonochromatic(double freq, double phi, double gamma, double amp, double d, double a, double p);
+        SimpleMonochromatic(double freq, double phi, double gamma, double amp, double b, double l, double p);
 
         double hp(double t);
         double hc(double t);
@@ -101,9 +101,9 @@ class NoiseWave : public Wave {
 	int allocated;
 
     public:
-	NoiseWave(Noise *noisehp, Noise *noisehc, double d, double a, double p);
-	NoiseWave(double sampletime, double prebuffer, double density, double exponent, int swindow, double d, double a, double p);
-	NoiseWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double density, double exponent, int swindow, double d, double a, double p);
+	NoiseWave(Noise *noisehp, Noise *noisehc, double b, double l, double p);
+	NoiseWave(double sampletime, double prebuffer, double density, double exponent, int swindow, double b, double l, double p);
+	NoiseWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double density, double exponent, int swindow, double b, double l, double p);
 
 	~NoiseWave();
 
@@ -120,7 +120,7 @@ class InterpolateMemory : public Wave {
         double lkback;
 
     public:
-        InterpolateMemory(double *hpa, double *hca, long samples, double samplingtime, double lookback, double d, double a, double p);
+        InterpolateMemory(double *hpa, double *hca, long samples, double samplingtime, double lookback, double b, double l, double p);
 
         double hp(double t);
         double hc(double t);
@@ -133,8 +133,8 @@ class PyWave : public Wave {
     PyObject *hpfunc, *hcfunc;
 
  public:
-    PyWave(PyObject *hpf, PyObject *hcf, double d, double a, double p)
-	: Wave(d,a,p), hpfunc(hpf), hcfunc(hcf) {};
+    PyWave(PyObject *hpf, PyObject *hcf, double b, double l, double p)
+	: Wave(b,l,p), hpfunc(hpf), hcfunc(hcf) {};
     virtual ~PyWave() {};
 
     double hp(double t) {

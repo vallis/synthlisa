@@ -66,7 +66,7 @@ class Tensor {
     Tensor& settranspose();
     Tensor& settranspose(const Tensor& tens);
 
-    Tensor& seteuler(double d, double a, double p);
+    Tensor& seteuler(double b, double l, double p);
 };
 
 #endif /* _LISASIM_TENS_H_ */

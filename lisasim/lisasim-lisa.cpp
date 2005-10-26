@@ -332,7 +332,7 @@ void CircularRotating::settime(double t) {
     const double zeta = -M_PI/6.0;
 
     // {eta -> Omega time + eta0, xi -> -Omega time + xi0}
-    // {psi -> xi, asc -> eta, dec -> zeta}
+    // {elat(beta) -> zeta, elon(lambda) -> eta, psi -> xi}
     // time is measured in seconds
     
     rotation.seteuler(zeta,Omega*(t+toffset)+eta0,-Omega*(t+toffset)+xi0);
