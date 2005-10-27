@@ -287,8 +287,35 @@ class SimpleBinary : public Wave {
 };
 
 class SimpleMonochromatic : public Wave {
-public:
+ public:
     SimpleMonochromatic(double freq, double phi, double gamma, double amp, double elat, double elon, double p);
+
+    double hp(double t);
+    double hc(double t);
+};
+
+%feature("docstring") GaussianPulse "
+GaussianPulse(t0,efold,gamma,amp,elat,elon,pol) returns a Wave object
+that implements a Gaussian wavepulse with the following parameters:
+
+- the pulse is centered at SSB baricentric time t0;
+
+- the pulse has e-folding time efold;
+
+- the pulse has amplitude amp, distributed as {ap,ac} = 
+  amp*{sin(gamma),cos(gamma)} between the two polarizations
+  (the same convention as SimpleMonochromatic)
+
+- the pulse is incoming from sky position (elat,elon), with
+  polarization pol.
+
+The amplitude of the pulse is cut to zero at 10 efolding times from
+the central time (this is set by GaussianPulse::sigma_cutoff in
+lisasim-wave.cpp)."
+
+class GaussianPulse : public Wave {
+ public:
+    GaussianPulse(double time, double decay, double gamma, double amp, double b, double l, double p);
 
     double hp(double t);
     double hc(double t);

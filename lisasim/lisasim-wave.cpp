@@ -155,6 +155,41 @@ double SimpleMonochromatic::hc(double t) {
     return ac * sin(twopi*f*t);
 }
 
+// --- GaussianPulse ---
+
+GaussianPulse::GaussianPulse(double time, double decay, double gamma, double amp, double b, double l, double p) : Wave(b,l,p) {
+  t0 = time;
+  dc = decay;
+
+  a = amp;
+  gm = gamma;
+
+  ap = a * sin(gm);
+  ac = a * cos(gm);
+}
+
+const double GaussianPulse::sigma_cutoff = 10.0;
+
+double GaussianPulse::hp(double t) {
+  double ex = (t - t0) / dc;
+
+  if(fabs(ex) > sigma_cutoff)
+	return 0.0;
+  else
+	return ap * exp(-ex*ex);
+}
+
+double GaussianPulse::hc(double t) {
+  double ex = (t - t0) / dc;
+
+  if(fabs(ex) > sigma_cutoff)
+	return 0.0;
+  else
+	return ac * exp(-ex*ex);
+}
+
+// --- NoiseWave ---
+
 NoiseWave::NoiseWave(Noise *noisehp, Noise *noisehc, double b, double l, double p) : Wave(b,l,p) {
     np = noisehp;
     nc = noisehc;

@@ -92,6 +92,21 @@ class SimpleMonochromatic : public Wave {
         double hc(double t);
 };
 
+class GaussianPulse : public Wave {
+    private:
+       double t0, dc; // offset time, decay
+       double gm, a;  // polarization and amplitude
+       double ap, ac; // polarization amplitudes
+
+	   static const double sigma_cutoff; // defined in lisasim-wave.cpp
+
+    public:
+	   GaussianPulse(double time, double decay, double gamma, double amp, double b, double l, double p);
+
+       double hp(double t);
+       double hc(double t);
+};
+
 class NoiseWave : public Wave {
     private:
         Noise *np, *nc;
