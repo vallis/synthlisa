@@ -135,7 +135,7 @@
   }
 
   int dim = PySequence_Size($input);
-  Wave **temp = new (Wave *)[dim];
+  Wave **temp = new Wave*[dim];
 
   // convert each element
 
@@ -154,7 +154,7 @@
 // was for Wave **PYTHON_SEQUENCE_WAVE
 
 %typemap(python, freearg) (Wave **WaveSeq, int WaveNum)  {
-   delete $1;
+   delete [] $1;
 }
 
 // from the SWIG documentation: input a python function

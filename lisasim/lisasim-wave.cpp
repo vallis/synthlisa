@@ -12,14 +12,14 @@ WaveArray::WaveArray(Wave **warray, int wnum) : wavenum(wnum) {
 		abort();
 	}
 
-	wavearray = new (Wave *)[wnum]; // syntax?
+	wavearray = new Wave*[wnum]; // syntax?
 
 	for(int i=0;i<wnum;i++)
 		wavearray[i] = warray[i];
 }
 
 WaveArray::~WaveArray() {
-	delete wavearray;
+	delete [] wavearray;
 }
 
 Wave *WaveArray::firstwave() {
