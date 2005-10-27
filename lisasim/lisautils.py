@@ -157,7 +157,7 @@ def time(t):
 def getobs(snum,stime,observables,zerotime=0.0):
     if len(Numeric.shape(observables)) == 0:
         array = Numeric.zeros(snum,typecode='d')
-        for i in arange(0,snum):
+        for i in Numeric.arange(0,snum):
             array[i] = observables(zerotime+i*stime)
     else:
         obslen = Numeric.shape(observables)[0]
