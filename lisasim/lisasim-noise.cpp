@@ -93,11 +93,11 @@ LagrangeInterpolator::LagrangeInterpolator(int sw)
 };
 
 LagrangeInterpolator::~LagrangeInterpolator() {
-    delete d;
-    delete c;
+    delete [] d;
+    delete [] c;
 	
-    delete ya;
-    delete xa;
+    delete [] ya;
+    delete [] xa;
 };
 
 double LagrangeInterpolator::polint(double x) {
