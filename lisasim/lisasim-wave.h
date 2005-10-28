@@ -7,55 +7,56 @@
 class Wave;
 
 class WaveObject {
-	public:
-		// need a virtual constructor, too?
-		virtual ~WaveObject() {};
-		
-		virtual Wave *firstwave() = 0;
-		virtual Wave *nextwave() = 0;
+ public:
+    // need a virtual constructor, too?
+    virtual ~WaveObject() {};
+
+    virtual Wave *firstwave() = 0;
+    virtual Wave *nextwave() = 0;
 };
 
 class WaveArray : public WaveObject {
-	private:
-		Wave **wavearray;
-		int wavenum;
-		int wavecurrent;
+ private:
+    Wave **wavearray;
+    int wavenum;
+    int wavecurrent;
 
-	public:
-		WaveArray(Wave **warray, int wnum);
-		~WaveArray();
+ public:
+    WaveArray(Wave **warray, int wnum);
+    ~WaveArray();
 
-		Wave *firstwave(), *nextwave();
+    Wave *firstwave(), *nextwave();
 };
 
 class Wave : public WaveObject {
-    public:
-        // position in the sky
-        // beta is the SSB ecliptic latitude
-        // lambda is the SSB ecliptic longitude from the vernal point
+ public:
+    // position in the sky
+    // beta is the SSB ecliptic latitude
+    // lambda is the SSB ecliptic longitude from the vernal point
 
-        double beta, lambda, pol;
+    double beta, lambda, pol;
 
-        // k vector
+    // k vector
 
-        Vector k;
-	double kArray[3];
+    Vector k;
+    double kArray[3];
 
-        // polarization tensors
+    // polarization tensors
     
-        Tensor pp, pc;
-	double ppArray[9], pcArray[9];
+    Tensor pp, pc;
+    double ppArray[9], pcArray[9];
 
-        Wave(double b, double l, double p);
+    Wave(double b, double l, double p);
 
-	Wave *firstwave() { return this; }
-	Wave *nextwave()  { return 0; }
+    Wave *firstwave() { return this; }
+    Wave *nextwave()  { return 0; }
+ 
+    virtual int inscope(double t) { return 1; }
 
-        virtual double hp(double t) = 0;
-        virtual double hc(double t) = 0;  
+    virtual double hp(double t) = 0;
+    virtual double hc(double t) = 0;  
 
-        void putwave(Tensor &h, double t);
-        void putwave(double **h, double t);
+    void putwave(Tensor &h, double t);
 };
 
 class SimpleBinary : public Wave {
@@ -93,18 +94,20 @@ class SimpleMonochromatic : public Wave {
 };
 
 class GaussianPulse : public Wave {
-    private:
-       double t0, dc; // offset time, decay
-       double gm, a;  // polarization and amplitude
-       double ap, ac; // polarization amplitudes
+ private:
+    double t0, dc; // offset time, decay
+    double gm, a;  // polarization and amplitude
+    double ap, ac; // polarization amplitudes
 
-	   static const double sigma_cutoff; // defined in lisasim-wave.cpp
+    static const double sigma_cutoff; // defined in lisasim-wave.cpp
 
-    public:
-	   GaussianPulse(double time, double decay, double gamma, double amp, double b, double l, double p);
+ public:
+    GaussianPulse(double time, double decay, double gamma, double amp, double b, double l, double p);
 
-       double hp(double t);
-       double hc(double t);
+    int inscope(double t);
+
+    double hp(double t);
+    double hc(double t);
 };
 
 class NoiseWave : public Wave {

@@ -11,16 +11,17 @@ void TDIsignal::setphlisa(LISA *mylisa) {
     phlisa = mylisa;
 }
 
-// the argument t is actually redundant here!
-
 double TDIsignal::psi(Wave *nwave, Vector &lisan, double t) {
+    // check if the Wave is active at time t
+    if(!nwave->inscope(t)) return 0.0;
+
     Tensor cwave;
     nwave->putwave(cwave,t);
     
     Vector tmp;
     tmp.setproduct(cwave,lisan);
 
-    return(0.5 * lisan.dotproduct(tmp));
+    return 0.5 * lisan.dotproduct(tmp);
 }
 
 // the y as computed below should now be fully covariant
@@ -59,25 +60,26 @@ double TDIsignal::y(int send, int slink, int recv, int ret1, int ret2, int ret3,
 
     double retardsignal = retardedtime - phlisa->armlength(link,retardedtime);
 
-	Vector psend, precv;
-	phlisa->putp(psend,send,retardsignal);
-	phlisa->putp(precv,recv,retardedtime);
+    Vector psend, precv;
+    phlisa->putp(psend,send,retardsignal);
+    phlisa->putp(precv,recv,retardedtime);
 
-	// loop over waves (if there is more than one)
-	// using the WaveObject interface (firstwave, nextwave)
+    // loop over waves (if there is more than one)
+    // using the WaveObject interface (firstwave, nextwave)
 
-	Wave *nwave = wave->firstwave();
-	double accpsi = 0.0;
+    Wave *nwave = wave->firstwave();
+    if(!nwave) return 0.0;
 
-	do {
-		double denom = 1.0 - linkn.dotproduct(nwave->k);
+    double accpsi = 0.0;
 
-		accpsi += (( psi(nwave, linkn, retardsignal - psend.dotproduct(nwave->k)) -
-					 psi(nwave, linkn, retardedtime - precv.dotproduct(nwave->k)) ) / denom);
+    do {
+	double acc = ( psi(nwave, linkn, retardsignal - psend.dotproduct(nwave->k)) -
+		       psi(nwave, linkn, retardedtime - precv.dotproduct(nwave->k)) );
 
-	} while( (nwave = wave->nextwave()) );
-		
-	return accpsi;
+	if(acc != 0.0) accpsi += acc / (1.0 - linkn.dotproduct(nwave->k));
+    } while( (nwave = wave->nextwave()) );
+
+    return accpsi;
 }
 
 // the next three names are not standard!

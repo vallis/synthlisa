@@ -7,31 +7,31 @@ using namespace std;
 #include <math.h>
 
 WaveArray::WaveArray(Wave **warray, int wnum) : wavenum(wnum) {
-	if(wnum < 1) {
-		cout << "WaveArray needs at least one wave object..." << endl;
-		abort();
-	}
+    if(wnum < 1) {
+	cout << "WaveArray needs at least one wave object..." << endl;
+	abort();
+    }
 
-	wavearray = new Wave*[wnum]; // syntax?
+    wavearray = new Wave*[wnum]; // syntax?
 
-	for(int i=0;i<wnum;i++)
-		wavearray[i] = warray[i];
+    for(int i=0;i<wnum;i++)
+	wavearray[i] = warray[i];
 }
 
 WaveArray::~WaveArray() {
-	delete [] wavearray;
+    delete [] wavearray;
 }
 
 Wave *WaveArray::firstwave() {
-	wavecurrent = 0;
-	return wavearray[0];
+    wavecurrent = 0;
+    return wavearray[0];
 }
 
 Wave *WaveArray::nextwave() {
-	if(++wavecurrent < wavenum)
-		return wavearray[wavecurrent];
-	else
-		return 0;
+    if(++wavecurrent < wavenum)
+	return wavearray[wavecurrent];
+    else
+	return 0;
 }
 
 Wave::Wave(double b, double l, double p) {
@@ -87,22 +87,8 @@ void Wave::putwave(Tensor &h, double t) {
   }
 }
 
-void Wave::putwave(double **h, double t) {
-  double hp_temp;
-  double hc_temp; 
-  int i,j;
-  hp_temp = hp(t);
-  hc_temp = hc(t);
-  
-  for(i=0;i<3;i++) {
-    for(j=0;j<3;j++) {
-      h[i][j] = hp_temp * ppArray[3*i+j] + hc_temp * pcArray[3*i+j];
-    }        
-  }
-}
-
 // full constructor for SimpleBinary; takes frequency in Hertz
-// d and a are (notwithstanding their name, which should be changed) heliocentric ecliptic latitude and longitude
+// b and l are SSB ecliptic latitude and longitude
 
 SimpleBinary::SimpleBinary(double freq, double initphi, double inc, double amp, double b, double l, double p) : Wave(b,l,p) {
     f = freq;
@@ -170,22 +156,22 @@ GaussianPulse::GaussianPulse(double time, double decay, double gamma, double amp
 
 const double GaussianPulse::sigma_cutoff = 10.0;
 
-double GaussianPulse::hp(double t) {
-  double ex = (t - t0) / dc;
+int GaussianPulse::inscope(double t) {
+    double ex = (t - t0) / dc;
 
-  if(fabs(ex) > sigma_cutoff)
-	return 0.0;
-  else
-	return ap * exp(-ex*ex);
+    return fabs(ex) < sigma_cutoff;
+}
+
+double GaussianPulse::hp(double t) {
+    double ex = (t - t0) / dc;
+
+    return ap * exp(-ex*ex);
 }
 
 double GaussianPulse::hc(double t) {
-  double ex = (t - t0) / dc;
+    double ex = (t - t0) / dc;
 
-  if(fabs(ex) > sigma_cutoff)
-	return 0.0;
-  else
-	return ac * exp(-ex*ex);
+    return ac * exp(-ex*ex);
 }
 
 // --- NoiseWave ---
