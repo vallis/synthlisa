@@ -152,6 +152,7 @@ setup(name = 'synthLISA',
                                ),
                      Extension('healpix/_healpix',
                                source_healpix,
-                               include_dirs = ['lisasim/healpix',numeric_hfiles]
+                               include_dirs = ['lisasim/healpix',numeric_hfiles],
+                               depends = header_healpix
                                )]
       )
