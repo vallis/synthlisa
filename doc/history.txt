@@ -1,6 +1,29 @@
-2005/10/26 Release 1.2.4, beta version
+2005/11/1 Release 1.2.4, beta version
 
 Changed dec and asc to beta (= elat) and lambda (= elon) everywhere.
+
+Removed "special" LISAs (development and testing only): NoisyLISA,
+NominalLISA, LinearLISA, MeasureLISA. Moved to extra (not
+distributed).
+
+Fixed some "delete"s that should have been "delete []".
+
+Added GaussianPulse Wave object, with optimized "inscope"
+functionality implemented in TDIsignal.
+
+Continued improving online documentation (added docstring for several
+Wave objects, removed duplicate docstring for constructors and
+destructors).
+
+Simplified interface: moved some proprietary LISA functionality to
+extra.
+
+Removed direct Python access to k and pp, pc in Wave, added putk. pp
+and pc can be gotten using a specially-designed PyWave.
+
+Removed InterpolateMemory (but defined backward-compatible Python
+factory based on NoiseWave). InterpolateMemory is replaced by
+SampledWave, defined by a Python factory.
 
 2005/07/21 Release 1.2.3, beta version
 
