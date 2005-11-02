@@ -1,3 +1,9 @@
+/* $Id$
+ * $Date$
+ * $Author$
+ * $Revision$
+ */
+ 
 #ifndef _LISASIM_NOISE_H_
 #define _LISASIM_NOISE_H_
 
@@ -47,31 +53,31 @@ class BufferNoise {
 
  public:
     BufferNoise(long l) : maxbuffer(l) {
-	if ( !(data = new double[maxbuffer]) ) {
-	    cout << "RingBufferNoise::RingBufferNoise: out of memory" << endl;
-	    abort();
-	}
+		if ( !(data = new double[maxbuffer]) ) {
+			cout << "RingBufferNoise::RingBufferNoise: out of memory" << endl;
+			abort();
+		}
 
-	for(int i=0;i<maxbuffer;i++)
-	    data[i] = 0.0;
-    };
-
-    ~BufferNoise() {
-	delete data;
-    };
-
-    void reset() {
-	for(int i=0;i<maxbuffer;i++)
-	    data[i] = 0.0;
-    };
-
-    double& operator[](long pos) {
-	if(pos < 0) {
-	    zero = 0.0;
-	    return zero;
-	} else {
-	    return data[pos % maxbuffer];
-	}
+		for(int i=0;i<maxbuffer;i++)
+			data[i] = 0.0;
+	};
+	
+	~BufferNoise() {
+		delete data;
+	};
+	
+	void reset() {
+		for(int i=0;i<maxbuffer;i++)
+			data[i] = 0.0;
+	};
+	
+	double& operator[](long pos) {
+		if(pos < 0) {
+			zero = 0.0;
+			return zero;
+		} else {
+			return data[pos % maxbuffer];
+		}
     };
 };
 
@@ -96,11 +102,11 @@ class WhiteNoise : public GetNoise {
     virtual ~WhiteNoise();
 
     void reset(unsigned long seed = 0) {
-	seedrandgen(seed);
+		seedrandgen(seed);
     };
 
     void operator()(BufferNoise &x, long pos) {
-	x[pos] = deviate();
+		x[pos] = deviate();
     };
 };
 
@@ -116,12 +122,12 @@ class SampledNoise : public GetNoise {
     SampledNoise(double *d,long m) : data(d), maxbuffer(m) {};
 
     void operator()(BufferNoise &x, long pos) {
-	if (pos < 0 && pos > maxbuffer) {
-	    cout << "SampledNoise::(): index (" << pos << ") out of range" << endl;
-	    abort();
-	} else {
-	    x[pos] = data[pos];
-	}
+		if (pos < 0 && pos > maxbuffer) {
+			cout << "SampledNoise::(): index (" << pos << ") out of range" << endl;
+			abort();
+		} else {
+			x[pos] = data[pos];
+		}
     }
 };
 
@@ -137,7 +143,7 @@ class Filter {
 class NoFilter : public Filter {
  public:
     void operator()(BufferNoise &x,BufferNoise &y,long pos) {
-	y[pos] = x[pos];
+		y[pos] = x[pos];
     };
 };
 
@@ -152,14 +158,14 @@ class IntFilter : public Filter {
     IntFilter(double a = 0.9999) : alpha(a) {};
 
     void operator()(BufferNoise &x,BufferNoise &y,long pos) {
-	y[pos] = alpha * y[pos - 1] + x[pos];
+		y[pos] = alpha * y[pos - 1] + x[pos];
     };
 };
 
 class DiffFilter : public Filter {
  public:
     void operator()(BufferNoise &x,BufferNoise &y,long pos) {
-	y[pos] = x[pos] - x[pos-1];
+		y[pos] = x[pos] - x[pos-1];
     };
 };
 
@@ -184,43 +190,44 @@ class FilterMakeNoise : public MakeNoise {
  public:
     FilterMakeNoise(GetNoise *g,Filter *f,long l)
 	: maxbuffer(l), earliest(-1), latest(-1), get(g), filter(f) {
-	x = new BufferNoise(maxbuffer);
-	y = new BufferNoise(maxbuffer);
+		x = new BufferNoise(maxbuffer);
+		y = new BufferNoise(maxbuffer);
     };
 
     virtual ~FilterMakeNoise() {
-	delete y;
-	delete x;
+		delete y;
+		delete x;
     }
 
     void reset() {
-	get->reset();
+		get->reset();
 
-	x->reset();
-	y->reset();
+		x->reset();
+		y->reset();
 
-	earliest = -1;
-	latest = -1;
+		earliest = -1;
+		latest = -1;
     };
 
     double operator[](long pos) {
-	if(pos < earliest) {
-	    cout << "FilterMakeNoise::[]: trying to access noise element (" << pos << ") before oldest kept." << endl;
-	    abort();
-	} else if (pos > latest) {
-	    for(int i=latest+1;i<=pos;i++) {
-		(*get)(*x,i);
-		(*filter)(*x,*y,i);
-	    }
-
-	    latest = pos;
-	    if(latest - earliest > maxbuffer)
-		earliest = latest - maxbuffer + 1;
-
-	    return (*y)[pos];
-	} else {
-	    return (*y)[pos];
-	}
+		if(pos < earliest) {
+			cout << "FilterMakeNoise::[]: trying to access noise element (" << pos << ") before oldest kept." << endl;
+			abort();
+		} else if (pos > latest) {
+			for(int i=latest+1;i<=pos;i++) {
+				(*get)(*x,i);
+				(*filter)(*x,*y,i);
+			}
+	
+			latest = pos;
+			
+			if(latest - earliest > maxbuffer)
+				earliest = latest - maxbuffer + 1;
+	
+			return (*y)[pos];
+		} else {
+			return (*y)[pos];
+		}
     };
 };
 
@@ -235,7 +242,7 @@ class Interpolator {
 class NearestInterpolator : public Interpolator {
  public:
     double operator()(MakeNoise &y,long ind,double dind) {
-	return (dind < 0.5 ? y[ind] : y[ind+1]);
+		return (dind < 0.5 ? y[ind] : y[ind+1]);
     };
 };
 
@@ -244,7 +251,7 @@ class NearestInterpolator : public Interpolator {
 class LinearInterpolator : public Interpolator {
  public:
     double operator()(MakeNoise &y,long ind,double dind) {
-	return (1.0 - dind) * y[ind] + dind * y[ind+1];
+		return (1.0 - dind) * y[ind] + dind * y[ind+1];
     };
 };
 
@@ -253,7 +260,7 @@ class LinearInterpolator : public Interpolator {
 class LinearExtrapolator : public Interpolator {
  public:
     double operator()(MakeNoise &y,long ind,double dind) {
-	return (-dind) * y[ind-1] + (1.0 + dind) * y[ind];
+		return (-dind) * y[ind-1] + (1.0 + dind) * y[ind];
     };
 };
 
@@ -272,12 +279,12 @@ class LagrangeInterpolator : public Interpolator {
     virtual ~LagrangeInterpolator();
 
     double operator()(MakeNoise &y,long ind,double dind) {
- 	for(int i=0;i<semiwindow;i++) {
-	    ya[semiwindow-i] = y[ind-i];
-	    ya[semiwindow+i+1] = y[ind+i+1];
-	}
+ 		for(int i=0;i<semiwindow;i++) {
+	    	ya[semiwindow-i] = y[ind-i];
+	    	ya[semiwindow+i+1] = y[ind+i+1];
+		}
 
-	return polint(semiwindow+dind);
+		return polint(semiwindow+dind);
     };
 };
 
@@ -288,14 +295,14 @@ class Noise {
  public:
     virtual void reset() {};
 
-    virtual double operator[](double time) = 0;
+	virtual double operator[](double time) = 0;
 
     virtual double noise(double time) {
-	return (*this)[time];
+		return (*this)[time];
     };
     
     virtual double noise(double timebase,double timecorr) {
-	return noise(timebase + timecorr);
+		return noise(timebase + timecorr);
     };
 };
 
@@ -337,7 +344,7 @@ class InterpolateNoise : public Noise {
     double operator[](double time);
 
     double noise(double time) {
-	return (*this)[time];
+		return (*this)[time];
     };
 
     double noise(double timebase,double timecorr);

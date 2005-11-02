@@ -1,3 +1,9 @@
+/* $Id$
+ * $Date$
+ * $Author$
+ * $Revision$
+ */
+
 #include "lisasim-tdinoise.h"
 
 #include <time.h>
@@ -23,7 +29,7 @@ TDInoise::TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, 
     }
 
     for(int craft = 1; craft <= 3; craft++) {
-	c[craft] = stdlasernoise(lisa,stlaser,sdlaser);
+		c[craft] = stdlasernoise(lisa,stlaser,sdlaser);
         cs[craft] = stdlasernoise(lisa,stlaser,sdlaser);
     }
 
@@ -48,11 +54,11 @@ TDInoise::TDInoise(LISA *mylisa, double *stproof, double *sdproof, double *stsho
     for(int craft1 = 1; craft1 <= 3; craft1++) {
         for(int craft2 = 1; craft2 <= 3; craft2++) {
             if(craft1 != craft2) {
-		if( (craft1 == 1 && craft2 == 2) || (craft1 == 2 && craft2 == 3) || (craft1 == 3 && craft2 == 1) )
-		    shot[craft1][craft2] = stdopticalnoise(lisa,stshot[2*(craft1-1)],  sdshot[2*(craft1-1)]);
-		else
-		    shot[craft1][craft2] = stdopticalnoise(lisa,stshot[2*(craft2-1)+1],sdshot[2*(craft2-1)+1]);
-	    }
+				if( (craft1 == 1 && craft2 == 2) || (craft1 == 2 && craft2 == 3) || (craft1 == 3 && craft2 == 1) )
+		    		shot[craft1][craft2] = stdopticalnoise(lisa,stshot[2*(craft1-1)],  sdshot[2*(craft1-1)]);
+				else
+		    		shot[craft1][craft2] = stdopticalnoise(lisa,stshot[2*(craft2-1)+1],sdshot[2*(craft2-1)+1]);
+	    	}
         }
     }
 
@@ -81,11 +87,11 @@ TDInoise::TDInoise(LISA *mylisa, Noise *proofnoise[6],Noise *shotnoise[6],Noise 
     for(int craft1 = 1; craft1 <= 3; craft1++) {
         for(int craft2 = 1; craft2 <= 3; craft2++) {
             if(craft1 != craft2) {
-		if( (craft1 == 1 && craft2 == 2) || (craft1 == 2 && craft2 == 3) || (craft1 == 3 && craft2 == 1) )
-		    shot[craft1][craft2] = shotnoise[2*(craft1-1)];
-		else
-		    shot[craft1][craft2] = shotnoise[2*(craft2-1)+1];
-	    }
+				if( (craft1 == 1 && craft2 == 2) || (craft1 == 2 && craft2 == 3) || (craft1 == 3 && craft2 == 1) )
+		    		shot[craft1][craft2] = shotnoise[2*(craft1-1)];
+				else
+		    		shot[craft1][craft2] = shotnoise[2*(craft2-1)+1];
+	    	}
         }
     }
 
@@ -112,29 +118,29 @@ class zLockNoise : public Noise {
 	: slave(recv), masterpm(mpm), slavepm(spm), masterc(mc), slavec(sc) {};
 
     virtual ~zLockNoise() {
-	delete slavec;
+		delete slavec;
     };
 
     double operator[](double t) {
-	if (slave > 0) {
-	    // in this case master is starred, slave is not
-	    return (*masterc)[t] - (*masterpm)[t] - (*slavepm)[t];
-	} else {
-	    // in this case master is not starred, slave is
-	    return (*masterc)[t] + (*masterpm)[t] + (*slavepm)[t];
-	}
+		if (slave > 0) {
+	    	// in this case master is starred, slave is not
+	    	return (*masterc)[t] - (*masterpm)[t] - (*slavepm)[t];
+		} else {
+	    	// in this case master is not starred, slave is
+	    	return (*masterc)[t] + (*masterpm)[t] + (*slavepm)[t];
+		}
     };
 
     double noise(double time) {
-	return (*this)[time];
+		return (*this)[time];
     };
 
     double noise(double tb,double tc) {
-	if (slave > 0) {
-	    return masterc->noise(tb,tc) - masterpm->noise(tb,tc) - slavepm->noise(tb,tc);
-	} else {
-	    return masterc->noise(tb,tc) + masterpm->noise(tb,tc) + slavepm->noise(tb,tc);
-	}
+		if (slave > 0) {
+	    	return masterc->noise(tb,tc) - masterpm->noise(tb,tc) - slavepm->noise(tb,tc);
+		} else {
+	    	return masterc->noise(tb,tc) + masterpm->noise(tb,tc) + slavepm->noise(tb,tc);
+		}
     };
 };
 
@@ -151,31 +157,31 @@ class yLockNoise : public Noise {
 	: slave(recv), arm(link), lisa(l), slavepm(spm), shot(sh), masterc(mc), slavec(sc) {};
 
     virtual ~yLockNoise() {
-	delete slavec;
+		delete slavec;
     };
 
     double operator[](double t) {
-	if (slave > 0) {
-	    // since the slave is not starred, the link is positive (cyclic)
-	    return (*masterc)[t - lisa->armlength(arm,t)] - 2.0 * (*slavepm)[t] + (*shot)[t];
-	} else {
-	    // the slave is starred, the link is anticyclic
-	    return (*masterc)[t - lisa->armlength(arm,t)] + 2.0 * (*slavepm)[t] + (*shot)[t];
-	}
+		if (slave > 0) {
+	    	// since the slave is not starred, the link is positive (cyclic)
+	    	return (*masterc)[t - lisa->armlength(arm,t)] - 2.0 * (*slavepm)[t] + (*shot)[t];
+		} else {
+	    	// the slave is starred, the link is anticyclic
+	    	return (*masterc)[t - lisa->armlength(arm,t)] + 2.0 * (*slavepm)[t] + (*shot)[t];
+		}
     };
 
     double noise(double time) {
-	return (*this)[time];
+		return (*this)[time];
     };
 
     double noise(double tb,double tc) {
-	if (slave > 0) {
-	    return masterc->noise(tb,tc - lisa->armlength(arm,tb+tc))
-		- 2.0 * slavepm->noise(tb,tc) + shot->noise(tb,tc);
-	} else {
-	    return masterc->noise(tb,tc - lisa->armlength(arm,tb+tc))
-		+ 2.0 * slavepm->noise(tb,tc) + shot->noise(tb,tc);
-	}
+		if (slave > 0) {
+	    	return masterc->noise(tb,tc - lisa->armlength(arm,tb+tc))
+					- 2.0 * slavepm->noise(tb,tc) + shot->noise(tb,tc);
+		} else {
+	    	return masterc->noise(tb,tc - lisa->armlength(arm,tb+tc))
+					+ 2.0 * slavepm->noise(tb,tc) + shot->noise(tb,tc);
+		}
     };
 };
 
@@ -189,9 +195,9 @@ void TDInoise::lock(int master) {
     // first lock the laser on the same bench
 
     if(master > 0) {
-	cs[mastera] = new zLockNoise(-mastera,pm[ mastera],pms[mastera],c[ mastera],cs[mastera]);
+		cs[mastera] = new zLockNoise(-mastera,pm[ mastera],pms[mastera],c[ mastera],cs[mastera]);
     } else {
-	c[ mastera] = new zLockNoise( mastera,pms[mastera],pm[ mastera],cs[mastera],c[ mastera]);
+		c[ mastera] = new zLockNoise( mastera,pms[mastera],pm[ mastera],cs[mastera],c[ mastera]);
     }
 
     // now lock across to the other benches
@@ -207,31 +213,33 @@ void TDInoise::lock(int master) {
 
 TDInoise::~TDInoise() {
     if(allocated) {
-	// allow for one noise object to be contained in multiple pointers
-	// without calling delete twice
+		// allow for one noise object to be contained in multiple pointers
+		// without calling delete twice
 
-	// remove proof-mass-noise InterpolateNoise objects
+		// remove proof-mass-noise InterpolateNoise objects
 
-	for(int craft = 1; craft <= 3; craft++) {
-	    if(pm[craft])  {delete pm[craft]; pm[craft]=0;}
-	    if(pms[craft]) {delete pms[craft]; pms[craft]=0;}
-	}
+		for(int craft = 1; craft <= 3; craft++) {
+	    	if(pm[craft])  {delete pm[craft]; pm[craft]=0;}
+	    	if(pms[craft]) {delete pms[craft]; pms[craft]=0;}
+		}
  
-	// remove optical-path-noise InterpolateNoise objects
+		// remove optical-path-noise InterpolateNoise objects
 
-	for(int craft1 = 1; craft1 <= 3; craft1++) {
-	    for(int craft2 = 1; craft2 <= 3; craft2++) {
-		if(craft1 != craft2)
-		    if(shot[craft1][craft2]) {delete shot[craft1][craft2]; shot[craft1][craft2]=0;}
-	    }
-	}
+		for(int craft1 = 1; craft1 <= 3; craft1++) {
+	    	for(int craft2 = 1; craft2 <= 3; craft2++) {
+				if(craft1 != craft2)
+		    		if(shot[craft1][craft2]) {
+		    			delete shot[craft1][craft2]; shot[craft1][craft2]=0;
+		    		}
+	    	}
+		}
 	
-	// remove laser-noise InterpolateNoise objects
+		// remove laser-noise InterpolateNoise objects
 
-	for(int craft = 1; craft <= 3; craft++) {
-	    if(c[craft])  {delete c[craft]; c[craft]=0;}
-	    if(cs[craft]) {delete cs[craft]; cs[craft]=0;}
-	}
+		for(int craft = 1; craft <= 3; craft++) {
+	    	if(c[craft])  {delete c[craft]; c[craft]=0;}
+	    	if(cs[craft]) {delete cs[craft]; cs[craft]=0;}
+		}
     }
 }
 
@@ -295,8 +303,8 @@ double TDInoise::y(int send, int slink, int recv, int ret1, int ret2, int ret3, 
         // if introducing error in the determination of the armlengths, it should not enter
         // the following (physical) retardation of the laser noise, so we use the phlisa object
 
-	lisa->retard(phlisa,link);
-	double retardlaser = lisa->retardedtime();
+		lisa->retard(phlisa,link);
+		double retardlaser = lisa->retardedtime();
 
         return( (*cs[send])[retardlaser] - 2.0 * (*pm[recv])[retardedtime]  - (*c[recv])[retardedtime]  + 
                 (*shot[send][recv])[retardedtime] );
@@ -304,8 +312,8 @@ double TDInoise::y(int send, int slink, int recv, int ret1, int ret2, int ret3, 
         // anticyclic combination
         // ditto here
 
-	lisa->retard(phlisa,-link);
-	double retardlaser = lisa->retardedtime();
+		lisa->retard(phlisa,-link);
+		double retardlaser = lisa->retardedtime();
 
         return( (*c[send])[retardlaser]  + 2.0 * (*pms[recv])[retardedtime] - (*cs[recv])[retardedtime] +
                 (*shot[send][recv])[retardedtime] );
@@ -410,24 +418,24 @@ double TDIaccurate::y(int send, int slink, int recv, int ret1, int ret2, int ret
         // if introducing error in the determination of the armlengths, it should not enter
         // the following (physical) retardation of the laser noise, so we use the phlisa object
 
-	lisa->retard(phlisa,link);
-	double retardlaser = -lisa->retardation();
+		lisa->retard(phlisa,link);
+		double retardlaser = -lisa->retardation();
 
         return( cs[send]->noise(t,retardlaser)
-		- 2.0 * pm[recv]->noise(t,retardation) 
-		- c[recv]->noise(t,retardation)
-		+ shot[send][recv]->noise(t,retardation) );
+				- 2.0 * pm[recv]->noise(t,retardation) 
+				- c[recv]->noise(t,retardation)
+				+ shot[send][recv]->noise(t,retardation) );
     } else {
         // anticyclic combination
         // ditto here
 
-	lisa->retard(phlisa,-link);
-	double retardlaser = -lisa->retardation();
+		lisa->retard(phlisa,-link);
+		double retardlaser = -lisa->retardation();
 
         return( c[send]->noise(t,retardlaser)
-		+ 2.0 * pms[recv]->noise(t,retardation)
-		- cs[recv]->noise(t,retardation)
-		+ shot[send][recv]->noise(t,retardation) );
+				+ 2.0 * pms[recv]->noise(t,retardation)
+				- cs[recv]->noise(t,retardation)
+				+ shot[send][recv]->noise(t,retardation) );
     }
 }
 
