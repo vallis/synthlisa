@@ -1,3 +1,9 @@
+/* $Id$
+ * $Date$
+ * $Author$
+ * $Revision$
+ */
+
 #include "lisasim-noise.h"
 
 #include <iostream>
@@ -29,13 +35,13 @@ WhiteNoise::~WhiteNoise() {
 
 void WhiteNoise::seedrandgen(unsigned long seed) {
     if (seed == 0) {
-	struct timeval tv;
-
-	gettimeofday(&tv,0);
-  
-	gsl_rng_set(randgen,tv.tv_sec+tv.tv_usec);
+		struct timeval tv;
+	
+		gettimeofday(&tv,0);
+	  
+		gsl_rng_set(randgen,tv.tv_sec+tv.tv_usec);
     } else {
-	gsl_rng_set(randgen,seed);
+		gsl_rng_set(randgen,seed);
     }
 
     cacheset = 0;
@@ -50,10 +56,10 @@ double WhiteNoise::deviate() {
 
   if (cacheset == 0) {
       do {
-	  x = -1.0 + 2.0 * gsl_rng_uniform(randgen);
-	  y = -1.0 + 2.0 * gsl_rng_uniform(randgen);
-	  
-	  r2 = x * x + y * y;
+		  x = -1.0 + 2.0 * gsl_rng_uniform(randgen);
+		  y = -1.0 + 2.0 * gsl_rng_uniform(randgen);
+		  
+		  r2 = x * x + y * y;
       } while (r2 > 1.0 || r2 == 0);
 
       double root = sqrt (-2.0 * log (r2) / r2);
@@ -79,17 +85,16 @@ double WhiteNoise::deviate() {
 
 LagrangeInterpolator::LagrangeInterpolator(int sw)
     : window(2*sw), semiwindow(sw) {
-    xa = new double[window+1];
-    ya = new double[window+1];
-    
-    c = new double[window+1];
-    d = new double[window+1];
-    
-    for(int i=1;i<=window;i++) {
-	xa[i] = 1.0*i;
-	ya[i] = 0.0;
-    }
-    
+	xa = new double[window+1];
+	ya = new double[window+1];
+		
+	c = new double[window+1];
+	d = new double[window+1];
+		
+	for(int i=1;i<=window;i++) {
+		xa[i] = 1.0*i;
+		ya[i] = 0.0;
+	}    
 };
 
 LagrangeInterpolator::~LagrangeInterpolator() {
@@ -110,29 +115,29 @@ double LagrangeInterpolator::polint(double x) {
     dif=fabs(x-xa[1]);
 
     for (i=1;i<=n;i++) {
-	if ( (dift=fabs(x-xa[i])) < dif) {
-	    ns=i;
-	    dif=dift;
-	}
-
-	c[i]=ya[i];
-	d[i]=ya[i];
+		if ( (dift=fabs(x-xa[i])) < dif) {
+			ns=i;
+			dif=dift;
+		}
+	
+		c[i]=ya[i];
+		d[i]=ya[i];
     }
 
     res=ya[ns--];
 
     for (m=1;m<n;m++) {
-	for (i=1;i<=n-m;i++) {
-	    ho=xa[i]-x;
-	    hp=xa[i+m]-x;
-	    w=c[i+1]-d[i];
-	    den=ho-hp;
-	    den=w/den;
-	    d[i]=hp*den;
-	    c[i]=ho*den;
-	}
+		for (i=1;i<=n-m;i++) {
+			ho=xa[i]-x;
+			hp=xa[i+m]-x;
+			w=c[i+1]-d[i];
+			den=ho-hp;
+			den=w/den;
+			d[i]=hp*den;
+			c[i]=ho*den;
+		}
 	
-	res += (dres=(2*ns < (n-m) ? c[ns+1] : d[ns--]));
+		res += (dres=(2*ns < (n-m) ? c[ns+1] : d[ns--]));
     }
 
     return res;
@@ -212,14 +217,15 @@ void InterpolateNoise::reset() {
 
 void InterpolateNoise::setfilter(double ex) {
     if (ex == 0.00) {
-	thefilter = new NoFilter();
+		thefilter = new NoFilter();
     } else if (ex == 2.00) {
-	thefilter = new DiffFilter();
+		thefilter = new DiffFilter();
     } else if (ex == -2.00) {
-	thefilter = new IntFilter();
+		thefilter = new IntFilter();
     } else {
-        cout << "InterpolateNoise::InterpolateNoise: noise spectral shape f^" << ex << " not implemented. Defaulting to no filtering." << endl;
-        thefilter = new NoFilter();
+		cout << "InterpolateNoise::InterpolateNoise: noise spectral shape f^" <<
+				ex << " not implemented. Defaulting to no filtering." << endl;
+		thefilter = new NoFilter();
     }
 }
 
@@ -231,7 +237,8 @@ void InterpolateNoise::setnorm(double sd, double ex) {
     } else if (ex == -2.00) {
         normalize = sqrt(sd) * sqrt(nyquistf) * (2.00 * M_PI * samplingtime);
     } else {
-        cout << "InterpolateNoise::InterpolateNoise: noise spectral shape f^" << ex << " not implemented. Defaulting to no filtering." << endl;
+        cout << "InterpolateNoise::InterpolateNoise: noise spectral shape f^" <<
+        		ex << " not implemented. Defaulting to no filtering." << endl;
         normalize = sqrt(sd) * sqrt(nyquistf);
     }
 }
@@ -244,23 +251,23 @@ void InterpolateNoise::setnormsampled(double sd, double ex) {
     } else if (ex == -2.00) {
         normalize = sd * samplingtime; // we're integrating
     } else {
-        cout << "InterpolateNoise::InterpolateNoise: noise spectral shape f^" << ex << " not implemented. Defaulting to no filtering." << endl;
+        cout << "InterpolateNoise::InterpolateNoise: noise spectral shape f^" <<
+        		ex << " not implemented. Defaulting to no filtering." << endl;
         normalize = sqrt(sd) * sqrt(nyquistf);
     }
 }
 
 void InterpolateNoise::setinterp(int window) {
-    if (interp != 0)
-	delete interp;
+    if (interp != 0) delete interp;
 
     if (window == 0) {
-	interp = new NearestInterpolator();
+		interp = new NearestInterpolator();
     } else if (window == -1) {
-	interp = new LinearExtrapolator();
+		interp = new LinearExtrapolator();
     } else if (window == 1) {
-	interp = new LinearInterpolator();
+		interp = new LinearInterpolator();
     } else {
-	interp = new LagrangeInterpolator(window);
+		interp = new LagrangeInterpolator(window);
     }
 
     // Here we set the window of interpolation times that will be
@@ -274,7 +281,7 @@ void InterpolateNoise::setinterp(int window) {
     double tw = prebuffertime - 2.0 * window * samplingtime;
 
     if (timewindow > 0.0 && tw > timewindow) {
-	lasttime = lasttime + (tw - timewindow);
+		lasttime = lasttime + (tw - timewindow);
     }
 
     timewindow = tw;
@@ -284,61 +291,65 @@ void InterpolateNoise::setinterp(int window) {
 // actually depends on the interpolation scheme!
 
 double InterpolateNoise::operator[](double time) {
+	if (normalize == 0.0) return 0.0;
+
     if (time > maxtime) {
         cout << "InterpolateNoise::[]: time requested (" << time <<
-	    ") too large [" << __FILE__ << ":" << __LINE__ << "]" << endl;
+	    		") too large [" << __FILE__ << ":" << __LINE__ << "]" << endl;
+	    		
         abort();
     } else if (lasttime - time > timewindow) {
-	cout << "InterpolateNoise::[]: time requested (" << time <<
-	    ") too old, last was " << lasttime << ", pbt is " << prebuffertime <<
-	    " [" << __FILE__ << ":" << __LINE__ << "]" << endl;
-	abort();
+		cout << "InterpolateNoise::[]: time requested (" << time <<
+	    		") too old, last was " << lasttime << ", pbt is " << prebuffertime <<
+	    		" [" << __FILE__ << ":" << __LINE__ << "]" << endl;
+	    		
+		abort();
     } else {
-	if (time > lasttime) {
-	    lasttime = time;
-	}
+    	if (time > lasttime) lasttime = time;
 
-	double rind = (time + prebuffertime) / samplingtime;
-	double dind = rind - floor(rind);
-
-	// the floor is to make sure we can handle negative indices
-	// correctly
-	long ind = long(floor(rind));
-
-	return normalize * (*interp)(*thenoise,ind,dind);
+		double rind = (time + prebuffertime) / samplingtime;
+		double dind = rind - floor(rind);
+	
+		// the floor is to make sure we can handle negative indices
+		// correctly
+		long ind = long(floor(rind));
+	
+		return normalize * (*interp)(*thenoise,ind,dind);
     }
 }
 
 double InterpolateNoise::noise(double timebase,double timecorr) {
+	if (normalize == 0.0) return 0.0;
+
     double time = timebase + timecorr;
 
     if (time > maxtime) {
         cout << "InterpolateNoise::[]: time requested (" << time << ") too large" <<
 	    "[" << __FILE__ << ":" << __LINE__ << "]" << endl;
+	    
         abort();
     } else if (lasttime - time > timewindow) {
-	cout << "InterpolateNoise::[]: time requested (" << time << 
+		cout << "InterpolateNoise::[]: time requested (" << time << 
 	    ") too old, last was " << lasttime << ", pbt is " << prebuffertime <<
 	    "[" << __FILE__ << ":" << __LINE__ << "]" << endl;
-	abort();
+	    
+		abort();
     } else {
-	if (time > lasttime) {
-	    lasttime = time;
-	}
+	    if (time > lasttime) lasttime = time;
 
-	double rindbase = (timebase + prebuffertime) / samplingtime;
-	double dindbase = rindbase - floor(rindbase);
-
-	double rindcorr = timecorr / samplingtime;
-	double dindcorr = rindcorr - floor(rindcorr);
-
-        double rind = rindbase + rindcorr + floor(dindbase + dindcorr);
-	double dind = dindbase + dindcorr - floor(dindbase + dindcorr);
-
-	// the floor is to make sure we can handle negative indices
-	// correctly
-	long ind = long(floor(rind));
-
-	return normalize * (*interp)(*thenoise,ind,dind);
+		double rindbase = (timebase + prebuffertime) / samplingtime;
+		double dindbase = rindbase - floor(rindbase);
+	
+		double rindcorr = timecorr / samplingtime;
+		double dindcorr = rindcorr - floor(rindcorr);
+	
+		double rind = rindbase + rindcorr + floor(dindbase + dindcorr);
+		double dind = dindbase + dindcorr - floor(dindbase + dindcorr);
+	
+		// the floor is to make sure we can handle negative indices
+		// correctly
+		long ind = long(floor(rind));
+	
+		return normalize * (*interp)(*thenoise,ind,dind);
     }
 }
