@@ -1,3 +1,9 @@
+/* $Id$
+ * $Date$
+ * $Author$
+ * $Revision$
+ */
+
 /* File : lisasim-swig.i */
 
 // Directors are not needed (only for AnyLISA, deprecated)
@@ -777,9 +783,6 @@ extern Noise *stdlasernoise(LISA *lisa,double stlaser,double sdlaser);
 extern TDInoise *stdnoise(LISA *mylisa);
 
 /* debugging */
-
-%apply double *NUMPY_ARRAY_DOUBLE { double *array };
-extern void settdi(double *array,TDI *mytdi,int samples,double samplingtime,char *observables);
 
 %apply Noise *PYTHON_SEQUENCE_NOISE[ANY] {Noise *proofnoise[6], Noise *shotnoise[6], Noise *lasernoise[6]}
 
