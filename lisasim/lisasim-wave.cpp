@@ -39,13 +39,9 @@ Wave::Wave(double b, double l, double p) {
     lambda = l;
     pol = p;
 
-    kArray[0] = -cos(lambda)*cos(beta);
-    kArray[1] = -sin(lambda)*cos(beta);
-    kArray[2] = -sin(beta);
-
-    k[0] = kArray[0];
-    k[1] = kArray[1];
-    k[2] = kArray[2];
+    k[0] = -cos(lambda)*cos(beta);
+    k[1] = -sin(lambda)*cos(beta);
+    k[2] = -sin(beta);
 
     Tensor stdpp(0.0), stdpc(0.0);
 
@@ -55,7 +51,6 @@ Wave::Wave(double b, double l, double p) {
     Tensor A, At;
     
     A.seteuler(beta,lambda,pol);
-
     At.settranspose(A);
 
     Tensor tmp;
@@ -65,20 +60,19 @@ Wave::Wave(double b, double l, double p) {
     
     tmp.setproduct(stdpc,At);
     pc.setproduct(A,tmp);    
+}
 
-    for(int i=0;i<3;i++) {
-      for(int j=0;j<3;j++) {
-	ppArray[3*i+j] = pp[i][j];
-	pcArray[3*i+j] = pc[i][j];
-      }
-    }
+void Wave::putk(Vector &kout) {
+    kout[0] = k[0];
+    kout[1] = k[1];
+    kout[2] = k[2];
+
+    // ??? Is this needed or would a direct copy work?
 }
 
 void Wave::putwave(Tensor &h, double t) {
-  double hp_temp;
-  double hc_temp; 
-  hp_temp = hp(t);
-  hc_temp = hc(t);
+  double hp_temp = hp(t);
+  double hc_temp = hc(t);
   
   for(int i=0;i<3;i++) {
     for(int j=0;j<3;j++) {
@@ -204,46 +198,6 @@ NoiseWave::~NoiseWave() {
     }
 }
 
-// --- InterpolateMemory wave class --------------------------------------------------
-
-InterpolateMemory::InterpolateMemory(double *hpa, double *hca, long samples, double samplingtime, double lookback, double b, double l, double p) : Wave(b,l,p) {
-  hpbuffer = hpa;
-  hcbuffer = hca;
-
-  maxsamples = samples;
-  sampletime = samplingtime;
-
-  lkback = lookback;
-}
-
-double InterpolateMemory::hp(double time) {
-    double ctime = (time + lkback) / sampletime;
-    double itime = floor(ctime);
-    long index = long(itime);
-    
-    if (index > maxsamples) {
-      cout << "InterpolateMemory::hp() accessing index larger than available" << endl;
-      abort();
-    } else if (index < 0) {
-      cout << "InterpolateMemory::lookback buffer insufficient" << endl;
-      abort();
-    }
-
-    return ( (ctime - itime) * hpbuffer[index+1] + (1.00 - (ctime - itime)) * hpbuffer[index] );
-}
-
-double InterpolateMemory::hc(double time) {
-    double ctime = (time + lkback) / sampletime;
-    double itime = floor(ctime);
-    long index = long(itime);
-    
-    if (index > maxsamples) {
-      cout << "InterpolateMemory::hp() accessing index larger than available" << endl;
-      abort();
-    } else if (index < 0) {
-      cout << "InterpolateMemory::lookback buffer insufficient" << endl;
-      abort();
-    }
-
-    return ( (ctime - itime) * hcbuffer[index+1] + (1.00 - (ctime - itime)) * hcbuffer[index] );
+NoiseWave *SampledWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double density, double exponent, int swindow, double d, double a, double p) {
+    return new NoiseWave(hpa,hca,samples,sampletime,prebuffer,density,exponent,swindow,d,a,p);
 }
