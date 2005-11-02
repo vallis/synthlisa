@@ -28,6 +28,9 @@ class WaveArray : public WaveObject {
     Wave *firstwave(), *nextwave();
 };
 
+
+// --- Wave ---
+
 class Wave : public WaveObject {
  public:
     // position in the sky
@@ -39,12 +42,10 @@ class Wave : public WaveObject {
     // k vector
 
     Vector k;
-    double kArray[3];
 
     // polarization tensors
     
     Tensor pp, pc;
-    double ppArray[9], pcArray[9];
 
     Wave(double b, double l, double p);
 
@@ -56,8 +57,12 @@ class Wave : public WaveObject {
     virtual double hp(double t) = 0;
     virtual double hc(double t) = 0;  
 
+    void putk(Vector &k);
     void putwave(Tensor &h, double t);
 };
+
+
+// --- SimpleBinary ---
 
 class SimpleBinary : public Wave {
     private:
@@ -76,6 +81,9 @@ class SimpleBinary : public Wave {
         double hc(double t);
 };
 
+
+// --- SimpleMonochromatic ---
+
 class SimpleMonochromatic : public Wave {
     private:
         // frequency
@@ -93,6 +101,9 @@ class SimpleMonochromatic : public Wave {
         double hc(double t);
 };
 
+
+// --- GaussianPulse ---
+
 class GaussianPulse : public Wave {
  private:
     double t0, dc; // offset time, decay
@@ -109,6 +120,9 @@ class GaussianPulse : public Wave {
     double hp(double t);
     double hc(double t);
 };
+
+
+// --- NoiseWave ---
 
 class NoiseWave : public Wave {
     private:
@@ -129,20 +143,17 @@ class NoiseWave : public Wave {
 	double hc(double t) { return nc->noise(t); };
 };
 
-class InterpolateMemory : public Wave {
-    private:
-        double *hpbuffer, *hcbuffer;
 
-        long maxsamples;
-        double sampletime;
-        double lkback;
+// --- SampledWave ---
 
-    public:
-        InterpolateMemory(double *hpa, double *hca, long samples, double samplingtime, double lookback, double b, double l, double p);
+/* This is really a frontend for NoiseWave, so we're just providing
+   this factory function. The Python interface has its own factory,
+   written in Python, which deals with garbage collection issues,
+   etc. Perhaps there's a better way to do this in C++... */
 
-        double hp(double t);
-        double hc(double t);
-};
+NoiseWave *SampledWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double density, double exponent, int swindow, double d, double a, double p);
+
+// --- PyWave ---
 
 #include <Python.h>
 
