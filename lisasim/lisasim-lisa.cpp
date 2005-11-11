@@ -1,8 +1,15 @@
-#include "lisasim-lisa.h"
-#include "lisasim-noise.h"
+/* $Id$
+ * $Date$
+ * $Author$
+ * $Revision$
+ */
 
-using namespace std;
+#include "lisasim-lisa.h"
+#include "lisasim-signal.h"
+#include "lisasim-except.h"
+
 #include <iostream>
+
 
 // --- generic LISA class --------------------------------------------------------------
 
@@ -428,19 +435,22 @@ void EccentricInclined::settime(int craft, double t) {
     double beta;
 
     switch(craft) {
-    case 1:
-	beta = lambda;
-	break;
-    case 2:
-	beta = (swi > 0.0) ? 4.0*M_PI/3.0 + lambda : 2.0*M_PI/3.0 + lambda;
-	break;
-    case 3:
-	beta = (swi > 0.0) ? 2.0*M_PI/3.0 + lambda : 4.0*M_PI/3.0 + lambda;
-	break;
-    default:
-	cout << "EccentricInclined::settime: invalid spacecraft index" << endl;
-	abort(); 
-	break;
+        case 1:
+	       beta = lambda;
+	       break;
+        case 2:
+            beta = (swi > 0.0) ? 4.0*M_PI/3.0 + lambda : 2.0*M_PI/3.0 + lambda;
+            break;
+        case 3:
+            beta = (swi > 0.0) ? 2.0*M_PI/3.0 + lambda : 4.0*M_PI/3.0 + lambda;
+            break;
+        default:
+            std::cerr << "EccentricInclined::settime: invalid spacecraft index "
+		          << craft << " [" << __FILE__ << ":" << __LINE__ << "]." << std::endl;
+	
+    		ExceptionUndefined e;
+	       	throw e;
+        break;
     }
 	    
     cachep[craft][0] =   0.5 * Rgc * ecc * ( cos(2.0*alpha-beta) - 3.0*cos(beta) )
