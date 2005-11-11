@@ -1,8 +1,14 @@
+/* $Id$
+ * $Date$
+ * $Author$
+ * $Revision$
+ */
+
 #ifndef _LISASIM_LISA_H_
 #define _LISASIM_LISA_H_
 
 #include "lisasim-tens.h"
-#include "lisasim-noise.h"
+#include "lisasim-signal.h"
 
 #include <math.h>
 
@@ -53,7 +59,6 @@ class LISA {
 	
  public:
     LISA() {};
-
     virtual ~LISA() {};
 
     /// Resets LISA classes that have something to reset.
@@ -80,7 +85,7 @@ class LISA {
 	chain retardations). If we don't make a distinction between
 	baseline and correction ("accurate"), return just the armlength. */
     virtual double armlengthbaseline(int arm, double t) {
-	return armlength(arm,t);
+	   return armlength(arm,t);
     }
 
     /** Correction to the baseline armlength (used to enhance
@@ -88,32 +93,7 @@ class LISA {
 	distinction between baseline and correction ("accurate"),
 	return 0. */
     virtual double armlengthaccurate(int arm, double t) {
-	return 0.0;
-    }
-
-    /// FIX: I should remove all of these overloaded functions, not
-    /// needed anymore now that Jeff's lisafast is not active anymore.
-
-    /// Load an array rather than a vector with n (was used in LISAfast).
-    virtual void putn(double n[], int arm, double t) {
-	Vector temp;
-            
-	putn(temp, arm, t);
-            
-	n[0] = temp[0];
-	n[1] = temp[1];
-	n[2] = temp[2];
-    }
-        
-    /// Load an array rather than a vector with p (was used in LISAfast).
-    virtual void putp(double p[], int craft, double t) {
-	Vector temp;
-            
-	putp(temp, craft, t);
-            
-	p[0] = temp[0];
-	p[1] = temp[1];
-	p[2] = temp[2];
+	   return 0.0;
     }
 
     virtual void newretardtime(double t);
@@ -156,181 +136,173 @@ class OriginalLISA : public LISA {
 /// rotating LISA geometry
 
 class ModifiedLISA : public OriginalLISA {
-    private:
-        double sagnac[4];
-        double Lc[4], Lac[4];
-        
-    public:
-        // accept the armlength in seconds
-    
-        ModifiedLISA(double arm1 = Lstd,double arm2 = Lstd,double arm3 = Lstd);
+ private:
+    double sagnac[4];
+    double Lc[4], Lac[4];
 
-        // OriginalLISA defines a computed version of armlength
-        // however, it uses the base putn
-    
-        void putp(Vector &p, int craft, double t);
-    
-        double armlength(int arm, double t);
-        double genarmlength(int arm, double t);
+ public:
+    // accept the armlength in seconds
+
+    ModifiedLISA(double arm1 = Lstd,double arm2 = Lstd,double arm3 = Lstd);
+
+    // OriginalLISA defines a computed version of armlength
+    // however, it uses the base putn
+
+    void putp(Vector &p, int craft, double t);
+
+    double armlength(int arm, double t);
+    double genarmlength(int arm, double t);
 };
 
 /// Rigidly rotating, orbiting LISA.
 
 class CircularRotating : public LISA {
-    private:
-        double scriptl;
-        double R;
-        double L;
+ private:
+    double scriptl;
+    double R;
+    double L;
 
-	double toffset;
+    double toffset;
 
-        double eta0;
-        double xi0;
+    double eta0;
+    double xi0;
 
-        // Trick: we use 1-3 indexing for LISA positions and vectors, so we need to allocate 4 of everything
+    // Trick: we use 1-3 indexing for LISA positions and vectors, so we need to allocate 4 of everything
 
-        double delmodamp;
-        double delmodph[4];
+    double delmodamp;
+    double delmodph[4];
 
-        Vector initn[4];
-        Vector initp[4];
-        
-        double rotationtime;
-        Vector center;
-        Tensor rotation;
+    Vector initn[4];
+    Vector initp[4];
+    
+    double rotationtime;
+    Vector center;
+    Tensor rotation;
 
-        void settime(double t);
+    void settime(double t);
 
-	void initialize(double e0, double x0, double sw);
+    void initialize(double e0, double x0, double sw);
 
-    public:
-        CircularRotating(double eta0 = 0.0,double xi0 = 0.0,double sw = 1.0,double t0 = 0.0);
-	CircularRotating(double myL,double e0,double x0,double sw,double t0);
+ public:
+    CircularRotating(double eta0 = 0.0,double xi0 = 0.0,double sw = 1.0,double t0 = 0.0);
+    CircularRotating(double myL,double e0,double x0,double sw,double t0);
 
-        // CircularRotating defines a computed (fitted) version of armlength
-        // use genarmlength to get the exact armlength,
-        // use oldputn to get the nondelayed (rotated-only) n's
+    // CircularRotating defines a computed (fitted) version of armlength
+    // use genarmlength to get the exact armlength,
+    // use oldputn to get the nondelayed (rotated-only) n's
 
-        // however, putn defaults to its base version
+    // however, putn defaults to its base version
 
-        void putp(Vector &p,int craft,double t);
-        
-        double armlength(int arm, double t);
+    void putp(Vector &p,int craft,double t);
+    
+    double armlength(int arm, double t);
 
-	double armlengthbaseline(int arm, double t);
-	double armlengthaccurate(int arm, double t);
+    double armlengthbaseline(int arm, double t);
+    double armlengthaccurate(int arm, double t);
 
-        double genarmlength(int arm, double t);
+    double genarmlength(int arm, double t);
 };
 
 /** Orbiting LISA with eccentric orbits. In the future it would be
     nice to have the eccentricity as a parameter */
 
 class EccentricInclined : public LISA {
-    private:
-        // LISA armlength 
+ private:
+    // LISA armlength 
 
-        double L;
+    double L;
 
-        // initial azimuthal position of the guiding center
-        // and initial orientation of the spacecraft
-	// used internally, but computed from eta0 and xi0
+    // initial azimuthal position of the guiding center
+    // and initial orientation of the spacecraft
+    // used internally, but computed from eta0 and xi0
 
-	double toffset;
+    double toffset;
 
-        double kappa; 
-        double lambda;
-	double swi;
+    double kappa; 
+    double lambda;
+    double swi;
 
-	// constants needed in the approximation to the armlength
+    // constants needed in the approximation to the armlength
 
-	double pdelmod, mdelmod, delmod3;
+    double pdelmod, mdelmod, delmod3;
 
-	double delmodph[4], delmodph2;
-        
-        // caching the positions of spacecraft
-        
-        Vector cachep[4];
-        double cachetime[4];
-        
-        void settime(int craft,double t);
-        
-    public:
-        EccentricInclined(double eta0 = 0.0,double xi0 = 0.0,double sw = 1.0,double t0 = 0.0);
+    double delmodph[4], delmodph2;
+    
+    // caching the positions of spacecraft
+    
+    Vector cachep[4];
+    double cachetime[4];
+    
+    void settime(int craft,double t);
+    
+ public:
+    EccentricInclined(double eta0 = 0.0,double xi0 = 0.0,double sw = 1.0,double t0 = 0.0);
+    // ??? do I want an enhanced version that can set myL, as CircularRotating?
 
-        void putp(Vector &p,int craft,double t);
+    void putp(Vector &p,int craft,double t);
 
-        // EccentricInclined defines a computed (leading order) version of armlength
-        // use genarmlength to get the exact armlength
+    // EccentricInclined defines a computed (leading order) version of armlength
+    // use genarmlength to get the exact armlength
 
-	double armlength(int arm, double t);
+    double armlength(int arm, double t);
 
-	double armlengthbaseline(int arm, double t);
-	double armlengthaccurate(int arm, double t);
+    double armlengthbaseline(int arm, double t);
+    double armlengthaccurate(int arm, double t);
 
-        double genarmlength(int arm, double t);
+    double genarmlength(int arm, double t);
 };
 
 #include <Python.h>
 
 class PyLISA : public LISA {
-    public:
-        LISA *baseLISA;
+ public:
+    LISA *baseLISA;
 
-    // FIX: this ugliness removes a warning about armfunc being initialized before baseLISA
-    //      but there should be a better way...
+    // ??? this ugliness removes a warning about armfunc being initialized
+    // before baseLISA, but there should be a better way...
 
-    private:
-	PyObject *armfunc;
+ private:
+    PyObject *armfunc;
 
-    public: 
-        PyLISA(LISA *base,PyObject *func) : baseLISA(base), armfunc(func) {};
-	virtual ~PyLISA() {};
+ public: 
+    PyLISA(LISA *base,PyObject *func) : baseLISA(base), armfunc(func) {};
 
-        void reset() {
-	    return baseLISA->reset();
-	}
+    void reset() {
+        return baseLISA->reset();
+    };
 
-       	LISA *physlisa() {
-	    return baseLISA;
-	}
+    LISA *physlisa() {
+        return baseLISA;
+    };
 
-        double armlength(int arm, double t) {
-	    PyObject *arglist, *result;
+    double armlength(int arm, double t) {
+        PyObject *arglist, *result;
+    
+        double dres = 0.0;
+    
+        arglist = Py_BuildValue("(id)",arm,t);        // Build argument list
+        result = PyEval_CallObject(armfunc,arglist);  // Call Python
+        Py_DECREF(arglist);                           // Trash arglist
+        if (result) dres = PyFloat_AsDouble(result);  // If no errors, return double
+        Py_XDECREF(result);                           // Trash result
+        return dres;
+    };
 
-	    double dres = 0.0;
-   
-	    arglist = Py_BuildValue("(id)",arm,t);        // Build argument list
-	    result = PyEval_CallObject(armfunc,arglist);  // Call Python
-	    Py_DECREF(arglist);                           // Trash arglist
-	    if (result) dres = PyFloat_AsDouble(result);  // If no errors, return double
-	    Py_XDECREF(result);                           // Trash result
-	    return dres;
-	}
+    double armlengthbaseline(int arm, double t) {
+        return armlength(arm,t);
+    };
 
-	double armlengthbaseline(int arm, double t) {
-	    return armlength(arm,t);
-	}
+    double armlengthaccurate(int arm, double t) {
+        return 0.0;
+    };
 
-	double armlengthaccurate(int arm, double t) {
-	    return 0.0;
-	}
-	
-        void putn(Vector &n, int arm, double t) {
-            baseLISA->putn(n,arm,t);
-        }
-        
-        void putp(Vector &p, int craft, double t) {
-            baseLISA->putp(p,craft,t);
-        }
-
-        void putn(double n[], int arm, double t) {
-            baseLISA->putn(n,arm,t);
-        }
-        
-        void putp(double p[], int craft, double t) {
-            baseLISA->putp(p,craft,t);
-	}
+    void putn(Vector &n, int arm, double t) {
+        baseLISA->putn(n,arm,t);
+    };
+    
+    void putp(Vector &p, int craft, double t) {
+        baseLISA->putp(p,craft,t);
+    };
 };
 
 #endif /* _LISASIM_LISA_H_ */
