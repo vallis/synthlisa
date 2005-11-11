@@ -8,6 +8,7 @@ from distutils.spawn import spawn
 import sys
 import os
 import glob
+import re
 
 synthlisa_prefix = ''
 numeric_prefix = ''
@@ -39,6 +40,23 @@ lisasim_hppfiles = glob.glob('lisasim/*.h')
 
 source_files = lisasim_cppfiles + gsl_cfiles
 header_files = lisasim_hppfiles + gsl_hfiles
+
+# compile Id catalog for lisasim
+
+idcatalog = ""
+
+signature = re.compile('.*\$(Id.*)\$.*')
+
+for file in source_files + header_files:
+    handle = open(file)
+
+    for i in range(0,5):
+        line = handle.readline()
+
+        if signature.match(line):
+            idcatalog += signature.match(line).group(1) + '\n'
+
+    handle.close()
 
 # Swig away!
 
@@ -131,8 +149,9 @@ else:
     setdir_scripts = []
 
 setup(name = 'synthLISA',
-      version = '1.2.3',
+      version = '1.2.4',
       description = 'Synthetic LISA Simulator',
+      long_description = idcatalog,
 
       author = 'Michele Vallisneri',
       author_email = 'vallis@vallis.org',
