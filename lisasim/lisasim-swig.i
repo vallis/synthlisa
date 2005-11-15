@@ -31,6 +31,17 @@ Destructor. See above.
 "
 %enddef
 
+%define exceptionhandle(thefunction,theexception,theerror)
+%exception thefunction {
+	try {
+		$action
+	} catch (theexception &e) {
+		PyErr_SetString(theerror,"");
+		return NULL;
+	}
+};
+%enddef
+
 /* -------- LISA objects -------- */
 
 
@@ -77,11 +88,6 @@ initdoc(OriginalLISA)
 class OriginalLISA : public LISA {
   public:
     OriginalLISA(double arm1 = Lstd,double arm2 = Lstd,double arm3 = Lstd);
-
-    virtual void putn(Vector &outvector, int arm, double t);
-    virtual void putp(Vector &outvector, int craft, double t);
-
-    virtual double armlength(int arm, double t);
 };
 
 
@@ -99,10 +105,6 @@ initdoc(ModifiedLISA)
 class ModifiedLISA : public OriginalLISA {
   public:
     ModifiedLISA(double arm1 = Lstd,double arm2 = Lstd,double arm3 = Lstd);
-
-    void putp(Vector &outvector, int craft, double t);
-        
-    double armlength(int arm, double t);
 };
 
 
@@ -128,17 +130,6 @@ class CircularRotating : public LISA {
   public:
     CircularRotating(double eta0=0.0, double xi0=0.0, double sw=0.0, double t0=0.0);
     CircularRotating(double myL, double eta0, double xi0, double sw, double t0);
-
-    void putp(Vector &outvector, int craft, double t);
-    
-    double armlength(int arm, double t);
-
-    // FIX: not clear to me that I want to expose (or even need) the following
-
-    double armlengthbaseline(int arm, double t);
-    double armlengthaccurate(int arm, double t);
-    
-    double genarmlength(int arms, double t);
 };
 
 
@@ -154,18 +145,6 @@ initdoc(EccentricInclined)
 class EccentricInclined : public LISA {
  public:
     EccentricInclined(double eta0=0.0, double xi0=0.0, double sw=1.0, double t0=0.0);
-    // DEV: do I want an enhanced version that can set myL, as CircularRotating?
-
-    void putp(Vector &outvector,int craft,double t);
-    
-    double armlength(int arm, double t);
-
-    // FIX: not clear to me that I want to expose (or even need) the following
-
-    double armlengthbaseline(int arm, double t);
-    double armlengthaccurate(int arm, double t);
-    
-    double genarmlength(int arm, double t);
 };
 
 
@@ -192,16 +171,6 @@ class PyLISA : public LISA {
     LISA *baseLISA;
 
     PyLISA(LISA *base,PyObject *func);
-
-    void putn(Vector &outvector, int arm, double t);
-    void putp(Vector &outvector,int craft,double t);
-
-    double armlength(int arm, double t);
-
-    // FIX: not clear to me that I want to expose (or even need) the following
-
-    double armlengthbaseline(int arm, double t);
-    double armlengthaccurate(int arm, double t);
 };
 
 
@@ -222,87 +191,147 @@ initsave(CacheLISA)
 class CacheLISA : public LISA {
   public:
     CacheLISA(LISA *base);
-    ~CacheLISA();
-
-    void putn(Vector &outvector, int arm, double t);
-    void putp(Vector &outvector, int craft, double t);
-
-    double armlength(int arm, double t);
-
-    // FIX: not clear to me that I want to expose (or even need) the following
-
-    double armlengthbaseline(int arm, double t);
-    double armlengthaccurate(int arm, double t);
 };
 
 
-/* -------- Noise objects -------- */
+/* -------- Signal/Noise objects -------- */
 
+exceptionhandle(SignalSource::__getitem__,ExceptionOutOfBounds,PyExc_IndexError)
 
-class Noise {
+%nodefault SignalSource;
+class SignalSource {
  public:
-    virtual void reset() {};
+	virtual void reset(unsigned long seed = 0);
 
-    virtual double noise(double time) = 0;
+	%extend {
+		double __getitem__(long pos) {
+			return (*self)[pos];
+		};
+	};
+};
 
-    virtual double noise(double timebase,double timecorr);
+class WhiteNoiseSource : public SignalSource {
+ public:
+	WhiteNoiseSource(long len,unsigned long seed = 0,double norm = 1.0);	
+};
+
+class SampledSignalSource : public SignalSource {
+ public:
+	SampledSignalSource(double *numarray,long length,double norm = 1.0);
+};
+
+%nodefault Filter;
+class Filter;
+
+class NoFilter : public Filter {
+ public:
+	NoFilter();
+};
+
+class IntFilter : public Filter {
+ public:
+    IntFilter(double a = 0.9999);
+};
+
+class DiffFilter : public Filter {
+ public:
+	DiffFilter();
+};
+
+class FIRFilter: public Filter {
+ public:
+ 	FIRFilter(double *doublearray,int doublenum);
+};
+
+class IIRFilter : public Filter {
+ public:
+ 	IIRFilter(double *doublearray,int doublenum,double *doublearray,int doublenum);
+};
+
+class SignalFilter : public SignalSource {
+  public:
+	SignalFilter(long length,SignalSource *src,Filter *flt,double norm = 1.0);
+};
+
+exceptionhandle(Signal::value,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(Signal::__call__,ExceptionOutOfBounds,PyExc_IndexError)
+
+%nodefault Signal;
+class Signal {
+ public:
+    virtual void reset(unsigned long seed = 0);
+
+	virtual double value(double time);
+	virtual double value(double timebase,double timecorr);
+	
+	%extend {
+		double __call__(double time) {
+			return self->value(time);
+		};
+	};
+};
+
+typedef Signal Noise;
+
+%nodefault Interpolator;
+class Interpolator;
+
+class NearestInterpolator : public Interpolator {
+ public:
+	NearestInterpolator();
+};
+
+class LinearInterpolator : public Interpolator {
+ public:
+	LinearInterpolator();
+};
+
+class LinearExtrapolator : public Interpolator {
+ public:
+	LinearExtrapolator();
+};
+
+class LagrangeInterpolator : public Interpolator {
+ public:
+    LagrangeInterpolator(int semiwin);
+};
+
+extern Interpolator *getInterpolator(int interplen);
+
+class InterpolatedSignal : public Signal {
+ public:
+	InterpolatedSignal(SignalSource *src,Interpolator *interp,
+					   double deltat,double prebuffer = 0.0,double norm = 1.0);
+	
+	void setinterp(Interpolator *inte);
 };
 
 
-// FIX: Who gets ownership of the Numpy arrays? Should I worry about
-//      this and fix it with %feature("shadow")? Maybe so.
-//      I wrote to Scott Ransom about it, but never got a response.
-
-%feature("docstring") InterpolateNoise "
-InterpolateNoise(deltat,prebuffer,psd,filter,interp=1) and
-InterpolateNoise(array,length,deltat,prebuffer,norm,filter=0,interp=1)
-return a Noise object from either filtered and interpolated
-pseudorandom whitenoise (first form) or from a filtered and
-interpolated array (second form).
-
-For the first form:
-
-- deltat is the time spacing (seconds) of the pseudorandom samples at
-  generation;
-
-- prebuffer (seconds??) sets the minimum interval of buffering of the
-  pseudorandom sequences (after the noise has been requested at time
-  t, the earliest noise value guaranteed to be available will be at
-  time (t-prebuf);
-
-- psd and filter set the one-sided PSD of the filtered pseudorandom noise
-  to psd*(f/Hz)^filter Hz^-1 (currently exp = -2, 0, 2 are implemented);
-
-- wind (> 1) sets the semiwidth of the data window used in Lagrange
-  interpolation (1 yields linear interpolation).
-
-For the second form:
-
-...
+%feature("docstring") PowerLawNoise "
+PowerLawNoise(deltat,prebuffer,psd,exponent,interplen = 1,seed = 0)
 "
 
-initdoc(InterpolateNoise)
+initdoc(PowerLawNoise)
 
-initsave(InterpolateNoise)
-
-// DEV: Should add machinery to let the typemaps infer the length of
-// the array and pass it on
-
-%apply double *NUMPY_ARRAY_DOUBLE { double *noisebuf };
-
-class InterpolateNoise : public Noise {
+class PowerLawNoise : public Signal {
  public:
-    InterpolateNoise(double sampletime,double prebuffer,double density,double exponent,int swindow = 1);
+	PowerLawNoise(double deltat,double prebuffer,double psd,double exponent,
+				  int interplen = 1,unsigned long seed = 0);
+};
 
-    InterpolateNoise(double *noisebuf,long samples,double sampletime,double prebuffer,double density, double exponent, int swindow = 1);
 
-    ~InterpolateNoise();
-    
-    void reset();
-    double noise(double time);
-    double noise(double timebase,double timecorr);
+%feature("docstring") SampledSignal "
+SampledSignal(numarray,deltat,prebuffer,norm = 1.0,filter = 0,interplen = 1)
+"
 
-    void setinterp(int window);
+initdoc(SampledSignal)
+
+initsave(SampledSignal)
+
+class SampledSignal : public Signal {
+ public:
+	SampledSignal(double* numarray,long length,double deltat,double prebuffer,
+				  double norm = 1.0,Filter *filter = 0,int interplen = 1);
 };
 
 
@@ -377,9 +406,6 @@ initdoc(SimpleBinary)
 class SimpleBinary : public Wave {
  public:
     SimpleBinary(double freq, double phi0, double inc, double amp, double elat, double elon, double pol);
-
-    double hp(double t);
-    double hc(double t);
 };
 
 
@@ -403,9 +429,6 @@ initdoc(SimpleMonochromatic)
 class SimpleMonochromatic : public Wave {
  public:
     SimpleMonochromatic(double freq, double phi, double gamma, double amp, double elat, double elon, double pol);
-
-    double hp(double t);
-    double hc(double t);
 };
 
 
@@ -433,9 +456,6 @@ initdoc(GaussianPulse)
 class GaussianPulse : public Wave {
  public:
     GaussianPulse(double time, double decay, double gamma, double amp, double b, double l, double p);
-
-    double hp(double t);
-    double hc(double t);
 };
 
 
@@ -481,7 +501,7 @@ NoiseWave can also be created from arrays of previously
 generated waveform samples, using the SampledWave syntax (see help for
 SampledWave):
 
-NoiseWave(hparray,hcarray,len,deltat,prebuffer,psd,filter,interp,
+NoiseWave(hparray,hcarray,len,deltat,prebuffer,norm,filter,interp,
           elat,elon,pol)
 
 TODO: details to be addressed: does the choice of interpolation affect
@@ -503,7 +523,7 @@ class NoiseWave : public Wave {
     NoiseWave(double sampletime, double prebuffer, double density, double exponent, int swindow, double elat, double elon, double p);
         
     // from sampled buffers (using filters and interpolation...)
-    NoiseWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double density, double exponent, int swindow, double elat, double elon, double p);
+	NoiseWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double norm, Filter *filter, int swindow, double b, double l, double p);
 
     ~NoiseWave();
 
@@ -519,8 +539,9 @@ class NoiseWave : public Wave {
 
 // ??? It would be interesting not to have to give the length of the arrays...
 
+
 %pythoncode %{
-def SampledWave(hparray,hcarray,len,deltat,prebuffer,psd,filter,interp,elat,elon,pol):
+def SampledWave(hparray,hcarray,len,deltat,prebuffer,norm,filter,interp,elat,elon,pol):
     """Returns a Wave object that represent a sampled plane GW incoming from
 sky position (elat,elon) with polarization pol, where:
 
@@ -536,11 +557,9 @@ sky position (elat,elon) with polarization pol, where:
   of SSB time: the polarization values needed to build (say) X at t =
   0 may require accessing hp and hc at the SSB t = -500 s, or earlier;
 
-- psd and filter set the normalization and filtering of the sampled
-  arrays so that, if they contained white noise of variance 1, they
-  would have one-sided PSD psd*(f/Hz)^filter Hz^-1 (currently only
-  filter = -2, 0, 2 is implemented). If only normalization is
-  required, set psd = norm and filter = 0;
+- norm and filter set the normalization and filtering of the sampled
+  arrays. The parameter filter must be a SynthLISA Filter object, or
+  0 if only normalization is required;
 
 - interp (> 1) sets the semiwidth of the data window used in Lagrange
   interpolation (1 yields linear interpolation).
@@ -550,7 +569,7 @@ SampledWave is represented internally using NoiseWave.
 TODO: check if the prebuffering formula above is exact or if there is
 another displacement by one or so."""
 
-    return NoiseWave(hparray,hcarray,len,deltat,prebuffer,psd,filter,interp,elat,elon,pol)
+    return NoiseWave(hparray,hcarray,len,deltat,prebuffer,norm,filter,interp,elat,elon,pol)
 %}
 
 
@@ -562,11 +581,10 @@ another displacement by one or so."""
 %pythoncode %{
 def InterpolateMemory(hparray,hcarray,len,deltat,prebuffer,elat,elon,pol):
     """For backward compatibility, equivalent to 
-NoiseWave(hparray,hcarray,len,deltat,prebuffer,1.0,0.0,1,elat,elon,pol)."""
+NoiseWave(hparray,hcarray,len,deltat,prebuffer,1.0,0,1,elat,elon,pol)."""
 
-    return NoiseWave(hparray,hcarray,len,deltat,prebuffer,1.0,0.0,1,elat,elon,pol)
+    return NoiseWave(hparray,hcarray,len,deltat,prebuffer,1.0,0,1,elat,elon,pol)
 %}
-
 
 %feature("docstring") PyWave "
 PyWave(hpfunc,hcfunc,elat,elon,pol)
@@ -617,6 +635,15 @@ initdoc(WaveArray)
 
 initsave(WaveArray)
 
+%exception WaveArray::WaveArray {
+	try {
+		$action
+	} catch (ExceptionOutOfBounds &e) {
+		PyErr_SetString(PyExc_ValueError,"Wrong arguments.");
+		return NULL;
+	}
+};
+
 class WaveArray : public WaveObject {
  public:
     WaveArray(Wave **WaveSeq, int WaveNum);
@@ -629,12 +656,29 @@ class WaveArray : public WaveObject {
 
 /* -------- TDI objects -------- */
 
+exceptionhandle(TDI::X,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::Y,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::Z,ExceptionOutOfBounds,PyExc_IndexError)
+
+exceptionhandle(TDI::alpha,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::beta,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::gamma,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::zeta,ExceptionOutOfBounds,PyExc_IndexError)
+
+exceptionhandle(TDI::P,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::E,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::U,ExceptionOutOfBounds,PyExc_IndexError)
+
+exceptionhandle(TDI::y,ExceptionOutOfBounds,PyExc_IndexError)
+
 class TDI {
 public:
     TDI() {};
     virtual ~TDI() {};
 
     virtual void reset() {};
+
+    // ??? should I keep all of these?
 
     virtual double X(double t);
     virtual double Y(double t);
@@ -705,7 +749,7 @@ class TDIquantize : public TDI {
    successive modifications to the list will not be mirrored in the
    contents of the TDInoise, and could result in unwanted behavior.
    To avoid the possibility of this, TDInoise should be created with a
-   tuple."
+   tuple. */
 
 initsave(TDInoise)
 
@@ -764,26 +808,6 @@ public:
     double y(int send, int link, int recv, int ret1, int ret2, int ret3, double t);
 };
 
-/* -------- Helper functions -------- */
+// ??? Helper functions used to be here...
 
-/* Noise */
 
-%newobject stdproofnoise;
-extern Noise *stdproofnoise(LISA *lisa,double stproof,double sdproof);
-
-%newobject stdopticalnoise;
-extern Noise *stdopticalnoise(LISA *lisa,double stshot,double sdshot);
-
-%newobject stdlasernoise;
-extern Noise *stdlasernoise(LISA *lisa,double stlaser,double sdlaser);
-
-/* TDInoise */
-
-%newobject stdnoise;
-extern TDInoise *stdnoise(LISA *mylisa);
-
-/* debugging */
-
-%apply Noise *PYTHON_SEQUENCE_NOISE[ANY] {Noise *proofnoise[6], Noise *shotnoise[6], Noise *lasernoise[6]}
-
-extern double retardation(LISA *mylisa,int ret1,int ret2,int ret3,int ret4,int ret5,int ret6,int ret7,int ret8,double t);
