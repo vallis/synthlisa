@@ -167,6 +167,19 @@ def getobs(snum,stime,observables,zerotime=0.0):
                 array[i,j] = observables[j](zerotime+i*stime)
     return array
 
+def testobs(snum,stime,observables,zerotime=0.0):
+    if len(Numeric.shape(observables)) == 0:
+        array = Numeric.zeros(snum,typecode='d')
+        for i in Numeric.arange(0,snum):
+            array[i] = observables(zerotime+i*stime)
+    else:
+        obslen = Numeric.shape(observables)[0]
+        array = Numeric.zeros((snum,obslen),typecode='d')
+        for i in Numeric.arange(0,snum):
+            for j in range(0,obslen):
+                array[i,j] = observables[j](zerotime+i*stime)
+    return None
+
 # used by getobsc (hoping time.time() will work on all platforms...)
 
 import sys
@@ -200,20 +213,33 @@ def getobsc(snum,stime,observables,zerotime=0.0):
     print "Processing...",
     sys.stdout.flush()
 
-    if len(Numeric.shape(observables)) == 0:
-        array = Numeric.zeros(snum,typecode='d')
-        for i in Numeric.arange(0,snum):
-            array[i] = observables(zerotime+i*stime)
-            if i % 1024 == 0:
-                lasttime = dotime(i,snum,inittime,lasttime)
-    else:
-        obslen = Numeric.shape(observables)[0]
-        array = Numeric.zeros((snum,obslen),typecode='d')
-        for i in Numeric.arange(0,snum):
-            for j in range(0,obslen):
-                array[i,j] = observables[j](zerotime+i*stime)
-            if i % 1024 == 0:
-                lasttime = dotime(i,snum,inittime,lasttime)
+    try:
+        if len(Numeric.shape(observables)) == 0:
+            array = Numeric.zeros(snum,typecode='d')
+            for i in Numeric.arange(0,snum):
+                array[i] = observables(zerotime+i*stime)
+                if i % 1024 == 0:
+                    lasttime = dotime(i,snum,inittime,lasttime)
+        else:
+            obslen = Numeric.shape(observables)[0]
+            array = Numeric.zeros((snum,obslen),typecode='d')
+            for i in Numeric.arange(0,snum):
+                for j in range(0,obslen):
+                    array[i,j] = observables[j](zerotime+i*stime)
+                if i % 1024 == 0:
+                    lasttime = dotime(i,snum,inittime,lasttime)
+    except IndexError:
+        print "lisautils::getobsc: I have trouble accessing time ", zerotime+i*stime,
+        print "; you may try to reset your objects and repeat..."
+
+        raise
+
+    # there was good stuff here, but it's better to let the user deal with this
+    # in particular, if observables is a noise-like variable, then it should
+    # have the 'reset' method ['reset' in dir(observables)]; if observables is
+    # a method of a TDI class, which should have the 'reset' method, the test
+    # is ['reset' in dir(observables.im_self)], where "im_self" returns the
+    # class instance for a given instance method
 
     currenttime = int(time()) - inittime
 
@@ -222,7 +248,7 @@ def getobsc(snum,stime,observables,zerotime=0.0):
         print "\r...completed in %d s [%d (multi)samples/s].                           " % (currenttime,vel)  
     else:
         print "\r...completed.                                                         "
-    
+
     return array
 
 # this version is less efficient, probably because of the conversion
@@ -245,11 +271,11 @@ def writeobs(filename,snum,stime,observables):
 def writearray(filename,a):
     file = open(filename, 'w')
     if len(a.shape) == 1:
-	a = a[:, Numeric.NewAxis]
+        a = a[:, Numeric.NewAxis]
     for line in a:
-	for element in line:
-	    file.write('%le ' % element)
-	file.write('\n')
+        for element in line:
+            file.write('%le ' % element)
+    file.write('\n')
     file.close()
 
 # still not satisfactory; should get the length from the file,
@@ -292,3 +318,4 @@ def hn2ec(nside,ipix):
 def hr2ec(nside,ipix):
     (th,ph) = healpix.healpix.pix2ang_ring(nside,ipix)
     return (math.pi-th,ph)
+
