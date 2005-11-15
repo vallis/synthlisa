@@ -5,8 +5,10 @@
  */
 
 #include "lisasim-tdinoise.h"
+#include "lisasim-except.h"
 
 #include <time.h>
+#include <iostream>
 
 // this version takes the parameters of the basic noises and lets us allocate objects as needed
 
@@ -107,6 +109,9 @@ void TDInoise::setphlisa(LISA *mylisa) {
     phlisa = mylisa;
 }
 
+
+// --- zLockNoise ---
+
 class zLockNoise : public Noise {
  private:
     int slave;
@@ -118,31 +123,33 @@ class zLockNoise : public Noise {
 	: slave(recv), masterpm(mpm), slavepm(spm), masterc(mc), slavec(sc) {};
 
     virtual ~zLockNoise() {
-		delete slavec;
+		delete slavec; // ??? Is this deallocation going to cause problems?
     };
 
-    double operator[](double t) {
-		if (slave > 0) {
-	    	// in this case master is starred, slave is not
-	    	return (*masterc)[t] - (*masterpm)[t] - (*slavepm)[t];
-		} else {
-	    	// in this case master is not starred, slave is
-	    	return (*masterc)[t] + (*masterpm)[t] + (*slavepm)[t];
-		}
-    };
-
-    double noise(double time) {
-		return (*this)[time];
-    };
-
-    double noise(double tb,double tc) {
-		if (slave > 0) {
-	    	return masterc->noise(tb,tc) - masterpm->noise(tb,tc) - slavepm->noise(tb,tc);
-		} else {
-	    	return masterc->noise(tb,tc) + masterpm->noise(tb,tc) + slavepm->noise(tb,tc);
-		}
-    };
+    double value(double time);
+    double value(double tb,double tc);
 };
+
+inline double zLockNoise::value(double t) {
+	if (slave > 0) {
+		// in this case master is starred, slave is not
+		return masterc->value(t) - masterpm->value(t) - slavepm->value(t);
+	} else {
+		// in this case master is not starred, slave is
+		return masterc->value(t) + masterpm->value(t) + slavepm->value(t);
+	}
+}
+
+inline double zLockNoise::value(double tb,double tc) {
+	if (slave > 0) {
+		return masterc->value(tb,tc) - masterpm->value(tb,tc) - slavepm->value(tb,tc);
+	} else {
+		return masterc->value(tb,tc) + masterpm->value(tb,tc) + slavepm->value(tb,tc);
+	}
+}
+
+
+// --- yLockNoise ---
 
 class yLockNoise : public Noise {
  private:
@@ -157,33 +164,34 @@ class yLockNoise : public Noise {
 	: slave(recv), arm(link), lisa(l), slavepm(spm), shot(sh), masterc(mc), slavec(sc) {};
 
     virtual ~yLockNoise() {
-		delete slavec;
+		delete slavec; // ??? Is this deallocation going to cause problems?
     };
 
-    double operator[](double t) {
-		if (slave > 0) {
-	    	// since the slave is not starred, the link is positive (cyclic)
-	    	return (*masterc)[t - lisa->armlength(arm,t)] - 2.0 * (*slavepm)[t] + (*shot)[t];
-		} else {
-	    	// the slave is starred, the link is anticyclic
-	    	return (*masterc)[t - lisa->armlength(arm,t)] + 2.0 * (*slavepm)[t] + (*shot)[t];
-		}
-    };
+    double value(double t);
+    double value(double tb,double tc);
 
-    double noise(double time) {
-		return (*this)[time];
-    };
-
-    double noise(double tb,double tc) {
-		if (slave > 0) {
-	    	return masterc->noise(tb,tc - lisa->armlength(arm,tb+tc))
-					- 2.0 * slavepm->noise(tb,tc) + shot->noise(tb,tc);
-		} else {
-	    	return masterc->noise(tb,tc - lisa->armlength(arm,tb+tc))
-					+ 2.0 * slavepm->noise(tb,tc) + shot->noise(tb,tc);
-		}
-    };
 };
+
+inline double yLockNoise::value(double t) {
+	if (slave > 0) {
+		// since the slave is not starred, the link is positive (cyclic)
+		return masterc->value(t - lisa->armlength(arm,t)) - 2.0 * slavepm->value(t) + shot->value(t);
+	} else {
+		// the slave is starred, the link is anticyclic
+		return masterc->value(t - lisa->armlength(arm,t)) + 2.0 * slavepm->value(t) + shot->value(t);
+	}
+}
+
+inline double yLockNoise::value(double tb,double tc) {
+	if (slave > 0) {
+		return masterc->value(tb,tc - lisa->armlength(arm,tb+tc))
+				- 2.0 * slavepm->value(tb,tc) + shot->value(tb,tc);
+	} else {
+		return masterc->noise(tb,tc - lisa->armlength(arm,tb+tc))
+				+ 2.0 * slavepm->value(tb,tc) + shot->value(tb,tc);
+	}
+}    
+
 
 // locking procedure: use negative numbers for starred lasers
 
@@ -298,26 +306,36 @@ double TDInoise::y(int send, int slink, int recv, int ret1, int ret2, int ret3, 
 
     double retardedtime = lisa->retardedtime();
 
-    if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2)) {
-        // cyclic combination
-        // if introducing error in the determination of the armlengths, it should not enter
-        // the following (physical) retardation of the laser noise, so we use the phlisa object
-
-		lisa->retard(phlisa,link);
-		double retardlaser = lisa->retardedtime();
-
-        return( (*cs[send])[retardlaser] - 2.0 * (*pm[recv])[retardedtime]  - (*c[recv])[retardedtime]  + 
-                (*shot[send][recv])[retardedtime] );
-    } else {
-        // anticyclic combination
-        // ditto here
-
-		lisa->retard(phlisa,-link);
-		double retardlaser = lisa->retardedtime();
-
-        return( (*c[send])[retardlaser]  + 2.0 * (*pms[recv])[retardedtime] - (*cs[recv])[retardedtime] +
-                (*shot[send][recv])[retardedtime] );
-    }
+    try {
+        if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2)) {
+            // cyclic combination
+            // if introducing error in the determination of the armlengths, it should not enter
+            // the following (physical) retardation of the laser noise, so we use the phlisa object
+    
+            lisa->retard(phlisa,link);
+            double retardlaser = lisa->retardedtime();
+        
+            return( (*cs[send])[retardlaser] - 2.0 * (*pm[recv])[retardedtime]  - (*c[recv])[retardedtime]  + 
+                    (*shot[send][recv])[retardedtime] );
+        } else {
+            // anticyclic combination
+            // ditto here
+    
+            lisa->retard(phlisa,-link);
+            double retardlaser = lisa->retardedtime();
+    
+            return( (*c[send])[retardlaser]  + 2.0 * (*pms[recv])[retardedtime] - (*cs[recv])[retardedtime] +
+                    (*shot[send][recv])[retardedtime] );
+        }
+    } catch (ExceptionOutOfBounds &e) {
+		std::cerr << "TDInoise::y(" << send << "," << slink << "," << recv
+		          << "," << ret1 << "," << ret2 << "," << ret3 << "," << ret4
+		          << "," << ret5 << "," << ret6 << "," << ret7
+		          << ") : could not get noise (OutOfBounds) at time "
+		          << t << " [" << __FILE__ << ":" << __LINE__ << "]." << std::endl;
+		
+		throw e;
+	}
 }
 
 double TDInoise::z(int send, int slink, int recv, int ret1, int ret2, int ret3, int ret4, double t) {
@@ -337,14 +355,24 @@ double TDInoise::z(int send, int slink, int recv, int ret1, int ret2, int ret3, 
 
     double retardedtime = lisa->retardedtime();
 
-    if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2)) {
-        // cyclic combination
-
-        return( (*cs[recv])[retardedtime] - 2.0 * (*pms[recv])[retardedtime] - (*c[recv])[retardedtime] );
-    } else {
-        // anticyclic combination
-
-        return( (*c[recv])[retardedtime]  + 2.0 * (*pm[recv])[retardedtime]  - (*cs[recv])[retardedtime] );
+    try {
+        if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2)) {
+            // cyclic combination
+    
+            return( (*cs[recv])[retardedtime] - 2.0 * (*pms[recv])[retardedtime] - (*c[recv])[retardedtime] );
+        } else {
+            // anticyclic combination
+    
+            return( (*c[recv])[retardedtime]  + 2.0 * (*pm[recv])[retardedtime]  - (*cs[recv])[retardedtime] );
+        }
+    } catch (ExceptionOutOfBounds &e) {
+		std::cerr << "TDInoise::z(" << send << "," << slink << "," << recv
+		          << "," << ret1 << "," << ret2 << "," << ret3 << "," << ret4
+		          << "," << ret5 << "," << ret6 << "," << ret7 << "," << ret8
+		          << ") : could not get noise (OutOfBounds) at time "
+		          << t << " [" << __FILE__ << ":" << __LINE__ << "]." << std::endl;
+		
+		throw e;
     }
 }
 
@@ -364,42 +392,52 @@ double lighttime(LISA *lisa) {
     return(1.10 * maxarm);
 }
 
-Noise *stdproofnoise(LISA *lisa,double stproof, double sdproof) {
+
+// --- Standard Noise factories ---
+
+Noise *stdproofnoise(LISA *lisa,double stproof,double sdproof,int interp) {
     // create InterpolateNoise objects for proof-mass noises
-    // we need quadruple retardations for the V's appearing in the z's (octuple for 2nd-gen TDI)
+    // we need quadruple retardations for the V's appearing in the z's
+    // (octuple for 2nd-gen TDI)
 
     // add two sampling times to allow linear interpolation for large
     // sampling times
+    
     double pbtproof = 8.0 * lighttime(lisa) + 2.0*stproof;
 
-    return new InterpolateNoise(stproof, pbtproof, sdproof, -2.0);
+	return new PowerLawNoise(stproof,pbtproof,sdproof,-2.0,interp);
 }
 
-Noise *stdopticalnoise(LISA *lisa,double stshot, double sdshot) {
+
+Noise *stdopticalnoise(LISA *lisa,double stshot,double sdshot,int interp) {
     // create InterpolateNoise objects for optical-path noises
-    // we need only triple retardations for the shot's appearing in the y's (septuple for 2nd-gen TDI)
+    // we need only triple retardations for the shot's appearing in the y's
+    // (septuple for 2nd-gen TDI)
 
     // add two sampling times to allow linear interpolation for large
     // sampling times
+    
     double pbtshot = 7.0 * lighttime(lisa) + 2.0*stshot;
-
-    return new InterpolateNoise(stshot, pbtshot, sdshot, 2.0);
+    
+    return new PowerLawNoise(stshot,pbtshot,sdshot,2.0,interp);
 }
 
-Noise *stdlasernoise(LISA *lisa,double stlaser, double sdlaser) {
-    // create laser noise objects
-    // quadruple retardations are needed for the C's (octuple for 2nd-gen TDI)
 
-    // add two sampling times to allow linear interpolation for large
-    // sampling times
+Noise *stdlasernoise(LISA *lisa,double stlaser,double sdlaser,int interp) {
+    // create laser noise objects
+
     double pbtlaser = 8.0 * lighttime(lisa) + 2.0*stlaser;
 
-    return new InterpolateNoise(stlaser, pbtlaser, sdlaser, 0.0);
+    return new PowerLawNoise(stlaser,pbtlaser,sdlaser,0.0,interp);
 }
+
+
+// --- Standard TDInoise factory ---
 
 TDInoise *stdnoise(LISA *mylisa) {
     return new TDInoise(mylisa,1.0,2.5e-48,1.0,1.8e-37,1.0,1.1e-26);
 }
+
 
 double TDIaccurate::y(int send, int slink, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t) {
     int link = abs(slink);

@@ -1,9 +1,16 @@
+/* $Id$
+ * $Date$
+ * $Author$
+ * $Revision$
+ */
+
 #ifndef _LISASIM_TDINOISE_H_
 #define _LISASIM_TDINOISE_H_
 
 #include "lisasim-tdi.h"
 #include "lisasim-lisa.h"
-#include "lisasim-noise.h"
+#include "lisasim-signal.h"
+
 
 class TDInoise : public TDI {
  protected:
@@ -60,6 +67,7 @@ class TDInoise : public TDI {
     virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
 };
 
+
 class TDIaccurate : public TDInoise {
  public:
     TDIaccurate(LISA *mylisa, Noise *proofnoise[6],Noise *shotnoise[6],Noise *lasernoise[6]) : TDInoise(mylisa,proofnoise,shotnoise,lasernoise) {};
@@ -70,19 +78,23 @@ class TDIaccurate : public TDInoise {
     double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
 };
 
+
 // return approx lighttime, for estimation of noise buffer size
 
 extern double lighttime(LISA *lisa);
 
-// return standard elementary noises
 
-extern Noise *stdproofnoise(LISA *lisa,double stproof, double sdproof);
-extern Noise *stdopticalnoise(LISA *lisa,double stshot, double sdshot);
+// standard Noise factories (should be static class members somewhere ???)
 
-extern Noise *stdlasernoise(LISA *lisa,double stlaser, double sdlaser);
-extern Noise *newstdlasernoise(LISA *lisa,double stlaser, double sdlaser, int window);
+extern Noise *stdproofnoise(LISA *lisa,double stproof,double sdproof,int interp = 1);
+extern Noise *stdopticalnoise(LISA *lisa,double stshot,double sdshot,int interp = 1);
+extern Noise *stdlasernoise(LISA *lisa,double stlaser,double sdlaser,int interp = 1);
+
+
+// ??? Why is the "extern" needed?
 
 extern TDInoise *stdnoise(LISA *mylisa);
+
 
 extern void retardone(LISA *lisa,int ret,double t,double *retardedtime,double *totalretardbaseline,double *totalretardaccurate);
 
