@@ -1,3 +1,9 @@
+/* $Id$
+ * $Date$
+ * $Author$
+ * $Revision$
+ */
+
 %include typemaps.i
 
 // The following from Scott Ransom's numpy.i (ransom@cfa.harvard.edu)
@@ -91,6 +97,79 @@
   $1 = &temp[0];
 } 
 
+// Map a Numeric array into an array of doubles, pass also the number of elements
+
+%typemap(python, in) (double* numarray, long length) {
+	PyArrayObject *arr;
+	
+	/* Check that obj is really a 1D array of bytes */
+	
+	if (!PyArray_Check($input)) {
+		PyErr_SetString(PyExc_TypeError,"First argument is not an array");
+		return NULL;
+	}
+	
+	/* check type (could also use arr->descr->type_num) */
+	
+	if (PyArray_ObjectType($input,0) != PyArray_DOUBLE) {
+		PyErr_SetString(PyExc_TypeError, \
+			"Incorrect array type: we need an array of DOUBLE");
+
+		return NULL;
+	}
+	
+	arr = PyArray_CONTIGUOUS((PyArrayObject *)$input);
+
+	if (arr->nd != 1) { /* we are really strict ! */
+		PyErr_SetString(PyExc_TypeError, \
+			"Incorrect number of dims: we want a 1D array");
+
+		return NULL;
+	}
+
+	$1 = (double *)arr->data;
+	$2 = (long)arr->dimensions[0];	
+	
+	// this seems a bit strange; why DECREF it after it's been INCREFed
+	// in the PyArray_CONTIGUOUS above? And won't this destroy an
+	// eventual contiguous local copy?
+	
+	Py_DECREF(arr);  /* Release our local copy of the PyArray */
+}
+
+// Map a Python sequence into an array of doubles;
+// pass also the number of elements
+
+%typemap(python, in) (double *doublearray, int doublenum) {
+	int i;
+	
+	// check that we are really getting a sequence (list or tuple)
+	
+	if (!PySequence_Check($input)) {
+		PyErr_SetString(PyExc_TypeError,"Expecting a sequence");
+		return NULL;
+	}
+	
+	int dim = PySequence_Size($input);
+	double *temp = new double[dim];
+	
+	// convert each element
+	
+	for (i = 0; i < dim; i++) {
+		PyObject *o = PySequence_GetItem($input,i);
+		temp[i] = PyFloat_AsDouble(o);
+	}
+	
+	// return pointer to the array
+	
+	$1 = temp;
+	$2 = dim;
+}
+
+%typemap(python, freearg) (double *doublearray, int doublenum)  {
+   delete [] $1;
+}
+
 // The following modified from the SWIG documentation
 // Map a Python sequence of noise objects into an array of pointers
 
@@ -124,6 +203,9 @@
   $1 = &temp[0];
 }
 
+// convert a list of Wave objects; could probably use a temp variable
+// (as above) instead of the freearg typemap
+
 %typemap(python, in) (Wave **WaveSeq, int WaveNum) {
   int i;
 
@@ -151,8 +233,6 @@
   $2 = dim;
 }
 
-// was for Wave **PYTHON_SEQUENCE_WAVE
-
 %typemap(python, freearg) (Wave **WaveSeq, int WaveNum)  {
    delete [] $1;
 }
@@ -177,6 +257,16 @@
     else
 	$1 = 1;
 }
+
+%typecheck(SWIG_TYPECHECK_POINTER) double *numarray {
+    /* Check that obj is really an array (of something) */
+  
+    if (!PyArray_Check($input))
+	$1 = 0;
+    else
+	$1 = 1;
+}
+
 
 %typecheck(SWIG_TYPECHECK_POINTER) double PYTHON_SEQUENCE_DOUBLE[ANY] {
     if (!PySequence_Check($input)) {
@@ -207,7 +297,7 @@
     }
 }
 
-// return a C++ Vector as a list
+// return a C++ Vector as a tuple
 
 // This tells SWIG to treat a Vector & argument with name outvector as
 // an output value.  We'll append the value to the current result which 
@@ -257,6 +347,8 @@
 
     $result = t;
 }
+
+// return a C++ Tensor as a tuple of tuples
 
 %typemap(in,numinputs=0) Tensor &outtensor {
     Tensor *a = new Tensor();
