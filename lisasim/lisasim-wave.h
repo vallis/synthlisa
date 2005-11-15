@@ -1,8 +1,14 @@
+/* $Id$
+ * $Date$
+ * $Author$
+ * $Revision$
+ */
+
 #ifndef _LISASIM_WAVE_H_
 #define _LISASIM_WAVE_H_
 
 #include "lisasim-tens.h"
-#include "lisasim-noise.h"
+#include "lisasim-signal.h"
 
 class Wave;
 
@@ -65,40 +71,40 @@ class Wave : public WaveObject {
 // --- SimpleBinary ---
 
 class SimpleBinary : public Wave {
-    private:
-        // frequency, initial phase
+ private:
+	// frequency, initial phase
 
-        double f, phi0;
+	double f, phi0;
 
-        // inclination, polarization amplitudes
+	// inclination, polarization amplitudes
 
-        double i, a, ap, ac;
+	double i, a, ap, ac;
 
-    public:
-        SimpleBinary(double freq, double initphi, double inc, double amp, double b, double l, double p);
+ public:
+	SimpleBinary(double freq, double initphi, double inc, double amp, double b, double l, double p);
 
-        double hp(double t);
-        double hc(double t);
+	double hp(double t);
+	double hc(double t);
 };
 
 
 // --- SimpleMonochromatic ---
 
 class SimpleMonochromatic : public Wave {
-    private:
-        // frequency
+ private:
+	// frequency
 
-        double f;
+	double f;
 
-        // polarization angles using John's convention
+	// polarization angles using John's convention
 
-        double gm, ph, ap, ac;
+	double gm, ph, ap, ac;
 
-    public:
-        SimpleMonochromatic(double freq, double phi, double gamma, double amp, double b, double l, double p);
+ public:
+	SimpleMonochromatic(double freq, double phi, double gamma, double amp, double b, double l, double p);
 
-        double hp(double t);
-        double hc(double t);
+	double hp(double t);
+	double hc(double t);
 };
 
 
@@ -125,17 +131,17 @@ class GaussianPulse : public Wave {
 // --- NoiseWave ---
 
 class NoiseWave : public Wave {
-    private:
-        Noise *np, *nc;
+ private:
+    Noise *np, *nc;
 
 	// set this to one if we are allocating noise objects
 
 	int allocated;
 
-    public:
+ public:
 	NoiseWave(Noise *noisehp, Noise *noisehc, double b, double l, double p);
 	NoiseWave(double sampletime, double prebuffer, double density, double exponent, int swindow, double b, double l, double p);
-	NoiseWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double density, double exponent, int swindow, double b, double l, double p);
+	NoiseWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double norm, Filter *filter, int swindow, double b, double l, double p);
 
 	~NoiseWave();
 
@@ -151,7 +157,7 @@ class NoiseWave : public Wave {
    written in Python, which deals with garbage collection issues,
    etc. Perhaps there's a better way to do this in C++... */
 
-NoiseWave *SampledWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double density, double exponent, int swindow, double d, double a, double p);
+NoiseWave *SampledWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double density, Filter *filter, int swindow, double d, double a, double p);
 
 // --- PyWave ---
 
@@ -163,33 +169,33 @@ class PyWave : public Wave {
 
  public:
     PyWave(PyObject *hpf, PyObject *hcf, double b, double l, double p)
-	: Wave(b,l,p), hpfunc(hpf), hcfunc(hcf) {};
+		: Wave(b,l,p), hpfunc(hpf), hcfunc(hcf) {};
     virtual ~PyWave() {};
 
     double hp(double t) {
-	PyObject *arglist, *result;
-
-	double dres = 0.0;
-   
-	arglist = Py_BuildValue("(d)",t);             // Build argument list
-	result = PyEval_CallObject(hpfunc,arglist);  // Call Python
-	Py_DECREF(arglist);                           // Trash arglist
-	if (result) dres = PyFloat_AsDouble(result);  // If no errors, return double
-	Py_XDECREF(result);                           // Trash result
-	return dres;
+		PyObject *arglist, *result;
+	
+		double dres = 0.0;
+	   
+		arglist = Py_BuildValue("(d)",t);             // Build argument list
+		result = PyEval_CallObject(hpfunc,arglist);  // Call Python
+		Py_DECREF(arglist);                           // Trash arglist
+		if (result) dres = PyFloat_AsDouble(result);  // If no errors, return double
+		Py_XDECREF(result);                           // Trash result
+		return dres;
     }
 
     double hc(double t) {
-	PyObject *arglist, *result;
-
-	double dres = 0.0;
-   
-	arglist = Py_BuildValue("(d)",t);             // Build argument list
-	result = PyEval_CallObject(hcfunc,arglist);  // Call Python
-	Py_DECREF(arglist);                           // Trash arglist
-	if (result) dres = PyFloat_AsDouble(result);  // If no errors, return double
-	Py_XDECREF(result);                           // Trash result
-	return dres;
+		PyObject *arglist, *result;
+	
+		double dres = 0.0;
+	   
+		arglist = Py_BuildValue("(d)",t);             // Build argument list
+		result = PyEval_CallObject(hcfunc,arglist);  // Call Python
+		Py_DECREF(arglist);                           // Trash arglist
+		if (result) dres = PyFloat_AsDouble(result);  // If no errors, return double
+		Py_XDECREF(result);                           // Trash result
+		return dres;
     }
 };
 

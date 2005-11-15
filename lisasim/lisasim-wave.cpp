@@ -1,21 +1,29 @@
+/* $Id$
+ * $Date$
+ * $Author$
+ * $Revision$
+ */
+
 #include "lisasim-tens.h"
 #include "lisasim-wave.h"
+#include "lisasim-except.h"
 
 #include <iostream>
-using namespace std;
-
 #include <math.h>
 
 WaveArray::WaveArray(Wave **warray, int wnum) : wavenum(wnum) {
     if(wnum < 1) {
-	cout << "WaveArray needs at least one wave object..." << endl;
-	abort();
+		std::cerr << "WaveArray::WaveArray(): need at least one wave object "
+		          << " [" << __FILE__ << ":" << __LINE__ << "]." << std::endl;
+
+		ExceptionWrongArguments e;
+		throw e;
     }
 
     wavearray = new Wave*[wnum]; // syntax?
 
     for(int i=0;i<wnum;i++)
-	wavearray[i] = warray[i];
+		wavearray[i] = warray[i];
 }
 
 WaveArray::~WaveArray() {
@@ -168,6 +176,7 @@ double GaussianPulse::hc(double t) {
     return ac * exp(-ex*ex);
 }
 
+
 // --- NoiseWave ---
 
 NoiseWave::NoiseWave(Noise *noisehp, Noise *noisehc, double b, double l, double p) : Wave(b,l,p) {
@@ -178,15 +187,15 @@ NoiseWave::NoiseWave(Noise *noisehp, Noise *noisehc, double b, double l, double 
 }
 
 NoiseWave::NoiseWave(double sampletime, double prebuffer, double density, double exponent, int swindow, double b, double l, double p) : Wave(b,l,p) {
-    np = new InterpolateNoise(sampletime,prebuffer,density,exponent,swindow);
-    nc = new InterpolateNoise(sampletime,prebuffer,density,exponent,swindow);
+    np = new PowerLawNoise(sampletime,prebuffer,density,exponent,swindow);
+    nc = new PowerLawNoise(sampletime,prebuffer,density,exponent,swindow);
 
     allocated = 1;
 }
 
-NoiseWave::NoiseWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double density, double exponent, int swindow, double b, double l, double p) : Wave(b,l,p) {
-    np = new InterpolateNoise(hpa,samples,sampletime,prebuffer,density,exponent,swindow);
-    nc = new InterpolateNoise(hca,samples,sampletime,prebuffer,density,exponent,swindow);
+NoiseWave::NoiseWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double norm, Filter *filter, int swindow, double b, double l, double p) : Wave(b,l,p) {
+    np = new SampledSignal(hpa,samples,sampletime,prebuffer,norm,filter,swindow);
+    nc = new SampledSignal(hca,samples,sampletime,prebuffer,norm,filter,swindow);
 
     allocated = 1;
 }
@@ -198,6 +207,9 @@ NoiseWave::~NoiseWave() {
     }
 }
 
-NoiseWave *SampledWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double density, double exponent, int swindow, double d, double a, double p) {
-    return new NoiseWave(hpa,hca,samples,sampletime,prebuffer,density,exponent,swindow,d,a,p);
+
+// --- SampledWave factory ---
+
+NoiseWave *SampledWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double density, Filter *filter, int swindow, double d, double a, double p) {
+    return new NoiseWave(hpa,hca,samples,sampletime,prebuffer,density,filter,swindow,d,a,p);
 }
