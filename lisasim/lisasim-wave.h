@@ -128,6 +128,27 @@ class GaussianPulse : public Wave {
 };
 
 
+// --- SineGaussian ---
+
+class SineGaussian : public Wave {
+ private:
+    double t0, dc;  // offset time, decay
+	double f, phi0; // base frequency and phase
+    double gm, a;   // polarization and amplitude
+    double ap, ac;  // polarization amplitudes
+
+    static const double sigma_cutoff; // defined in lisasim-wave.cpp
+
+ public:
+    SineGaussian(double time, double decay, double freq, double phase0, double gamma, double amp, double b, double l, double p);
+
+    int inscope(double t);
+
+    double hp(double t);
+    double hc(double t);
+};
+
+
 // --- NoiseWave ---
 
 class NoiseWave : public Wave {

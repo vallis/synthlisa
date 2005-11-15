@@ -459,6 +459,36 @@ class GaussianPulse : public Wave {
 };
 
 
+%feature("docstring") SineGaussian "
+SineGaussian(t0,efold,f,phi0,gamma,amp,elat,elon,pol) returns a Wave object
+that implements a Sine-Gaussian wavepulse with the following parameters:
+
+- the pulse is centered at SSB baricentric time t0 [seconds];
+
+- the pulse has e-folding time efold [seconds];
+
+- the pulse is modulated by a sinusoid of frequency f, centered at time
+  t0, with relative phase phi0 between the two polarizations;
+
+- the pulse has amplitude amp, distributed as {ap,ac} = 
+  amp*{sin(gamma),cos(gamma)} between the two polarizations
+  (the same convention as SimpleMonochromatic)
+
+- the pulse is incoming from sky position (elat,elon), with
+  polarization pol.
+
+The amplitude of the pulse is cut to zero at 10 efolding times from
+the central time (this is set by SineGaussian::sigma_cutoff in
+lisasim-wave.cpp)."
+
+initdoc(SineGaussian)
+
+class SineGaussian : public Wave {
+ public:
+    SineGaussian(double time, double decay, double freq, double phase0, double gamma, double amp, double b, double l, double p);
+};
+
+
 %feature("docstring") NoiseWave "
 NoiseWave(hpnoise,hcnoise,elat,elon,pol),
 NoiseWave(deltat,prebuffer,psd,filter,interp,elat,elon,pol)

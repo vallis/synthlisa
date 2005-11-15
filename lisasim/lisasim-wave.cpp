@@ -143,6 +143,48 @@ double SimpleMonochromatic::hc(double t) {
     return ac * sin(twopi*f*t);
 }
 
+
+// --- SineGaussian ---
+
+SineGaussian::SineGaussian(double time, double decay, double freq, double phase0, double gamma, double amp, double b, double l, double p) : Wave(b,l,p) {
+	t0 = time;
+	dc = decay;
+
+	f = freq;
+	phi0 = phase0;
+
+	a = amp;
+	gm = gamma;
+
+	ap = a * sin(gm);
+	ac = a * cos(gm);
+}
+
+const double SineGaussian::sigma_cutoff = 10.0;
+
+int SineGaussian::inscope(double t) {
+    double ex = (t - t0) / dc;
+
+    return fabs(ex) < sigma_cutoff;
+}
+
+double SineGaussian::hp(double t) {
+    const double twopi = 2.0*M_PI;
+
+    double ex = (t - t0) / dc;
+
+    return ap * exp(-ex*ex) * sin(twopi*f*(t-t0) + phi0);
+}
+
+double SineGaussian::hc(double t) {
+    const double twopi = 2.0*M_PI;
+    
+    double ex = (t - t0) / dc;
+
+    return ac * exp(-ex*ex) * sin(twopi*f*(t-t0));
+}
+
+
 // --- GaussianPulse ---
 
 GaussianPulse::GaussianPulse(double time, double decay, double gamma, double amp, double b, double l, double p) : Wave(b,l,p) {
