@@ -1,3 +1,35 @@
+2005/11/10 Release 1.2.5, beta version
+
+Removed some old putp and putn -> double[] calls in lisasim-lisa and
+lisasim-retard.
+
+Added some exception trapping:
+- invalid spacecraft index in EccentricInclined::settime
+- invalid hash in CacheLISA::retard
+- time OutOfBounds in TDInoise::y and TDInoise::z
+
+Fixed indentation:
+- lisasim-lisa.h
+- lisasim-retard.h
+
+New Signal/Noise architecture in lisasim-signal.cpp and lisasim-signal.h
+
+Changed main Noise (now Signal) method to value():
+- locking noise objects in lisasim-tdinoise.cpp
+
+Changed standard Noise objects in lisasim-TDInoise.* to PowerLawNoise
+(lisasim-signal); NoiseWave and SampledWave objects in lisasim-wave.*
+
+Added SWIG typecast for Numeric array with size
+
+Added some error trapping to getobsc in lisautils
+
+Simplified SWIG interface, added exception trapping, converted to new
+Noise/Signal interface
+
+Added CVS Ids:
+- most source and header files
+
 2005/11/1 Release 1.2.4, beta version
 
 Changed dec and asc to beta (= elat) and lambda (= elon) everywhere.
