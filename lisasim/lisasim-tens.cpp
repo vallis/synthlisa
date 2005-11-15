@@ -1,3 +1,9 @@
+/* $Id$
+ * $Date$
+ * $Author$
+ * $Revision$
+ */
+
 #include <math.h>
 
 #include "lisasim-tens.h"

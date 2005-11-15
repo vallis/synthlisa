@@ -1,3 +1,9 @@
+/* $Id$
+ * $Date$
+ * $Author$
+ * $Revision$
+ */
+
 #ifndef _LISASIM_TDISIGNAL_H_
 #define _LISASIM_TDISIGNAL_H_
 

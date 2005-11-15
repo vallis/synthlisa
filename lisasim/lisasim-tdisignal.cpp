@@ -1,3 +1,9 @@
+/* $Id$
+ * $Date$
+ * $Author$
+ * $Revision$
+ */
+
 #include "lisasim-tdisignal.h"
 
 TDIsignal::TDIsignal(LISA *mylisa, WaveObject *mywave) {

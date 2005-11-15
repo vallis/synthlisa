@@ -1,3 +1,9 @@
+/* $Id$
+ * $Date$
+ * $Author$
+ * $Revision$
+ */
+ 
 #ifndef _LISASIM_TENS_H_
 #define _LISASIM_TENS_H_
 
