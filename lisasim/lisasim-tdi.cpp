@@ -1,3 +1,9 @@
+/* $Id$
+ * $Date$
+ * $Author$
+ * $Revision$
+ */
+
 #include "lisasim-tdi.h"
 
 double TDI::X(double t) {

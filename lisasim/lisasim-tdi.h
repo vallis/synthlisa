@@ -1,10 +1,16 @@
+/* $Id$
+ * $Date$
+ * $Author$
+ * $Revision$
+ */
+
 #ifndef _LISASIM_TDI_H_
 #define _LISASIM_TDI_H_
 
 #include "lisasim-lisa.h"
 #include "lisasim-wave.h"
 
-#include <cmath>
+#include <math.h>
 
 class TDI {
  public:
