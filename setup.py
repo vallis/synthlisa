@@ -106,9 +106,11 @@ setdir_sh = open('lisasim/synthlisa-setdir.sh','w')
 setdir_csh = open('lisasim/synthlisa-setdir.csh','w')
 
 pythonpath = ''
+installpath = sys.exec_prefix
 
 if synthlisa_prefix:
     pythonpath = get_python_lib(prefix=synthlisa_prefix)
+    installpath = synthlisa_prefix
 
 if numeric_prefix:
     if pythonpath:
@@ -123,7 +125,9 @@ then
 else
     PYTHONPATH="%s:$PYTHONPATH"; export PYTHONPATH
 fi
-""" % (pythonpath, pythonpath)
+
+SYNTHLISABASE="%s"; export SYNTHLISABASE
+""" % (pythonpath, pythonpath, installpath)
 
 print >> setdir_csh, """
 if !($?PYTHONPATH) then
@@ -131,7 +135,9 @@ if !($?PYTHONPATH) then
 else
     setenv PYTHONPATH %s:$PYTHONPATH
 endif
-""" % (pythonpath, pythonpath)
+
+setenv SYNTHLISABASE %s
+""" % (pythonpath, pythonpath, installpath)
 
 setdir_csh.close()
 setdir_sh.close()
@@ -149,7 +155,7 @@ else:
     setdir_scripts = []
 
 setup(name = 'synthLISA',
-      version = '1.2.4',
+      version = '1.2.6',
       description = 'Synthetic LISA Simulator',
       long_description = idcatalog,
 
@@ -163,6 +169,8 @@ setup(name = 'synthLISA',
                      'healpix' : 'lisasim/healpix'},
 
       scripts = setdir_scripts,
+
+      data_files = [('share/synthlisa',['data/positions.txt'])],
 
       ext_modules = [Extension('synthlisa/_lisaswig',
                                source_files,
