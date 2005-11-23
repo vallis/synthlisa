@@ -503,6 +503,54 @@ double EccentricInclined::genarmlength(int arm, double t) {
 }
 
 
+// --- SampledLISA ---
+
+SampledLISA::SampledLISA(double *sc1,long length1,double *sc2,long length2,double *sc3,long length3,
+                         double deltat,double prebuffer,int interplen) {
+    for(int i=0;i<3;i++) {
+        buffer[1][i] = new double[length1/3];
+        buffer[2][i] = new double[length2/3];
+        buffer[3][i] = new double[length3/3];
+            
+        for(int k=0;k<length1/3;k++) buffer[1][i][k] = sc1[k*3 + i];
+        for(int k=0;k<length2/3;k++) buffer[2][i][k] = sc2[k*3 + i];
+        for(int k=0;k<length3/3;k++) buffer[3][i][k] = sc3[k*3 + i];
+        
+        sampledp[1][i] = new SampledSignal(buffer[1][i],length1/3,deltat,prebuffer,1.0,0,interplen);
+        sampledp[2][i] = new SampledSignal(buffer[2][i],length2/3,deltat,prebuffer,1.0,0,interplen);
+        sampledp[3][i] = new SampledSignal(buffer[3][i],length3/3,deltat,prebuffer,1.0,0,interplen);
+    }
+    
+    for(int c=1;c<4;c++) {
+        guessL[c] = Lstd;
+    }
+}
+
+SampledLISA::~SampledLISA() {
+    for(int i=0;i<3;i++) {
+        delete sampledp[1][i];
+        delete sampledp[2][i];
+        delete sampledp[3][i];
+        
+        delete [] buffer[1][i];
+        delete [] buffer[2][i];
+        delete [] buffer[3][i];
+    }
+}
+
+void SampledLISA::putp(Vector &p,int craft,double t) {
+    if(craft < 1 || craft > 3) {
+        std::cerr << "SampledLISA::putp: invalid spacecraft index "
+                  << craft << " [" << __FILE__ << ":" << __LINE__ << "]." << std::endl;
+	
+        ExceptionUndefined e;
+        throw e;
+    } else {
+        for(int i=0;i<3;i++) {
+            p[i] = sampledp[craft][i]->value(t);
+        }
+    }
+}
 
 
 

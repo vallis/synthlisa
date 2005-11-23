@@ -252,6 +252,25 @@ class EccentricInclined : public LISA {
     double genarmlength(int arm, double t);
 };
 
+
+// --- SampledLISA ---
+
+class SampledLISA : public LISA {
+ private:
+    double *buffer[4][3];
+    
+    SampledSignal *sampledp[4][3];
+
+ public:
+    SampledLISA(double *sc1,long length1,double *sc2,long length2,double *sc3,long length3,double deltat,double prebuffer,int interplen = 1);    
+    ~SampledLISA();
+
+    void putp(Vector &p,int craft,double t);
+};
+
+
+// --- PyLISA ---
+
 #include <Python.h>
 
 class PyLISA : public LISA {
