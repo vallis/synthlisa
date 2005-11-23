@@ -337,8 +337,19 @@ def hr2ec(nside,ipix):
 
 # lisa positions from Ted Sweetser's file
 
-def lisapositions():
-    pos = readarray('positions.txt')
+import os
+import os.path
+
+def stdLISApositions():
+    """Returns four Numeric arrays corresponding to times [in seconds] along
+ten years and to the corresponding positions [the three SSB coordinates
+in Earth Mean Equator and J2000 Equinox, also given in seconds] of the
+three LISA spacecraft according to simulations run by JPL's Ted Sweetser
+on 2005-07-23 (from Excel spreadsheet states_baseline2.xls). The times
+are spaced by 1 day (86400 seconds), and they begin from zero instead of
+Ted's Julian date 2457023.5"""
+
+    pos = readarray(os.path.join(os.environ['SYNTHLISABASE'],'share/synthlisa','positions.txt'))
 
     t = pos[:,0].copy()
 
@@ -358,3 +369,16 @@ def lisapositions():
     p3 /= speedoflight
 
     return t,p1,p2,p3
+
+
+import lisaswig
+
+def stdSampledLISA(interp=1):
+"""Returns an interpolated SampledLISA object based on the position arrays
+returned by stdLISApositions(); the argument interp sets the semilength
+of the interpolation window, and prebuffering is set to interp times 1
+day (the spacing of the stdLISApositions() data."""
+
+    [t,p1,p2,p3] = stdlisapositions()
+    
+    return lisaswig.SampledLISA(p1,p2,p3,86400,86400*interp,interp)
