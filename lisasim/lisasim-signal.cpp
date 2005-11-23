@@ -8,7 +8,7 @@
 #include "lisasim-except.h"
 
 #include <iostream>
-#include <math.h>
+#include <cmath>
 
 // --- RingBuffer ---
 
@@ -275,8 +275,9 @@ double LagrangeInterpolator::getvalue(SignalSource &y,long ind,double dind) {
 }
 
 LagrangeInterpolator::LagrangeInterpolator(int semiwin)
-    : xa(new double[2*semiwin+1]), ya(new double[2*semiwin+1]),
-       c(new double[2*semiwin+1]),  d(new double[2*semiwin+1]) {
+    : window(2*semiwin), semiwindow(semiwin),
+      xa(new double[2*semiwin+1]), ya(new double[2*semiwin+1]),
+      c(new double[2*semiwin+1]),  d(new double[2*semiwin+1]) {
 		
 	for(int i=1;i<=window;i++) {
 		xa[i] = 1.0*i;
@@ -486,6 +487,12 @@ SampledSignal::SampledSignal(double *narray,long length,double deltat,double pre
 		          << interplen << " [" << __FILE__ << ":" << __LINE__ << "]." << std::endl;
 
 		throw e;
+	}
+
+	if (interplen > prebuffer/deltat) {
+		std::cerr << "WARNING: SampledSignal::SampledSignal(...): for t = 0, interpolator (semiwin=" 
+				  << interplen << ") will stray beyond prebuffer." << std::endl;
+	
 	}
 
 	samplednoise = new SampledSignalSource(narray,length,norm);
