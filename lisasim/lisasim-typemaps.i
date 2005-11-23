@@ -102,7 +102,7 @@
 %typemap(python, in) (double* numarray, long length) {
 	PyArrayObject *arr;
 	
-	/* Check that obj is really a 1D array of bytes */
+	/* Check that obj is really an array */
 	
 	if (!PyArray_Check($input)) {
 		PyErr_SetString(PyExc_TypeError,"First argument is not an array");
@@ -120,15 +120,20 @@
 	
 	arr = PyArray_CONTIGUOUS((PyArrayObject *)$input);
 
-	if (arr->nd != 1) { /* we are really strict ! */
+	if (arr->nd == 1) {
+		$1 = (double *)arr->data;
+		$2 = (long)arr->dimensions[0];
+	} else if (arr->nd == 2) {
+		/* flatten data for 2-dimensional array */
+	
+		$1 = (double *)arr->data;
+		$2 = (long)arr->dimensions[0] * (long)arr->dimensions[1];
+	} else {
 		PyErr_SetString(PyExc_TypeError, \
-			"Incorrect number of dims: we want a 1D array");
+			"Incorrect number of dims: we want a 1D or 2D array");
 
 		return NULL;
 	}
-
-	$1 = (double *)arr->data;
-	$2 = (long)arr->dimensions[0];	
 	
 	// this seems a bit strange; why DECREF it after it's been INCREFed
 	// in the PyArray_CONTIGUOUS above? And won't this destroy an
