@@ -194,6 +194,35 @@ class CacheLISA : public LISA {
 };
 
 
+%feature("docstring") SampledLISA "
+SampledLISA(p1,p2,p3,deltat,prebuffer,interp)
+returns a LISA object that takes the positions of its spacecraft from
+the 2-dimensional Numeric arrays p1, p2, p3, each of which consists of
+three rows, for the SSB coordinates of one of the LISA spacecraft.
+
+The array data is understood to be spaced by intervals deltat [s], and
+it is offset so that (for instance)
+
+p1x(t) = p1[(t - prebuffer)/deltat,0],
+p1y(t) = p1[(t - prebuffer)/deltat,1],
+p1z(t) = p1[(t - prebuffer)/deltat,2].
+  
+Last, interp (> 1) sets the semiwidth of the data window used in
+Lagrange interpolation of the positions.
+
+Note 1: SampledLISA makes copies of the positions arrays, so these can
+be safely destroyed after calling the SampledLISA constructor; on the
+other hand, modifying the arrays passed to the constructor will have no
+effect on the positions returned by SampledLISA.putp().
+
+Note 2: currently armlength are computed explicitly by SampledLISA by
+solving the backward light propagation equation."
+
+initdoc(SampledLISA)
+
+/* SampledLISA makes copies of the positions arrays, so initsave is not
+   needed */
+
 class SampledLISA : public LISA {
  public:
     SampledLISA(double *numarray,long length,double *numarray,long length,double *numarray,long length,double deltat,double prebuffer,int interplen = 1);
