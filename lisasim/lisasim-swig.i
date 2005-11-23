@@ -194,6 +194,12 @@ class CacheLISA : public LISA {
 };
 
 
+class SampledLISA : public LISA {
+ public:
+    SampledLISA(double *numarray,long length,double *numarray,long length,double *numarray,long length,double deltat,double prebuffer,int interplen = 1);
+};
+
+
 /* -------- Signal/Noise objects -------- */
 
 exceptionhandle(SignalSource::__getitem__,ExceptionOutOfBounds,PyExc_IndexError)
