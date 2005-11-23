@@ -282,11 +282,25 @@ def writearray(filename,a):
 # not from the user, and should allocate its own buffer
 # can probably do it with append()
 
-def readarray(buffer,length,filename):
+def readarray(filename):
     file = open(filename, 'r')
-    for index in range(0,length):
-        buffer[index] = float(file.readline())
+    lines = [line.split() for line in file.readlines() if line[0] != '#']    
     file.close()
+    
+    bshape = (len(lines),len(lines[0]))
+
+    if bshape[1] == 1:
+        buffer = Numeric.zeros(bshape[0],'d')
+
+        for index in range(0,bshape[0]):
+            buffer[index] = float(lines[index][0])
+    else:
+        buffer = Numeric.zeros(bshape,'d')
+
+        for index in range(0,buffer.shape[0]):
+            buffer[index,:] = map(float,lines[index])
+
+    return buffer
 
 # how is the record order going to be?
 
@@ -304,6 +318,7 @@ def readbinary(filename,length):
     # then reshape the buffer if needed
     return buffer
 
+
 # healpix (need to sort out the license)
 
 import healpix
@@ -319,3 +334,27 @@ def hr2ec(nside,ipix):
     (th,ph) = healpix.healpix.pix2ang_ring(nside,ipix)
     return (math.pi-th,ph)
 
+
+# lisa positions from Ted Sweetser's file
+
+def lisapositions():
+    pos = readarray('positions.txt')
+
+    t = pos[:,0].copy()
+
+    p1 = pos[:,1:4].copy()
+    p2 = pos[:,4:7].copy()
+    p3 = pos[:,7:10].copy()
+
+    secondsperday = 86400
+
+    t -= t[0]
+    t *= secondsperday
+
+    speedoflight = 299792.458
+
+    p1 /= speedoflight
+    p2 /= speedoflight
+    p3 /= speedoflight
+
+    return t,p1,p2,p3
