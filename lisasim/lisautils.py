@@ -347,7 +347,7 @@ in Earth Mean Equator and J2000 Equinox, also given in seconds] of the
 three LISA spacecraft according to simulations run by JPL's Ted Sweetser
 on 2005-07-23 (from Excel spreadsheet states_baseline2.xls). The times
 are spaced by 1 day (86400 seconds), and they begin from zero instead of
-Ted's Julian date 2457023.5"""
+Ted's Julian date 2457023.5."""
 
     pos = readarray(os.path.join(os.environ['SYNTHLISABASE'],'share/synthlisa','positions.txt'))
 
@@ -374,11 +374,11 @@ Ted's Julian date 2457023.5"""
 import lisaswig
 
 def stdSampledLISA(interp=1):
-"""Returns an interpolated SampledLISA object based on the position arrays
+    """Returns an interpolated SampledLISA object based on the position arrays
 returned by stdLISApositions(); the argument interp sets the semilength
 of the interpolation window, and prebuffering is set to interp times 1
 day (the spacing of the stdLISApositions() data."""
 
-    [t,p1,p2,p3] = stdlisapositions()
+    [t,p1,p2,p3] = stdLISApositions()
     
     return lisaswig.SampledLISA(p1,p2,p3,86400,86400*interp,interp)
