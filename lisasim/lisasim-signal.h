@@ -219,6 +219,8 @@ typedef Signal Noise;
 
 class Interpolator {
  public:
+	virtual ~Interpolator() {};
+
     virtual double getvalue(SignalSource &y,long ind,double dind) = 0;
 };
 
@@ -284,6 +286,13 @@ class InterpolatedSignal : public Signal {
 	void setinterp(Interpolator *inte);
 };
 
+
+/* ??? Since PowerLawNoise and SampledSignal really exist as separate
+   classes to garbage collect gracefully their components (and to be
+   convenient), it might be wise to implement them directly in Python, or
+   also in Python). This would save one indirection (currently inlined,
+   although the inline is probably not realized by the compiler because
+   the classes are virtual. */
 
 // PowerLawNoise
 
