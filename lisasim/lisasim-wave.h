@@ -65,6 +65,9 @@ class Wave : public WaveObject {
 
     void putk(Vector &k);
     void putwave(Tensor &h, double t);
+    
+    static void putep(Tensor &h,double b,double l,double p);
+    static void putec(Tensor &h,double b,double l,double p);
 };
 
 

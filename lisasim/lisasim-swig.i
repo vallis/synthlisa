@@ -175,7 +175,8 @@ class PyLISA : public LISA {
 
 
 %feature("docstring") CacheLISA "
-CacheLISA(baseLISA) works by routing all putp-putn calls to the
+CacheLISA(baseLISA)
+returns a LISA object that works by routing all putp-putn calls to the
 baseLISA object, passed on construction. It will however interpose a
 layer of its own making for retard() calls, effectively caching
 chained retardations for the most recently accessed time.
@@ -197,8 +198,9 @@ class CacheLISA : public LISA {
 %feature("docstring") SampledLISA "
 SampledLISA(p1,p2,p3,deltat,prebuffer,interp)
 returns a LISA object that takes the positions of its spacecraft from
-the 2-dimensional Numeric arrays p1, p2, p3, each of which consists of
-three rows, for the SSB coordinates of one of the LISA spacecraft.
+the 2-dimensional Numeric arrays p1, p2, p3; each of these consists of
+three columns that give the SSB coordinates of corresponding LISA
+spacecraft.
 
 The array data is understood to be spaced by intervals deltat [s], and
 it is offset so that (for instance)
@@ -405,6 +407,18 @@ the SSB."
 Wave.hc(t) returns the hc polarization of the GW Wave at time t [s] at
 the SSB."
 
+%feature("docstring") Wave::putep "
+Wave.putep(elat,elon,pol) returns the basic ep polarization tensor
+for a plane Wave object at ecliptic latitude elat, longitude elon,
+and polarization pol. This is a class (static) method.
+"
+
+%feature("docstring") Wave::putec "
+Wave.putec(elat,elon,pol) returns the basic ec polarization tensor
+for a plane Wave object at ecliptic latitude elat, longitude elon,
+and polarization pol. This is a class (static) method.
+"
+
 class WaveObject;
 
 %nodefault Wave;
@@ -415,7 +429,10 @@ class Wave : public WaveObject {
     void putwave(Tensor &outtensor, double t);
 
     virtual double hp(double t);
-    virtual double hc(double t);  
+    virtual double hc(double t);
+    
+    static void putep(Tensor &outtensor,double b,double l,double p);
+    static void putec(Tensor &outtensor,double b,double l,double p);
 };
 
 

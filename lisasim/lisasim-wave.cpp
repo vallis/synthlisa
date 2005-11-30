@@ -89,6 +89,45 @@ void Wave::putwave(Tensor &h, double t) {
   }
 }
 
+// static methods to return the basic ep and ec tensors for a given sky
+// position
+
+// this code is repeated from above, and calls to these static methods
+// could be used above
+
+void Wave::putep(Tensor &h,double b,double l,double p) {
+    Tensor stdpp(0.0);
+
+    stdpp[0][0] = 1.0; stdpp[1][1] = -1.0;
+    
+    Tensor A, At;
+    
+    A.seteuler(b,l,p);
+    At.settranspose(A);
+    
+    Tensor tmp;
+    
+    tmp.setproduct(stdpp,At);
+    h.setproduct(A,tmp);
+}
+
+void Wave::putec(Tensor &h,double b,double l,double p) {
+    Tensor stdpc(0.0);
+
+    stdpc[0][1] = 1.0; stdpc[1][0] =  1.0;
+
+    Tensor A, At;
+    
+    A.seteuler(b,l,p);
+    At.settranspose(A);
+    
+    Tensor tmp;
+        
+    tmp.setproduct(stdpc,At);
+    h.setproduct(A,tmp);   
+}
+
+
 // full constructor for SimpleBinary; takes frequency in Hertz
 // b and l are SSB ecliptic latitude and longitude
 
