@@ -9,6 +9,9 @@
 
 #include "lisasim-tens.h"
 #include "lisasim-signal.h"
+#include "lisasim-except.h"
+
+#include <iostream>
 
 #include <math.h>
 
@@ -45,6 +48,51 @@ static const double Lstd = 16.6782;
 static const double ecc = 0.00964838;
 
 /// Base LISA geometry class.
+
+
+// --- spacecraft/link indexing ---
+
+// check index validity
+
+inline void assertArm(int arm) {
+	if(arm < -3 || arm > 3 || arm == 0) {
+		std::cerr << "synthlisa::assertArm: invalid arm index "
+				  << arm << " [" << __FILE__ << ":" << __LINE__ << "]." << std::endl;
+	
+		ExceptionUndefined e;
+		throw e;
+	}
+}
+
+inline void assertCraft(int sc) {
+	if(sc < 1 || sc > 3) {
+		std::cerr << "synthlisa::assertCraft invalid spacecraft index "
+				  << sc << " [" << __FILE__ << ":" << __LINE__ << "]." << std::endl;
+	
+		ExceptionUndefined e;
+		throw e;
+	}
+}
+
+// convert link to spacecraft
+// assume we're given good arm indexes
+
+inline int getSend(int arm) {
+    if(arm > 0) {
+        return (arm ==  1) ? 3 : (arm - 1);
+    } else {
+        return (arm == -3) ? 1 : (1 - arm);
+    }
+}
+
+inline int getRecv(int arm) {
+    if(arm > 0) {
+        return (arm ==  3) ? 1 : ( arm + 1);
+    } else {
+        return (arm == -1) ? 3 : (-arm - 1);
+    }
+}
+
 
 class LISA {
  private:
@@ -133,6 +181,7 @@ class OriginalLISA : public LISA {
     virtual double armlength(int arm, double t);
 };
 
+
 /// rotating LISA geometry
 
 class ModifiedLISA : public OriginalLISA {
@@ -153,6 +202,7 @@ class ModifiedLISA : public OriginalLISA {
     double armlength(int arm, double t);
     double genarmlength(int arm, double t);
 };
+
 
 /// Rigidly rotating, orbiting LISA.
 
@@ -202,6 +252,7 @@ class CircularRotating : public LISA {
 
     double genarmlength(int arm, double t);
 };
+
 
 /** Orbiting LISA with eccentric orbits. In the future it would be
     nice to have the eccentricity as a parameter */
@@ -266,6 +317,58 @@ class SampledLISA : public LISA {
     ~SampledLISA();
 
     void putp(Vector &p,int craft,double t);
+};
+
+
+// --- CacheLengthLISA ---
+
+/* Instead of passing LISASource to InterpolatedSignal, It would be
+   more elegant to have a generic class BufferedFunctionLISASource
+   that could take any pointer to function, but there's a question
+   about managing back-conversion from time to long pos.
+*/
+
+class LISASource : public BufferedSignalSource {
+ private:
+	double deltat, prebuffer;
+
+	LISA *basiclisa;
+	int arm;
+
+ public:
+	LISASource(long len,double dt,double pbt,LISA *lisa,int l)
+		: BufferedSignalSource(len), deltat(dt), prebuffer(pbt), basiclisa(lisa), arm(l) {};
+
+	double getvalue(long pos);
+};
+
+
+class CacheLengthLISA : public LISA {
+ private:
+	LISA *basicLISA, *physLISA;
+
+	// use {1,2,3,-1,-2,-3} = {1,2,3,4,5,6} indexing for armlengths
+
+	LISASource *lisafuncs[7];
+	Interpolator *interp;
+
+	InterpolatedSignal *armlengths[7];
+
+ public:
+    CacheLengthLISA(LISA *lisa,long length,double deltat,int interplen = 4);
+	~CacheLengthLISA();
+
+	LISA *physlisa();
+
+	void reset(); 
+
+	double armlength(int arm, double t);
+
+	double armlengthbaseline(int arm, double t);
+    double armlengthaccurate(int arm, double t);
+
+    void putn(Vector &n, int arm, double t);
+    void putp(Vector &p, int craft, double t);
 };
 
 

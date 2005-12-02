@@ -18,16 +18,12 @@
     armlength to get the right delay */
 
 void LISA::putn(Vector &n,int arms,double t) {
-    int arm = abs(arms);
+	assertArm(arms);
 
-    int crafta = (arm + 1 < 4) ? (arm + 1) : (arm - 2);
-    int craftb = (arm + 2 < 4) ? (arm + 2) : (arm - 1);
-
-    if(arms < 0) {
-        int swap = crafta;
-        crafta = craftb;
-        craftb = swap;
-    }
+    // get spacecraft indices for b -> arms -> a
+    
+    int crafta = getRecv(arms);
+    int craftb = getSend(arms);
 
     // this is consistent with pa(t) = pb(t-L(t;b->a)) + L(t;b->a) n
     // for instance, p_1 = p_2 + n_3
@@ -37,15 +33,8 @@ void LISA::putn(Vector &n,int arms,double t) {
     putp(pa,crafta,t);
     putp(pb,craftb,t-armlength(arms,t));
 
-    for(int i=0;i<3;i++)
-        n[i] = pa[i] - pb[i];
-    
-    // normalize to a unit vector
-
-    double norm = sqrt(n[0]*n[0] + n[1]*n[1] + n[2]*n[2]);    
-                
-    for(int i=0;i<3;i++)
-        n[i] /= norm;
+    n.setdifference(pa,pb);
+    n.setnormalized();    
 }
 
 /** Generic version of armlength. Will use putp iteratively to
@@ -53,16 +42,12 @@ void LISA::putn(Vector &n,int arms,double t) {
     from t along "arm" */
 
 double LISA::armlength(int arms, double t) {
-    int arm = abs(arms);
+	assertArm(arms);
 
-    int crafta = (arm + 1 < 4) ? (arm + 1) : (arm - 2);
-    int craftb = (arm + 2 < 4) ? (arm + 2) : (arm - 1);
+    // get spacecraft indices for b -> arms -> a
 
-    if(arms < 0) {
-        int swap = crafta;
-        crafta = craftb;
-        craftb = swap;
-    }
+    int crafta = getRecv(arms);
+    int craftb = getSend(arms);
 
     // this is consistent with pa(t) = pb(t-L(t;b->a)) + L(t;b->a) n
     // for instance, p_1 = p_2 + n_3
@@ -74,38 +59,31 @@ double LISA::armlength(int arms, double t) {
     // implement a simple bisection search for the correct armlength
     // use a 10% initial bracket
 
-    double newguess = guessL[arm];
+    const double tol = 1e-14;
+
+    double newguess = guessL[abs(arms)];
     double hi = 1.10 * newguess, lo = 0.90 * newguess;
 
-    double guess;
-    
-    const double tol = 1e-14;
+    double norm, guess;
 
     do {
         guess = newguess;
     
         putp(pb,craftb,t-guess);
 
-        for(int i=0;i<3;i++)
-            n[i] = pa[i] - pb[i];
+        n.setdifference(pa,pb);
 
-        // compute the invariant relativistic distance between the events
-        // of emission and reception
+        norm = n.dotproduct() - guess*guess;
 
-        double norm = sqrt(-guess*guess + n[0]*n[0] + n[1]*n[1] + n[2]*n[2]);
-
-        if(norm >= 0) {
-            // distance is spacelike; increase delay
-
-            lo = guess;
+        if(norm > 0) {
+            lo = guess;   // distance is spacelike; increase delay
+        } else if(norm < 0) {
+            hi = guess;   // distance is timelike; reduce delay
         } else {
-            // distance is timelike; reduce delay
-        
-            hi = guess;
+            return guess; // should almost never happen
         }
         
         newguess = 0.5 * (hi + lo);
-        
     } while( fabs(newguess - guess) > tol );
 
     return newguess;
@@ -129,19 +107,19 @@ double LISA::retardation() {
 
 void LISA::retard(int ret) {
     if (ret != 0) {
-	trb += armlengthbaseline(ret,rt);  
-	tra += armlengthaccurate(ret,rt);
+		trb += armlengthbaseline(ret,rt);  
+		tra += armlengthaccurate(ret,rt);
 
-	rt = (it - trb) - tra;
+		rt = (it - trb) - tra;
     }
 };
 
 void LISA::retard(LISA *anotherlisa, int ret) {
     if (ret != 0) {
-	trb += anotherlisa->armlengthbaseline(ret,rt);  
-	tra += anotherlisa->armlengthaccurate(ret,rt);
+		trb += anotherlisa->armlengthbaseline(ret,rt);  
+		tra += anotherlisa->armlengthaccurate(ret,rt);
 
-	rt = (it - trb) - tra;
+		rt = (it - trb) - tra;
     }
 }
 
@@ -179,37 +157,37 @@ OriginalLISA::OriginalLISA(double L1,double L2,double L3) {
 
     // now compute the corresponding n's as differences of p's, and normalize
     
-    for(int i=0;i<3;i++) {
-        initn[1][i] = initp[2][i] - initp[3][i];
-        initn[2][i] = initp[3][i] - initp[1][i];
-        initn[3][i] = initp[1][i] - initp[2][i];                
-    }
-        
-    for(int j=1;j<4;j++) {
-        double norm = sqrt(initn[j][0]*initn[j][0] + initn[j][1]*initn[j][1] + initn[j][2]*initn[j][2]);
-        
-        for(int i=0;i<3;i++)
-            initn[j][i] /= norm;
-    }
+    initn[1].setdifference(initp[2],initp[3]);
+    initn[1].setnormalized();
+
+    initn[2].setdifference(initp[3],initp[1]);
+    initn[2].setnormalized();
+
+    initn[3].setdifference(initp[1],initp[2]);                
+    initn[3].setnormalized();
 }
 
 // OriginalLISA does not move; hence the length (but not the
 // direction!) of positive and negative arms is the same
 
 void OriginalLISA::putn(Vector &n,int arm,double t) {
-    double sign = arm > 0 ? 1.0 : -1.0;
+	assertArm(arm);
 
-    for(int i=0;i<3;i++)
-        n[i] = sign * initn[abs(arm)][i];
+	double sign = arm > 0 ? 1.0 : -1.0;
+
+    n.setproduct(sign,initn[abs(arm)]);
 }
 
 void OriginalLISA::putp(Vector &p,int craft,double t) {
-    for(int i=0;i<3;i++)
-        p[i] = initp[craft][i];
+	assertCraft(craft);
+
+    p = initp[craft];
 }
 
-double OriginalLISA::armlength(int arm, double t) {
-    return( L[abs(arm)] );
+double OriginalLISA::armlength(int arms, double t) {
+	assertArm(arms);
+
+	return L[abs(arms)];
 }
 
 // --- ModifiedLISA LISA class ---------------------------------------------------------
@@ -218,20 +196,22 @@ ModifiedLISA::ModifiedLISA(double arm1,double arm2,double arm3) : OriginalLISA(a
     // compute everything in seconds
 
     for(int i=1;i<4;i++) {
-        int crafta = (i + 1 < 4) ? i + 1 : i - 2;
-        int craftb = (i + 2 < 4) ? i + 2 : i - 1;
+        // get spacecraft indices for b -> arms -> a
 
-        double La = sqrt(initp[crafta].dotproduct(initp[crafta]));
-        double Lb = sqrt(initp[craftb].dotproduct(initp[craftb]));
+        int crafta = getRecv(i);
+        int craftb = getSend(i);
+
+        double La = sqrt(initp[crafta].dotproduct());
+        double Lb = sqrt(initp[craftb].dotproduct());
 
         sagnac[i] = La * Lb * sqrt(1.0 - (La*La + Lb*Lb - L[i]*L[i])*(La*La + Lb*Lb - L[i]*L[i]) / (4.0 * La*La * Lb*Lb)) * Omega;
 
-	sagnac[i] = Omega * (initp[craftb][0]*initp[crafta][1] - initp[crafta][0]*initp[craftb][1]);
+		sagnac[i] = Omega * (initp[craftb][0]*initp[crafta][1] - initp[crafta][0]*initp[craftb][1]);
 
         Lc[i]  = L[i] + sagnac[i];
         Lac[i] = L[i] - sagnac[i];
 
-	guessL[i] = L[i];
+    	guessL[i] = L[i];
     }
 }
 
@@ -239,23 +219,30 @@ ModifiedLISA::ModifiedLISA(double arm1,double arm2,double arm3) : OriginalLISA(a
 // take input time in seconds
 
 void ModifiedLISA::putp(Vector &p,int craft,double t) {
-    p[0] = cos(Omega*t) * initp[craft][0] - sin(Omega*t) * initp[craft][1];
-    p[1] = sin(Omega*t) * initp[craft][0] + cos(Omega*t) * initp[craft][1];
-    p[2] = initp[craft][2];
+	assertCraft(craft);
+
+	p[0] = cos(Omega*t) * initp[craft][0] - sin(Omega*t) * initp[craft][1];
+	p[1] = sin(Omega*t) * initp[craft][0] + cos(Omega*t) * initp[craft][1];
+	p[2] = initp[craft][2];
 }
 
 // positive arms are corotating (have longer arms), negative arms are counterrotating (shorter arms)
 
 double ModifiedLISA::armlength(int arm, double t) {
-    if(arm > 0)
+	assertArm(arm);
+
+    if(arm > 0) {
         return(Lc[arm]);
-    else
+	} else {
         return(Lac[-arm]);
+	}
 }
 
 double ModifiedLISA::genarmlength(int arm, double t) {
     return LISA::armlength(arm,t);
 }
+
+// ??? modernized up to here
 
 // --- CircularRotating LISA class -----------------------------------------------------
 
@@ -265,13 +252,15 @@ double ModifiedLISA::genarmlength(int arm, double t) {
 
 CircularRotating::CircularRotating(double myL, double e0, double x0, double sw, double t0)
     : L(myL), toffset(t0) {
+
 	initialize(e0,x0,sw);
-    }
+}
 
 CircularRotating::CircularRotating(double e0, double x0, double sw, double t0)
     : L(Lstd), toffset(t0) {
+
 	initialize(e0,x0,sw);
-    }
+}
 
 void CircularRotating::initialize(double e0, double x0, double sw) {
     // set distance from the Sun (s)
@@ -368,10 +357,12 @@ void CircularRotating::putp(Vector &p,int craft,double t) {
 // fit to armlength modulation from armlength.nb
 
 double CircularRotating::armlength(int arm, double t) {
+	assertArm(arm);
+
     if(arm > 0) {
-	return L + delmodamp * sin(Omega*(t+toffset) - delmodph[arm]);
+		return L + delmodamp * sin(Omega*(t+toffset) - delmodph[arm]);
     } else {
-	return L - delmodamp * sin(Omega*(t+toffset) - delmodph[-arm]);
+		return L - delmodamp * sin(Omega*(t+toffset) - delmodph[-arm]);
     }
 }
 
@@ -380,10 +371,12 @@ double CircularRotating::armlengthbaseline(int arm, double t) {
 }
 
 double CircularRotating::armlengthaccurate(int arm, double t) {
+	assertArm(arm);
+	
     if(arm > 0) {
-	return delmodamp * sin(Omega*(t+toffset) - delmodph[arm]);
+		return delmodamp * sin(Omega*(t+toffset) - delmodph[arm]);
     } else {
-	return -delmodamp * sin(Omega*(t+toffset) - delmodph[-arm]);
+		return -delmodamp * sin(Omega*(t+toffset) - delmodph[-arm]);
     }
 }
 
@@ -434,23 +427,21 @@ void EccentricInclined::settime(int craft, double t) {
 
     double beta;
 
+	assertCraft(craft);
+
     switch(craft) {
-        case 1:
-	       beta = lambda;
-	       break;
-        case 2:
-            beta = (swi > 0.0) ? 4.0*M_PI/3.0 + lambda : 2.0*M_PI/3.0 + lambda;
-            break;
-        case 3:
-            beta = (swi > 0.0) ? 2.0*M_PI/3.0 + lambda : 4.0*M_PI/3.0 + lambda;
-            break;
-        default:
-            std::cerr << "EccentricInclined::settime: invalid spacecraft index "
-		          << craft << " [" << __FILE__ << ":" << __LINE__ << "]." << std::endl;
-	
-    		ExceptionUndefined e;
-	       	throw e;
-        break;
+	case 1:
+		beta = lambda;
+		break;
+	case 2:
+		beta = (swi > 0.0) ? 4.0*M_PI/3.0 + lambda : 2.0*M_PI/3.0 + lambda;
+		break;
+	case 3:
+		beta = (swi > 0.0) ? 2.0*M_PI/3.0 + lambda : 4.0*M_PI/3.0 + lambda;
+		break;
+	default:
+		beta = 0.0; // should never get here, having the assertCraft above
+		break;
     }
 	    
     cachep[craft][0] =   0.5 * Rgc * ecc * ( cos(2.0*alpha-beta) - 3.0*cos(beta) )
@@ -475,12 +466,14 @@ void EccentricInclined::putp(Vector &p, int craft, double t) {
 }
 
 double EccentricInclined::armlength(int arm, double t) {
+	assertArm(arm);
+
     if(arm > 0) {
-	return L + pdelmod * sin(Omega*(t+toffset) - delmodph[arm]) 
-	    + delmod3 * sin(Omega3*(t+toffset) - delmodph2);
+		return L + pdelmod * sin(Omega*(t+toffset) - delmodph[arm]) 
+			     + delmod3 * sin(Omega3*(t+toffset) - delmodph2);
     } else {
-	return L + mdelmod * sin(Omega*(t+toffset) - delmodph[-arm])
-	    + delmod3 * sin(Omega3*(t+toffset) - delmodph2);
+		return L + mdelmod * sin(Omega*(t+toffset) - delmodph[-arm])
+			     + delmod3 * sin(Omega3*(t+toffset) - delmodph2);
     }
 }
 
@@ -489,12 +482,14 @@ double EccentricInclined::armlengthbaseline(int arm, double t) {
 }
 
 double EccentricInclined::armlengthaccurate(int arm, double t) {
+	assertArm(arm);
+
     if(arm > 0) {
-	return pdelmod * sin(Omega*(t+toffset) - delmodph[arm]) 
-	    + delmod3 * sin(Omega3*(t+toffset) - delmodph2);
+		return pdelmod * sin(Omega*(t+toffset) - delmodph[arm]) 
+			 + delmod3 * sin(Omega3*(t+toffset) - delmodph2);
     } else {
-	return mdelmod * sin(Omega*(t+toffset) - delmodph[-arm])
-	    + delmod3 * sin(Omega3*(t+toffset) - delmodph2);
+		return mdelmod * sin(Omega*(t+toffset) - delmodph[-arm])
+			 + delmod3 * sin(Omega3*(t+toffset) - delmodph2);
     }
 }
 
@@ -539,25 +534,112 @@ SampledLISA::~SampledLISA() {
 }
 
 void SampledLISA::putp(Vector &p,int craft,double t) {
-    if(craft < 1 || craft > 3) {
-        std::cerr << "SampledLISA::putp: invalid spacecraft index "
-                  << craft << " [" << __FILE__ << ":" << __LINE__ << "]." << std::endl;
-	
-        ExceptionUndefined e;
-        throw e;
-    } else {
-        for(int i=0;i<3;i++) {
-            p[i] = sampledp[craft][i]->value(t);
-        }
-    }
+	assertCraft(craft);
+
+	for(int i=0;i<3;i++) {
+		p[i] = sampledp[craft][i]->value(t);
+	}
 }
 
 
+// --- CacheLengthLISA (including LISASource) ---
 
+// always use the computed armlengths, since they are guaranteed to exist
+// for all LISAs
 
+double LISASource::getvalue(long pos) {
+	return basiclisa->LISA::armlength(arm,pos*deltat - prebuffer);
+};
 
+CacheLengthLISA::CacheLengthLISA(LISA *l,long length,double deltat,int interplen)
+    : basicLISA(l) {
+	try {
+		interp = getInterpolator(interplen);	
+	} catch (ExceptionUndefined &e) {
+		std::cerr << "PowerLawNoise::PowerLawNoise(...): undefined interpolator length "
+				  << interplen << " [" << __FILE__ << ":" << __LINE__ << "]." << std::endl;
+			
+		throw e;		
+	}
 
+	double prebuffer = interplen * deltat;
 
+	for(int i=1;i<4;i++) {
+		lisafuncs[i] = new LISASource(length,deltat,prebuffer,basicLISA,i);
+		lisafuncs[i+3] = new LISASource(length,deltat,prebuffer,basicLISA,-i);
+	}
 
+	for(int i=1;i<7;i++) {
+		armlengths[i] = new InterpolatedSignal(lisafuncs[i],interp,deltat,prebuffer);
+	}
+		
+	if(l->physlisa() == l) {
+	   physLISA = this;
+	} else {
+	   physLISA = new CacheLengthLISA(l->physlisa(),length,deltat,interplen);
+	}
+}
 
+CacheLengthLISA::~CacheLengthLISA() {
+    if(physLISA != this) delete physLISA;
 
+	for(int i=1;i<7;i++) delete armlengths[i];
+
+	for(int i=1;i<7;i++) delete lisafuncs[i];
+
+	delete interp;
+}
+
+void CacheLengthLISA::reset() {
+    if(physLISA != this) physLISA->reset();
+
+	for(int i=1;i<7;i++) armlengths[i]->reset();
+}
+
+LISA* CacheLengthLISA::physlisa() {
+    return physLISA;
+}
+
+double CacheLengthLISA::armlength(int arm, double t) {
+	assertArm(arm);
+
+	if(arm > 0) {
+		return armlengths[arm]->value(t);
+	} else {
+		return armlengths[3-arm]->value(t);
+	}
+}
+
+double CacheLengthLISA::armlengthbaseline(int arm, double t) {
+	return armlength(arm,t);
+}
+
+double CacheLengthLISA::armlengthaccurate(int arm, double t) {
+	return 0.0;
+}
+
+// need this because basicLISA's putn will call basicLISA's armlength
+
+void CacheLengthLISA::putn(Vector &n,int arms,double t) {
+	assertArm(arms);
+
+    int crafta = getRecv(arms);
+    int craftb = getSend(arms);
+
+    Vector pa, pb;
+
+    basicLISA->putp(pa,crafta,t);
+
+	if(arms > 0) {
+        basicLISA->putp(pb,craftb,t - armlengths[arms]->value(t));
+	} else {
+        basicLISA->putp(pb,craftb,t - armlengths[3-arms]->value(t));
+	}
+
+    n.setdifference(pa,pb);
+    n.setnormalized();
+}
+
+void CacheLengthLISA::putp(Vector &p, int craft, double t) {
+	basicLISA->putp(p,craft,t);
+}
