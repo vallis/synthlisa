@@ -62,6 +62,10 @@ coordinates of spacecraft i (1,2,3) at time t [s]."
 LISA.armlength(l,t) the armlength [s] of LISA link l (1,2,3,-1,-2,-3)
 at time t [s]."
 
+%feature("docstring") LISA::reset "
+LISA.reset() resets any underlying pseudo-random or ring-buffer
+elements used by the LISA object."
+
 %nodefault LISA;
 
 class LISA {
@@ -70,6 +74,8 @@ class LISA {
     virtual void putn(Vector &outvector, int arm, double t);
 
     virtual double armlength(int arm, double t);
+    
+    virtual void reset();
 };
 
 
@@ -145,6 +151,8 @@ initdoc(EccentricInclined)
 class EccentricInclined : public LISA {
  public:
     EccentricInclined(double eta0=0.0, double xi0=0.0, double sw=1.0, double t0=0.0);
+
+	double genarmlength(int arm,double t);
 };
 
 
@@ -228,6 +236,31 @@ initdoc(SampledLISA)
 class SampledLISA : public LISA {
  public:
     SampledLISA(double *numarray,long length,double *numarray,long length,double *numarray,long length,double deltat,double prebuffer,int interplen = 1);
+};
+
+
+%feature("docstring") CacheLengthLISA "
+CacheLengthLISA(baseLISA,bufferlength,deltat,interplen = 1)
+returns a LISA object that caches and interpolates armlengths found by
+solving the light-propagation equation for the spacecraft positions
+returned by baseLISA.putp(). The light-propagation equation is solved
+every deltat seconds, and results remain available in a time window of
+duration bufferlength*deltat. Last, interplen is the semiwidth of the
+interpolation kernel (with 0 nearest-neighbor interpolation and 1 linear
+interpolation).
+
+Note: the current implementation does not support changing the physical
+LISA of baseLISA on the fly, and is untested for different nominal and
+physical LISAs."
+
+initdoc(CacheLengthLISA)
+
+initsave(CacheLengthLISA)
+
+class CacheLengthLISA : public LISA {
+ public:
+    CacheLengthLISA(LISA *lisa,long length,double deltat,int interplen = 4);
+	~CacheLengthLISA();
 };
 
 
@@ -717,14 +750,7 @@ initdoc(WaveArray)
 
 initsave(WaveArray)
 
-%exception WaveArray::WaveArray {
-	try {
-		$action
-	} catch (ExceptionOutOfBounds &e) {
-		PyErr_SetString(PyExc_ValueError,"Wrong arguments.");
-		return NULL;
-	}
-};
+exceptionhandle(WaveArray::WaveArray,ExceptionOutOfBounds,PyExc_ValueError)
 
 class WaveArray : public WaveObject {
  public:
@@ -745,18 +771,48 @@ exceptionhandle(TDI::Z,ExceptionOutOfBounds,PyExc_IndexError)
 exceptionhandle(TDI::alpha,ExceptionOutOfBounds,PyExc_IndexError)
 exceptionhandle(TDI::beta,ExceptionOutOfBounds,PyExc_IndexError)
 exceptionhandle(TDI::gamma,ExceptionOutOfBounds,PyExc_IndexError)
+
+exceptionhandle(TDI::alpham,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::betam,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::gammam,ExceptionOutOfBounds,PyExc_IndexError)
+
+exceptionhandle(TDI::alpha1,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::alpha2,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::alpha3,ExceptionOutOfBounds,PyExc_IndexError)
+
 exceptionhandle(TDI::zeta,ExceptionOutOfBounds,PyExc_IndexError)
+
+exceptionhandle(TDI::zeta1,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::zeta2,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::zeta3,ExceptionOutOfBounds,PyExc_IndexError)
 
 exceptionhandle(TDI::P,ExceptionOutOfBounds,PyExc_IndexError)
 exceptionhandle(TDI::E,ExceptionOutOfBounds,PyExc_IndexError)
 exceptionhandle(TDI::U,ExceptionOutOfBounds,PyExc_IndexError)
 
+exceptionhandle(TDI::Xm,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::Ym,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::Zm,ExceptionOutOfBounds,PyExc_IndexError)
+
+exceptionhandle(TDI::Xmlock1,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::Xmlock2,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::Xmlock3,ExceptionOutOfBounds,PyExc_IndexError)
+
+exceptionhandle(TDI::X1,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::Y2,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::Z3,ExceptionOutOfBounds,PyExc_IndexError)
+
 exceptionhandle(TDI::y,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::z,ExceptionOutOfBounds,PyExc_IndexError)
 
 class TDI {
 public:
     TDI() {};
     virtual ~TDI() {};
+
+    // TDI may need to support a seeded reset... in which case
+    // there may be a problem with offsetting the seeds of the single
+    // noises...
 
     virtual void reset() {};
 
@@ -814,9 +870,6 @@ class TDIquantize : public TDI {
  public:
     TDIquantize(TDI *bt,double qlev,int qbits,int qsat);
     ~TDIquantize();
-
-    virtual double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t);
-    virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
 };
 
 %apply double PYTHON_SEQUENCE_DOUBLE[ANY] {double stproof[6], double sdproof[6], double stshot[6], double sdshot[6], double stlaser[6], double sdlaser[6], double claser[6]}
@@ -857,9 +910,6 @@ public:
     void lock(int master);
     
     void reset();
-
-    virtual double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t);
-    virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
 };
 
 /* We're holding on to the constructor args so that the LISA/Noise
@@ -872,9 +922,6 @@ class TDIaccurate : public TDInoise {
  public:
     TDIaccurate(LISA *mylisa, Noise *proofnoise[6],Noise *shotnoise[6],Noise *lasernoise[6]);
     ~TDIaccurate();
-
-    double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t);
-    double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
 };
 
 /* We're holding on to the constructor args so that the LISA/Wave
@@ -886,8 +933,6 @@ initsave(TDIsignal)
 class TDIsignal : public TDI {
 public:
     TDIsignal(LISA *mylisa, WaveObject *mywave);
-            
-    double y(int send, int link, int recv, int ret1, int ret2, int ret3, double t);
 };
 
 // ??? Helper functions used to be here...
