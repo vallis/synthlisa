@@ -8,61 +8,7 @@
 
 #include "lisasim-tens.h"
 
-// Vector member functions
-
-Vector& Vector::setsum(const Vector &add1,const Vector &add2) {
-    c[0] = add1.c[0] + add2.c[0];
-    c[1] = add1.c[1] + add2.c[1];
-    c[2] = add1.c[2] + add2.c[2];
-
-    return *this;
-}
-
-Vector& Vector::setdifference(const Vector &add1,const Vector &add2) {
-    c[0] = add1.c[0] - add2.c[0];
-    c[1] = add1.c[1] - add2.c[1];
-    c[2] = add1.c[2] - add2.c[2];
-
-    return *this;
-}
-
-Vector& Vector::setproduct(const double fac) {
-    c[0] *= fac;
-    c[1] *= fac;
-    c[2] *= fac;
-
-    return *this;
-}
-
-Vector& Vector::setproduct(const Tensor &mat, const Vector &vec) {
-    c[0] = mat.c[0]*vec.c[0] + mat.c[1]*vec.c[1] + mat.c[2]*vec.c[2];
-    c[1] = mat.c[3]*vec.c[0] + mat.c[4]*vec.c[1] + mat.c[5]*vec.c[2];
-    c[2] = mat.c[6]*vec.c[0] + mat.c[7]*vec.c[1] + mat.c[8]*vec.c[2];
-
-    return *this;
-}
-
-double Vector::dotproduct() {
-    return c[0] * c[0] + c[1] * c[1] + c[2] * c[2];
-}
-
-double Vector::dotproduct(const Vector &vec) {
-    return c[0] * vec.c[0] + c[1] * vec.c[1] + c[2] * vec.c[2];
-}
-
-double dotproduct(const Vector &vec1,const Vector &vec2) {
-    return vec1.c[0] * vec2.c[0] + vec1.c[1] * vec2.c[1] + vec1.c[2] * vec2.c[2];
-}
-
-Vector& Vector::setnormalized() {
-    double norm = 1.0/sqrt(c[0]*c[0] + c[1]*c[1] + c[2]*c[2]);
-
-    c[0] *= norm;
-    c[1] *= norm;
-    c[2] *= norm;
-
-    return *this;
-}
+// Vector member functions in the header file (all inlined)
 
 // Tensor member functions
 
