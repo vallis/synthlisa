@@ -207,7 +207,8 @@ def dotime(i,snum,inittime,lasttime):
 # the next version, getobsc, will display a countdown to completion
 
 def getobsc(snum,stime,observables,zerotime=0.0):
-    inittime = int(time())
+    fullinittime = time()
+    inittime = int(fullinittime)
     lasttime = 0
     
     print "Processing...",
@@ -241,11 +242,11 @@ def getobsc(snum,stime,observables,zerotime=0.0):
     # is ['reset' in dir(observables.im_self)], where "im_self" returns the
     # class instance for a given instance method
 
-    currenttime = int(time()) - inittime
+    currenttime = time() - fullinittime
 
     if currenttime > 0:
-        vel = ((1.0*snum)/currenttime)
-        print "\r...completed in %d s [%d (multi)samples/s].                           " % (currenttime,vel)  
+        vel = snum/currenttime
+        print "\r...completed in %d s [%d (multi)samples/s].                           " % (int(currenttime),int(vel))  
     else:
         print "\r...completed.                                                         "
 
