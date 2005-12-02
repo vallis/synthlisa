@@ -280,15 +280,35 @@ class SignalSource {
 	};
 };
 
+
+%feature("docstring") WhiteNoiseSource::setglobalseed "
+WhiteNoiseSource.setglobalseed(seed) sets the global seed that will be
+used to initialize the next pseudorandom-number generator to be created
+or reset. The argument should be an unsigned long integer. The global
+seed is increased by one after each creation or initialization. This is
+a class (static) method. "
+
+%feature("docstring") WhiteNoiseSource::getglobalseed "
+WhiteNoiseSource.getglobalseed() returns the global seed that will be
+used to initialize the next pseudorandom-number generator to be created
+or reset. The seed is an unsigned long integer. The global seed is
+increased by one after each creation or initialization. This is a class
+(static) method. "
+
 class WhiteNoiseSource : public SignalSource {
  public:
 	WhiteNoiseSource(long len,unsigned long seed = 0,double norm = 1.0);	
+
+    static void setglobalseed(unsigned long seed = 0);
+    static unsigned long getglobalseed();
 };
+
 
 class SampledSignalSource : public SignalSource {
  public:
 	SampledSignalSource(double *numarray,long length,double norm = 1.0);
 };
+
 
 %nodefault Filter;
 class Filter;
@@ -343,30 +363,45 @@ class Signal {
 
 typedef Signal Noise;
 
+
 %nodefault Interpolator;
 class Interpolator;
+
 
 class NearestInterpolator : public Interpolator {
  public:
 	NearestInterpolator();
 };
 
+
 class LinearInterpolator : public Interpolator {
  public:
 	LinearInterpolator();
 };
+
 
 class LinearExtrapolator : public Interpolator {
  public:
 	LinearExtrapolator();
 };
 
+
 class LagrangeInterpolator : public Interpolator {
  public:
     LagrangeInterpolator(int semiwin);
 };
 
+
+class NewLagrangeInterpolator : public Interpolator {
+ public:
+    NewLagrangeInterpolator(int semiwin);
+};
+
+
 extern Interpolator *getInterpolator(int interplen);
+
+
+initsave(InterpolatedSignal)
 
 class InterpolatedSignal : public Signal {
  public:

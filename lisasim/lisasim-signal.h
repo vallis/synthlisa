@@ -82,6 +82,8 @@ class WhiteNoiseSource : public BufferedSignalSource {
     void seedrandgen(unsigned long seed);
     double deviate();
 
+    static unsigned long globalseed;
+
  public:
 	WhiteNoiseSource(long len,unsigned long seed = 0,double norm = 1.0);
 	~WhiteNoiseSource();	
@@ -89,6 +91,9 @@ class WhiteNoiseSource : public BufferedSignalSource {
 	double getvalue(long pos);
 		
 	void reset(unsigned long seed = 0);  // ??? redefining default
+
+    static void setglobalseed(unsigned long seed = 0);
+    static unsigned long getglobalseed();
 };
 
 
@@ -255,6 +260,26 @@ class LagrangeInterpolator : public Interpolator {
  public:
     LagrangeInterpolator(int semiwin);
     virtual ~LagrangeInterpolator();
+
+        double getvalue(SignalSource &y,long ind,double dind);
+};
+
+
+class NewLagrangeInterpolator : public Interpolator {
+ private:
+    int window;
+    double semiwindow;
+
+    double *xa;
+    double *ya;
+    
+    double *c,*d;
+
+    double polint(double x);
+
+ public:
+    NewLagrangeInterpolator(int semiwin);
+    virtual ~NewLagrangeInterpolator();
 
 	double getvalue(SignalSource &y,long ind,double dind);
 };

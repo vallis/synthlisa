@@ -23,8 +23,7 @@ RingBuffer::~RingBuffer() {
 }
 
 void RingBuffer::reset() {
-	for(int i=0;i<length;i++)
-		data[i] = 0.0;
+	for(int i=0;i<length;i++) data[i] = 0.0;
 }
 
 
@@ -65,7 +64,8 @@ double BufferedSignalSource::operator[](long pos) {
 WhiteNoiseSource::WhiteNoiseSource(long len,unsigned long seed,double norm) 
 	: BufferedSignalSource(len), normalize(norm) {
 
-    randgen = gsl_rng_alloc(gsl_rng_ranlux);
+	randgen = gsl_rng_alloc(gsl_rng_taus2);
+    // randgen = gsl_rng_alloc(gsl_rng_ranlux);
 
     seedrandgen(seed);
 }
@@ -74,13 +74,30 @@ WhiteNoiseSource::~WhiteNoiseSource() {
     gsl_rng_free(randgen);
 }
 
-void WhiteNoiseSource::seedrandgen(unsigned long seed) {
-    if (seed == 0) {
+unsigned long WhiteNoiseSource::globalseed = 0;
+
+void WhiteNoiseSource::setglobalseed(unsigned long seed) {
+	if(seed == 0) {
 		struct timeval tv;
 	
-		gettimeofday(&tv,0);
-	  
-		gsl_rng_set(randgen,tv.tv_sec+tv.tv_usec);
+		gettimeofday(&tv,0);	
+
+		globalseed = tv.tv_sec+tv.tv_usec;
+	} else {
+		globalseed = seed;
+	}
+}
+
+unsigned long WhiteNoiseSource::getglobalseed() {
+	if(globalseed == 0) setglobalseed(0);
+	
+	return globalseed;
+}
+
+void WhiteNoiseSource::seedrandgen(unsigned long seed) {
+    if (seed == 0) {
+		gsl_rng_set(randgen,globalseed);
+		globalseed++;
     } else {
 		gsl_rng_set(randgen,seed);
     }
@@ -265,10 +282,12 @@ double LinearExtrapolator::getvalue(SignalSource &y,long ind,double dind) {
 }
 
 
+// --- LagrangeInterpolator ---
+
 double LagrangeInterpolator::getvalue(SignalSource &y,long ind,double dind) {
 	for(int i=0;i<semiwindow;i++) {
-    	ya[semiwindow-i] = y[ind-i];
-    	ya[semiwindow+i+1] = y[ind+i+1];
+		ya[semiwindow-i] = y[ind-i];
+		ya[semiwindow+i+1] = y[ind+i+1];
 	}
 
 	return polint(semiwindow+dind);
@@ -278,7 +297,7 @@ LagrangeInterpolator::LagrangeInterpolator(int semiwin)
     : window(2*semiwin), semiwindow(semiwin),
       xa(new double[2*semiwin+1]), ya(new double[2*semiwin+1]),
       c(new double[2*semiwin+1]),  d(new double[2*semiwin+1]) {
-		
+                
 	for(int i=1;i<=window;i++) {
 		xa[i] = 1.0*i;
 		ya[i] = 0.0;
@@ -288,7 +307,7 @@ LagrangeInterpolator::LagrangeInterpolator(int semiwin)
 LagrangeInterpolator::~LagrangeInterpolator() {
     delete [] d;
     delete [] c;
-	
+        
     delete [] ya;
     delete [] xa;
 }
@@ -307,7 +326,7 @@ double LagrangeInterpolator::polint(double x) {
 			ns=i;
 			dif=dift;
 		}
-	
+        
 		c[i]=ya[i];
 		d[i]=ya[i];
     }
@@ -324,8 +343,75 @@ double LagrangeInterpolator::polint(double x) {
 			d[i]=hp*den;
 			c[i]=ho*den;
 		}
-	
+
 		res += (dres=(2*ns < (n-m) ? c[ns+1] : d[ns--]));
+    }
+
+    return res;
+}
+
+
+NewLagrangeInterpolator::NewLagrangeInterpolator(int semiwin)
+    : window(2*semiwin), semiwindow(1.0*semiwin),
+      xa(new double[2*semiwin+1]), ya(new double[2*semiwin+1]),
+      c(new double[2*semiwin+1]),  d(new double[2*semiwin+1]) {
+		
+	for(int i=1;i<=window;i++) {
+		xa[i] = 1.0*i;
+		ya[i] = -1.0/xa[i];
+	}    
+}
+
+NewLagrangeInterpolator::~NewLagrangeInterpolator() {
+    delete [] d;
+    delete [] c;
+	
+    delete [] ya;
+    delete [] xa;
+}
+
+double NewLagrangeInterpolator::getvalue(SignalSource &y,long ind,double dind) {
+	int bind = ind - window/2;
+
+	for(int i=window;i>0;i--) {
+		c[i] = d[i] = y[bind + i];
+	}
+
+	/* was:	for(int i=0;i<semiwindow;i++) {
+    			ya[semiwindow-i] = y[ind-i];
+    			ya[semiwindow+i+1] = y[ind+i+1];
+			}
+	   with ya[] copied into c[] and d[] in polint */
+
+	return polint(semiwindow+dind);
+}
+
+double NewLagrangeInterpolator::polint(double x) {
+    int n = window, ns = 1;
+
+    double dif, mindif = fabs(x-xa[1]);
+
+    for (int i=2;i<=n;i++) {
+		dif = fabs(x-xa[i]);
+		
+		if(dif < mindif) {
+			ns = i;
+			mindif = dif;
+		}
+	}
+
+    double den, res = c[ns--];
+
+    for (int m=1;m<n;m++) {
+		for (int i=1;i<=n-m;i++) {		
+			den = ya[m] * (c[i+1] - d[i]);
+
+			c[i] = (xa[i]   - x) * den;
+			d[i] = (xa[i+m] - x) * den;
+		}
+	
+		// the summand here is the error estimate
+		res += (2*ns < (n-m) ? c[ns+1] : d[ns--]);
     }
 
     return res;
@@ -455,7 +541,6 @@ PowerLawNoise::PowerLawNoise(double deltat,double prebuffer,
 		std::cerr << "PowerLawNoise::PowerLawNoise(...): undefined interpolator length "
 		          << interplen << " [" << __FILE__ << ":" << __LINE__ << "]." << std::endl;
 
-		// ??? if this exception is thrown, will the destructor be called?
 		throw e;		
 	}
 
@@ -491,7 +576,7 @@ SampledSignal::SampledSignal(double *narray,long length,double deltat,double pre
 
 	if (interplen > prebuffer/deltat) {
 		std::cerr << "WARNING: SampledSignal::SampledSignal(...): for t = 0, interpolator (semiwin=" 
-				  << interplen << ") will stray beyond prebuffer." << std::endl;
+				  << interplen << ") will stray beyond prebuffer, yielding zeros." << std::endl;
 	
 	}
 
