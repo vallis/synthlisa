@@ -17,6 +17,12 @@ void TDIsignal::setphlisa(LISA *mylisa) {
     phlisa = mylisa;
 }
 
+void TDIsignal::reset() {
+    lisa->reset();
+
+    if(phlisa != lisa) phlisa->reset();
+}
+
 double TDIsignal::psi(Wave *nwave, Vector &lisan, double t) {
     // check if the Wave is active at time t
     if(!nwave->inscope(t)) return 0.0;
