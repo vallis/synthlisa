@@ -71,34 +71,65 @@ class TDIquantize : public TDI {
     double qlevel, qover;
 
     double quantize(double var) {
-	if(fabs(var) > qover) {
-	    // hey, there is no "sign" function in C/C++ 
-	    return (var > 0.0) ? qover : -qover;
-	} else {
-	    return qlevel * (long long)(var/qlevel);
-	}
+	   if(fabs(var) > qover) {
+	       // hey, there is no "sign" function in C/C++ 
+	       return (var > 0.0) ? qover : -qover;
+	   } else {
+	       return qlevel * (long long)(var/qlevel);
+	   }
     };
 
  public:
     TDIquantize(TDI *bt,double qlev,int qbits,int qsat)
-	: basetdi(bt), qlevel(qlev/pow(2.0,qbits)), qover(qlev*pow(2.0,qsat)) {};
+    	: basetdi(bt), qlevel(qlev/pow(2.0,qbits)), qover(qlev*pow(2.0,qsat)) {};
+    
     virtual ~TDIquantize() {};
 
     virtual double y(int send, int link, int recv, int ret1, int ret2, int ret3, double t) {
-	return quantize(basetdi->y(send, link, recv, ret1, ret2, ret3, t));
+    	return quantize(basetdi->y(send, link, recv, ret1, ret2, ret3, t));
     };
 
     virtual double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t) {
-	return quantize(basetdi->y(send, link, recv, ret1, ret2, ret3, ret4, ret5, ret6, ret7, t));
+    	return quantize(basetdi->y(send, link, recv, ret1, ret2, ret3, ret4, ret5, ret6, ret7, t));
     };
 
     virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, double t) {
-	return quantize(basetdi->z(send, link, recv, ret1, ret2, ret3, ret4, t));
+    	return quantize(basetdi->z(send, link, recv, ret1, ret2, ret3, ret4, t));
     };
 
     virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t) {
-	return quantize(basetdi->z(send, link, recv, ret1, ret2, ret3, ret4, ret5, ret6, ret7, ret8, t));
+    	return quantize(basetdi->z(send, link, recv, ret1, ret2, ret3, ret4, ret5, ret6, ret7, ret8, t));
     };
+};
+
+class TDIalpha : public Signal {
+ private:
+    TDI *tdi;
+
+ public:
+    TDIalpha(TDI *t) : tdi(t) {};
+    
+    double value(double t) { return tdi->alpha(t); };
+};
+
+class TDIbeta : public Signal {
+ private:
+    TDI *tdi;
+
+ public:
+    TDIbeta(TDI *t) : tdi(t) {};
+    
+    double value(double t) { return tdi->beta(t); };
+};
+
+class TDIgamma : public Signal {
+ private:
+    TDI *tdi;
+
+ public:
+    TDIgamma(TDI *t) : tdi(t) {};
+    
+    double value(double t) { return tdi->gamma(t); };
 };
 
 #endif /* _LISASIM_TDI_H_ */
