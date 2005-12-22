@@ -181,6 +181,31 @@ class PyLISA : public LISA {
     PyLISA(LISA *base,PyObject *func);
 };
 
+%feature("docstring") AllPyLISA "
+AllPyLISA(putpfunc,armlengthfunc = 0)
+
+returns a LISA object that takes the positions of spacecraft from
+the Python function putpfunc(craft,time), where craft = 1,2,3, and
+time is given in seconds; and that takes the armlengths from the
+Python function armlengthfunc(link,time), where link = 1,2,3,-1,-2,-3.
+If armlengthfunc is not given, the armlengths will be determined from
+the s/c positions using the exact light-propagation equation (solved
+in the base LISA class).
+
+Note: simulations that use AllPyLISA can be speeded up somewhat by
+enclosing the AllPyLISA object in a CacheLengthLISA object."
+
+initdoc(AllPyLISA)
+
+initsave(AllPyLISA)
+
+%apply PyObject* PYTHONFUNC { PyObject *sfunc, PyObject *afunc };
+
+class AllPyLISA : public LISA {
+  public:
+    AllPyLISA(PyObject *sfunc,PyObject *afunc = 0);
+};
+
 
 %feature("docstring") CacheLISA "
 CacheLISA(baseLISA)
@@ -437,6 +462,18 @@ class SampledSignal : public Signal {
  public:
 	SampledSignal(double* numarray,long length,double deltat,double prebuffer,
 				  double norm = 1.0,Filter *filter = 0,int interplen = 1);
+};
+
+
+%feature("docstring") CachedSignal "
+CachedSignal(Signal,bufferlen,deltat,interplen = 4)
+"
+
+initsave(CachedSignal)
+
+class CachedSignal : public Signal {
+ public:
+    CachedSignal(Signal *s,long length,double deltat,int interplen = 4);
 };
 
 
@@ -907,9 +944,45 @@ class TDIquantize : public TDI {
     ~TDIquantize();
 };
 
-%apply double PYTHON_SEQUENCE_DOUBLE[ANY] {double stproof[6], double sdproof[6], double stshot[6], double sdshot[6], double stlaser[6], double sdlaser[6], double claser[6]}
+%feature("docstring") TDInoise "
+TDInoise(lisa,PMnoise[6],      SHnoise[6],      LSnoise[6])
+TDInoise(lisa,PMdt[6],PMpsd[6],SHdt[6],SHpsd[6],LSdt[6],LSpsd[6])
+TDInoise(lisa,PMdt,   PMpsd,   SHdt,   SHpsd,   LSdt,   LSpsd)
 
-%apply Noise *PYTHON_SEQUENCE_NOISE[ANY] {Noise *proofnoise[6], Noise *shotnoise[6], Noise *lasernoise[6]}
+all return TDI objects that implement the inter- and intra-spacecraft
+phase measurements using the standard noise transfer functions for
+proof-mass noise, shot noise, and laser noise. All the TDI observables
+defined in the base TDI class are available from TDInoise.
+
+- In the first form of the constructor, Synthetic LISA Noise/Signal
+  objects (e.g., as created with PowerLawNoise or SampledSignal) must be
+  provided for all 18 fundamental noises, in the orders [according to
+  the PRD 71, 022001 (2005) naming]
+
+  [pn_1,pn_1*,pn_2,pn_2*,pn_3,pn_3*]
+  [y^sh_{12},y^sh_{21},y^sh_{23},y^sh_{32},y^sh_{31},y^sh_{13}]
+  [C_1,C_1*,C_2,C_2*,C_3,C_3*]
+
+- In the second form of the constructor, the noise object are created
+  internally as pseudorandom noise objects (equivalent to PowerLawNoise)
+  with sampling times PMdt[i], SHdt[i], and LSdt[i] (for the ith
+  proof-mass, shot, and laser-phase noise respectively), and with
+  approximate one-sided power spectral densities
+
+  PMpsd*(f/Hz)^-2 Hz^-1
+  SHpsd*(f/Hz)^2  Hz^-1
+  LSpsd           Hz^-1
+
+- In the third form of the constructor, the same sampling time and psd
+  parameter is used for the six noises of each type.
+
+Note: resetting the TDInoise object will reset all the component noise
+objects. 
+
+TODO: might want to allow different interpolation widths for the
+self-built pseudorandom noise objects."
+
+initdoc(TDInoise)
 
 /* We're holding on to the constructor args so that the LISA/Noise
    objects won't get destroyed if they fall out of scope: we may still
@@ -923,6 +996,10 @@ class TDIquantize : public TDI {
 
 initsave(TDInoise)
 
+%apply double PYTHON_SEQUENCE_DOUBLE[ANY] {double stproof[6], double sdproof[6], double stshot[6], double sdshot[6], double stlaser[6], double sdlaser[6], double claser[6]}
+
+%apply Noise *PYTHON_SEQUENCE_NOISE[ANY] {Noise *proofnoise[6], Noise *shotnoise[6], Noise *lasernoise[6]}
+
 /* Same for physical LISA objects */
 
 %feature("addtofunc") TDInoise::setphlisa {
@@ -931,7 +1008,7 @@ initsave(TDInoise)
 
 class TDInoise : public TDI {
 public:
-    TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser);
+    TDInoise(LISA *mylisa, double stproof = 1.0, double sdproof = 2.5e-48, double stshot = 1.0, double sdshot = 1.8e-37, double stlaser = 1.0, double sdlaser = 1.1e-26);
 
     TDInoise(LISA *mylisa, double stproof[6], double sdproof[6], double stshot[6], double sdshot[6], double stlaser[6], double sdlaser[6]);
 
@@ -968,6 +1045,23 @@ initsave(TDIsignal)
 class TDIsignal : public TDI {
 public:
     TDIsignal(LISA *mylisa, WaveObject *mywave);
+};
+
+/* TDI function objects... */
+
+class TDIalpha : public Signal {
+ public:
+    TDIalpha(TDI *t);
+};
+
+class TDIbeta : public Signal {
+ public:
+    TDIbeta(TDI *t);
+};
+
+class TDIgamma : public Signal {
+ public:
+    TDIgamma(TDI *t);
 };
 
 // ??? Helper functions used to be here...
