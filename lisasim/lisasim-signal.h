@@ -111,6 +111,9 @@ class SampledSignalSource : public SignalSource {
 };
 
 
+
+
+
 /* Filters! It might be tempting to inline the getvalue() call, but it
    would probably do little good since they are called as virtual methods
    from a base pointer. */
@@ -198,7 +201,7 @@ class Signal {
 
     virtual void reset(unsigned long seed = 0) {};  // ??? redefining default
 
-	virtual double value(double time) = 0; 
+	virtual double value(double time) = 0;
 
 	// standard implementation if we are not more precise than this
 	virtual double value(double timebase,double timecorr) {
@@ -290,7 +293,7 @@ class NewLagrangeInterpolator : public Interpolator {
 Interpolator *getInterpolator(int interplen);
 
 
-// InterpolatedSignal
+// --- InterpolatedSignal ---
 
 class InterpolatedSignal : public Signal {
  private:
@@ -319,7 +322,7 @@ class InterpolatedSignal : public Signal {
    although the inline is probably not realized by the compiler because
    the classes are virtual. */
 
-// PowerLawNoise
+// --- PowerLawNoise ---
 
 class PowerLawNoise : public Signal {
  private:
@@ -351,7 +354,7 @@ inline double PowerLawNoise::value(double timebase,double timecorr) {
 }
 
 
-// SampledSignal
+// --- SampledSignal ---
 
 class SampledSignal : public Signal {
  private:
@@ -382,6 +385,56 @@ inline double SampledSignal::value(double timebase,double timecorr) {
 }
 
 
+// --- CachedSignal (uses ResampledSignalSource) ---
 
+class ResampledSignalSource : public BufferedSignalSource {
+ private:
+	double deltat, prebuffer;
+
+	Signal *signal;
+
+ public:
+	ResampledSignalSource(long len,double dt,double pbt,Signal *s)
+		: BufferedSignalSource(len), deltat(dt), prebuffer(pbt), signal(s) {};
+
+	void reset(unsigned long seed = 0);  // ??? redefining default
+
+	double getvalue(long pos);
+};
+
+class CachedSignal : public Signal {
+ private:
+	ResampledSignalSource *resample;
+	Interpolator *interp;
+	InterpolatedSignal *interpsignal;
+
+ public:
+    CachedSignal(Signal *s,long length,double deltat,int interplen = 4);
+	~CachedSignal();
+
+    void reset(unsigned long seed = 0);  // ??? redefining default
+
+	double value(double time);
+	double value(double timebase,double timecorr);
+};
+
+inline double CachedSignal::value(double time) {
+	return interpsignal->value(time);
+}
+
+inline double CachedSignal::value(double timebase,double timecorr) {
+	return interpsignal->value(timebase,timecorr);
+}
 
 #endif /* _LISASIM_SIGNAL_H_ */
+
+
+
+
+
+
+
+
+
+
+

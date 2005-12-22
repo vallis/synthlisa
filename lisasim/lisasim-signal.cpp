@@ -142,6 +142,23 @@ double WhiteNoiseSource::getvalue(long pos) {
 }
 
 
+// --- ResampledSignalSource ---
+
+// the idea is to take a Signal (continuous) and to use it to feed a
+// SignalSource (discrete), with the eventual purpose of using an
+// InterpolatedSignal on top of that, to cache it
+
+double ResampledSignalSource::getvalue(long pos) {
+    return signal->value(pos*deltat - prebuffer);
+}
+
+void ResampledSignalSource::reset(unsigned long seed) {
+	signal->reset(seed);
+
+	BufferedSignalSource::reset(seed);
+}
+
+
 // --- SampledSignalSource ---
 
 // does not own the data array!
@@ -597,4 +614,43 @@ SampledSignal::~SampledSignal() {
 	delete samplednoise;
 	delete interp;
 }
+
+// Derive this from InterpolatedSignal, or simply contain it?
+
+CachedSignal::CachedSignal(Signal *signal,long length,double deltat,int interplen) {
+	try {
+		interp = getInterpolator(interplen);	
+	} catch (ExceptionUndefined &e) {
+		std::cerr << "CachedSignal::CachedSignal(...): undefined interpolator length "
+				  << interplen << " [" << __FILE__ << ":" << __LINE__ << "]." << std::endl;
+ 
+		throw e;
+	}
+
+	double prebuffer = interplen * deltat;
+
+	resample = new ResampledSignalSource(length,deltat,prebuffer,signal);
+	interpsignal = new InterpolatedSignal(resample,interp,deltat,prebuffer);
+}
+
+CachedSignal::~CachedSignal() {
+	delete interpsignal;
+	delete resample;
+}
+
+void CachedSignal::reset(unsigned long seed) {
+	// InterpolatedSignal will reset also the SignalSource
+
+	interpsignal->reset();
+}
+
+
+
+
+
+
+
+
+
+
 
