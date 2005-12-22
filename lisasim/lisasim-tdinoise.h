@@ -31,7 +31,7 @@ class TDInoise : public TDI {
  public:
     // standard noises for everybody, same levels
 
-    TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, double sdshot, double stlaser, double sdlaser);
+    TDInoise(LISA *mylisa, double stproof = 1.0, double sdproof = 2.5e-48, double stshot = 1.0, double sdshot = 1.8e-37, double stlaser = 1.0, double sdlaser = 1.1e-26);
 
     // provide arrays of noise parameters
     // the convention is {1, 1*, 2, 2*, 3, 3*}, and {12,21,23,32,31,13} (sending and receiving)
