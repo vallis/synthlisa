@@ -1,3 +1,72 @@
+2005/12/21 Release 1.2.7, beta version
+
+Moved the main PyLISA code to lisasim-lisa.cpp from lisasim-lisa.h.
+
+Added AllPyLISA object, which takes pointers to two Python functions:
+the first is analog to putp(sc,time), and should return the three
+spacecraft positions (in seconds, given as tuples); the second is
+analog to armlength(link,time), and should return the armlengths in
+seconds. If only one function is given, the armlengths will be
+determined from the s/c positions using the exact light-propagation
+equation (solved in the base LISA class).
+
+Added a function setguessL to the base LISA to initialize the initial
+light-propagation--equation guesses from the positions of the
+spacecraft (this was needed by AllPyLISA).
+
+Added TDIalpha, TDIbeta, TDIgamma functionoid (w/Signal interface) to
+lisasim-tdi.h.
+
+Added default parameters for standard TDInoise constructor. Documented
+constructor in lisasim-swig.i.
+
+Added ResampledSignalSource and CachedSignal (in analogy to
+CacheLengthLISA) to lisasim-signal.(h|cpp). The idea is that an
+expensive function (such as the TDI functionoids) is sampled at
+regular intervals, and interpolation is used to get values in between.
+
+========================================================================
+
+2005/12/2 Release 1.2.6, beta version
+
+Added SampledLISA to lisasim-lisa and lisasim-swig to support sampled
+spacecraft positions; added file of positions from Ted Sweetser's
+simulations to distribution, and patched lisautils.py to load it and
+massage it into useful form.
+
+Fixed bad initialization bug in lisasim-signal.cpp that broke
+LagrangeInterpolator.
+
+Patched lisasim-typemaps.i to accept 2D Numeric arrays and flatten them
+for use in SampledLISA.
+
+Added putep and putec static methods to Wave to access basic
+polarization tensors.
+
+Added SampleCacheLISA() to speed up armlength determination of
+SampledLISA (and possibly other LISA classes).
+
+Inlined many Vector methods.
+
+Cleaned up lisasim-lisa.cpp somewhat, with standard link-index and
+s/c-index checking functions. Fixed conceptual (but ineffectual)
+sqrt(negative) bug in LISA::armlength().
+
+Recoded LagrangeInterpolator (NewLagrangeInterpolator) to increase
+efficiency. Gains seem nominal.
+
+Added mechanism to set the seed of pseudorandom number generators
+globally. This should ensure the reproducibility of results if the
+initial seed is captured with WhiteNoiseSource.getglobalseed(). If the
+seed is not set explicitly, it is obtained from the current time (in
+microseconds); the global seed is increased by one after creating each new
+WhiteNoiseSource object.
+
+Added TAUS pseudorandom engine from GSL 1.4. Should be faster than
+ranlux. Switched to using TAUS in WhiteNoiseSource.
+
+========================================================================
+
 2005/11/10 Release 1.2.5, beta version
 
 Removed some old putp and putn -> double[] calls in lisasim-lisa and
@@ -30,6 +99,10 @@ Noise/Signal interface
 Added CVS Ids:
 - most source and header files
 
+Added SineGaussian wave type.
+
+========================================================================
+
 2005/11/1 Release 1.2.4, beta version
 
 Changed dec and asc to beta (= elat) and lambda (= elon) everywhere.
@@ -56,6 +129,8 @@ and pc can be gotten using a specially-designed PyWave.
 Removed InterpolateMemory (but defined backward-compatible Python
 factory based on NoiseWave). InterpolateMemory is replaced by
 SampledWave, defined by a Python factory.
+
+========================================================================
 
 2005/07/21 Release 1.2.3, beta version
 
@@ -88,6 +163,8 @@ In lisasim-lisa.(cpp|h), cleaned up constructor calls, fixed bug in
 handling of ccw n[i] in OriginalLISA, removed stdlisa(), replaced by
 CircularRotating().
 
+========================================================================
+
 2005/07/06 Release 1.2.2, beta version
 
 Added SWIG typemap to return three-vectors (class Vector) as Python
@@ -99,19 +176,21 @@ in Python where we can return tuples.]
 
 Also, exposed Wave.hp(t) and Wave.hc(t) to Python.
 
+========================================================================
+
 2005/05/19 Release 1.2.1, beta version
 
 Fixed persistence problem for LISA/Noise/Wave objects passed to TDI
 constructors. Using SWIG's %feature("addtofunc") to inject Python code
 (which saves arguments) into Python shadow class constructors.
 
+========================================================================
+
 2005/05/06 Release 1.2, beta version
-Current state of the art, after clearance; sent to various people on 05/09
+Current state of the art, after clearance; sent to various people on
+05/09
 
 Changes from 1.0 to 1.2 include...
-
-- 
-
 
 2004/07/28 1.2 lisasim-retard.h
 Second version of CacheLISA, based on home-grown hashed map. Better.
