@@ -123,6 +123,18 @@ void LISA::retard(LISA *anotherlisa, int ret) {
     }
 }
 
+void LISA::setguessL(double t) {
+	Vector pa,pb,n;
+
+	for(int arm = 1;arm < 4;arm++) {
+		putp(pa,getSend(arm),t);
+		putp(pb,getRecv(arm),t);
+
+		n.setdifference(pa,pb);
+		guessL[arm] = sqrt(n.dotproduct());
+	}
+}
+
 
 // --- OriginalLISA LISA class ---------------------------------------------------------
 
@@ -542,6 +554,98 @@ void SampledLISA::putp(Vector &p,int craft,double t) {
 }
 
 
+// --- PyLISA ---
+
+void PyLISA::reset() {
+	return baseLISA->reset();
+}
+
+LISA* PyLISA::physlisa() {
+	return baseLISA;
+}
+
+double PyLISA::armlength(int arm, double t) {
+	PyObject *arglist, *result;
+  
+	double dres = 0.0;
+	
+	arglist = Py_BuildValue("(id)",arm,t);        // Build argument list
+	result = PyEval_CallObject(armfunc,arglist);  // Call Python
+	Py_DECREF(arglist);                           // Trash arglist
+	if (result) dres = PyFloat_AsDouble(result);  // If no errors, return double
+	Py_XDECREF(result);                           // Trash result
+	return dres;
+}
+
+double PyLISA::armlengthbaseline(int arm, double t) {
+	return armlength(arm,t);
+}
+
+double PyLISA::armlengthaccurate(int arm, double t) {
+	return 0.0;
+}
+
+void PyLISA::putn(Vector &n, int arm, double t) {
+	baseLISA->putn(n,arm,t);
+}
+    
+void PyLISA::putp(Vector &p, int craft, double t) {
+	baseLISA->putp(p,craft,t);
+}
+
+// --- AllPyLISA ---
+
+// problem here: setLguesses needs the virtual putp, which may not be ready
+
+AllPyLISA::AllPyLISA(PyObject *cfunc,PyObject *afunc) : craftfunc(cfunc), armlengthfunc(afunc) {
+	setguessL();
+}
+
+void AllPyLISA::reset() {
+	setguessL();
+}
+
+double AllPyLISA::armlength(int arm, double t) {
+	if (armlengthfunc != 0) {
+		PyObject *arglist, *result;
+    
+		double dres = 0.0;
+    
+		arglist = Py_BuildValue("(id)",arm,t);              // Build argument list
+		result = PyEval_CallObject(armlengthfunc,arglist);  // Call Python
+		Py_DECREF(arglist);                                 // Trash arglist
+		if (result) dres = PyFloat_AsDouble(result);        // If no errors, return double
+		// no type checking!
+		Py_XDECREF(result);                                 // Trash result
+		return dres;
+	} else {
+		return LISA::armlength(arm,t);
+	}
+}
+
+double AllPyLISA::armlengthbaseline(int arm, double t) {
+	return armlength(arm,t);
+}
+
+double AllPyLISA::armlengthaccurate(int arm, double t) {
+	return 0.0;
+}
+    
+void AllPyLISA::putp(Vector &p, int craft, double t) {
+	PyObject *arglist, *result;
+        
+	arglist = Py_BuildValue("(id)",craft,t);        // Build argument list
+	result = PyEval_CallObject(craftfunc,arglist);  // Call Python
+	Py_DECREF(arglist);                             // Trash arglist
+	if (result) {                                   // If no errors, get results
+		p[0] = PyFloat_AsDouble(PyTuple_GetItem(result,0));
+		p[1] = PyFloat_AsDouble(PyTuple_GetItem(result,1));
+		p[2] = PyFloat_AsDouble(PyTuple_GetItem(result,2));
+	}
+	Py_XDECREF(result);                             // Trash result
+}
+
+
 // --- CacheLengthLISA (including LISASource) ---
 
 // always use the computed armlengths, since they are guaranteed to exist
@@ -643,3 +747,9 @@ void CacheLengthLISA::putn(Vector &n,int arms,double t) {
 void CacheLengthLISA::putp(Vector &p, int craft, double t) {
 	basicLISA->putp(p,craft,t);
 }
+
+
+
+
+
+

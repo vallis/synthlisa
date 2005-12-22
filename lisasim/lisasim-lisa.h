@@ -105,6 +105,8 @@ class LISA {
 	all the derived LISA classes that do not define armlength. */    
     double guessL[4];
 	
+	void setguessL(double time = 0.0);
+
  public:
     LISA() {};
     virtual ~LISA() {};
@@ -377,57 +379,50 @@ class CacheLengthLISA : public LISA {
 #include <Python.h>
 
 class PyLISA : public LISA {
- public:
-    LISA *baseLISA;
-
-    // ??? this ugliness removes a warning about armfunc being initialized
-    // before baseLISA, but there should be a better way...
-
  private:
     PyObject *armfunc;
 
  public: 
-    PyLISA(LISA *base,PyObject *func) : baseLISA(base), armfunc(func) {};
+    LISA *baseLISA;
 
-    void reset() {
-        return baseLISA->reset();
-    };
+    PyLISA(LISA *base,PyObject *func) : armfunc(func), baseLISA(base) {};
 
-    LISA *physlisa() {
-        return baseLISA;
-    };
+	void reset();
 
-    double armlength(int arm, double t) {
-        PyObject *arglist, *result;
-    
-        double dres = 0.0;
-    
-        arglist = Py_BuildValue("(id)",arm,t);        // Build argument list
-        result = PyEval_CallObject(armfunc,arglist);  // Call Python
-        Py_DECREF(arglist);                           // Trash arglist
-        if (result) dres = PyFloat_AsDouble(result);  // If no errors, return double
-        Py_XDECREF(result);                           // Trash result
-        return dres;
-    };
+	LISA *physlisa();
 
-    double armlengthbaseline(int arm, double t) {
-        return armlength(arm,t);
-    };
+    double armlength(int arm, double t);
 
-    double armlengthaccurate(int arm, double t) {
-        return 0.0;
-    };
+    double armlengthbaseline(int arm, double t);
+    double armlengthaccurate(int arm, double t);
 
-    void putn(Vector &n, int arm, double t) {
-        baseLISA->putn(n,arm,t);
-    };
-    
-    void putp(Vector &p, int craft, double t) {
-        baseLISA->putp(p,craft,t);
-    };
+    void putn(Vector &n, int arm, double t);
+    void putp(Vector &p, int craft, double t);
+};
+
+
+class AllPyLISA : public LISA {
+ private:
+    PyObject *craftfunc, *armlengthfunc;
+
+ public: 
+    AllPyLISA(PyObject *cfunc,PyObject *afunc = 0);
+
+	void reset();
+
+    double armlength(int arm, double t);
+
+    double armlengthbaseline(int arm, double t);
+    double armlengthaccurate(int arm, double t);
+
+    void putp(Vector &p, int craft, double t);
 };
 
 #endif /* _LISASIM_LISA_H_ */
+
+
+
+
 
 
 
