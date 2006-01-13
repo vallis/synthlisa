@@ -276,7 +276,7 @@ def writearray(filename,a):
     for line in a:
         for element in line:
             file.write('%le ' % element)
-    file.write('\n')
+        file.write('\n')
     file.close()
 
 # still not satisfactory; should get the length from the file,
