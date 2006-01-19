@@ -1,6 +1,8 @@
-# these might be replaced with simple imports; otherwise all of
-# Numeric is available within the lisaswig context
-
+# $Id$
+# $Date$
+# $Author$
+# $Revision$
+ 
 import Numeric
 import FFT
 import math
