@@ -1,5 +1,5 @@
 ====================================
-Synthetic LISA, v. 1.2.3, 2005-07-22
+Synthetic LISA, v. 1.2.7, 01/05/2006
 ====================================
 
 by M. Vallisneri and J. W. Armstrong
@@ -8,35 +8,42 @@ Jet Propulsion Laboratory, Caltech
 
 contact: Michele Vallisneri, vallis@vallis.org
 
----------------------------------------------
+-------------------------------------------------
 In this file:
 
 0. Quickstart
 1. Introduction to Synthetic LISA
 2. License terms
 3. System requirements
-4. Installation of source package
-   4a. Compilation notes for Mac OS X
-   4b. Compilation notes for Linux
-   4c. Compilation notes for Windows (cygwin)
-5. Installation of binary package
+4. Installation of Synthetic LISA
+   4a. Installing Numeric (required)
+   4b. Installing SWIG (required to modify and
+                        recompile Synthetic LISA)
+   4c. Installing Synthetic LISA
+   4d. Setting the Python path
+   4e. Recompiling and Synthetic LISA
+   4f. Installing PyX (optional)
+5. System-specific notes
+   5a. Mac OS X
+   5b. Linux
+   5c. Cygwin
 6. Running the examples
 7. Synthetic LISA usage
 8. User involvement
 9. Asking for help 
 10.To do list
----------------------------------------------
+-------------------------------------------------
 
 =============
 0. Quickstart
 =============
 
 - I assume you have Python >= 2.3, GNU gcc, GNU Make, and Gnuplot (if
-  you want to plot). If you use Cygwin, you also need the Cygwin SWIG
-  package.
+  you want to plot; an alternative is PyX, see 4f below). If you use
+  Cygwin, you also need the Cygwin SWIG package.
 
-- Unpack the Synthetic LISA distribution (synthLISA-1.2.1.tar.gz) and cd
-  to it; download recent versions of Numeric and SWIG from
+- Unpack the Synthetic LISA distribution (synthLISA-1.2.5.tar.gz) and
+  cd to it; download recent versions of Numeric and SWIG from
   www.vallis.org/syntheticlisa into the unpacked Synthetic LISA
   distribution directory.
 
@@ -47,10 +54,11 @@ In this file:
   errors, you're set. Otherwise, I'm afraid you'll have to read all
   the installation instructions below.
 
-- If you're running csh/tcsh, do "source bin/synthlisa-setdir.csh"; if you're
-  running bash, do "source bin/synthlisa-setdir.sh". This will set the correct
-  path for Numeric and Synthetic LISA. [The path needs to be set each
-  time you open a new shell session and want to use Synthetic LISA.]
+- If you're running csh/tcsh, do "source bin/synthlisa-setdir.csh"; if
+  you're running bash, do "source bin/synthlisa-setdir.sh". This will
+  set the correct path for Numeric and Synthetic LISA. [The path needs
+  to be set each time you open a new shell session and want to use
+  Synthetic LISA.]
 
 - Now you can go to the "examples" directory, run a few of the Python
   (*.py) scripts ("python scriptname.py") and plot their results
@@ -81,7 +89,9 @@ the temporal and directional dependence of the armlengths).
 ================
 
 Please see license.pdf or license.doc. I would appreciate it if you
-could send me a signed copy of the license.
+could send me a signed copy of the license (which is the Caltech
+public domain license; later Synthetic LISA will be switched to the
+more open MIT license).
 
 ======================
 3. System requirements
@@ -98,15 +108,17 @@ said, it should be possible to install Synthetic LISA on any platform
 with a working installation of Python and of a standards-compliant
 C/C++ compiler.
 
-Synthetic LISA relies on the Python package Numerical Python
-("Numeric") to manage large arrays. Numeric can be downloaded from
-numeric.scipy.org; Synthetic LISA is known to work with versions >=
-23.1.
+Synthetic LISA relies on the Python package Numerical Python ("Numeric")
+to manage large arrays. Numeric can be downloaded from
+numeric.scipy.org; the current version of Synthetic LISA is known to
+work with versions >= 24.2, and it should very probably work with
+earlier (but still relatively recent) versions.
 
-In addition, if you want to modify the Synthetic LISA code you will
-need SWIG to regenerate Python wrappers. SWIG can be downloaded from
+In addition, if you want to modify the Synthetic LISA code you will need
+SWIG to regenerate Python wrappers. SWIG can be downloaded from
 www.swig.org; Synthetic LISA is known to compile with versions >=
-1.3.20.
+1.3.27, and it should very probably work with earlier (but still
+relatively recent) versions.
 
 If you need the GNU tools, Python, or Gnuplot, please see
 
@@ -119,7 +131,7 @@ If you need the GNU tools, Python, or Gnuplot, please see
 =================================
 
 To install and use Synthetic LISA from the source distribution
-(synthLISA-1.2.1.tar.gz) you need a working installation of Python and
+(synthLISA-1.2.5.tar.gz) you need a working installation of Python and
 of a Python-interoperable C/C++ compiler, preferably gcc. The setup of
 these is not discussed in this document.
 
@@ -150,7 +162,7 @@ http://sourceforge.net/project/showfiles.php?group_id=1369&package_id=1351
 Unpack the distribution in a directory of your choice (you might have
 a different version number).
 
-> tar ztvf Numeric-23.8.tar.gz
+> tar ztvf Numeric-24.2.tar.gz
 
 At this point, you have two choices: if you have administrator access
 to your workstation, you can install Numeric to the system-wide Python
@@ -210,7 +222,7 @@ http://www.swig.org/download.html
 Unpack it in a directory of your choice (you might have a different
 version number).
 
-> tar ztvf swig-1.3.24.tar.gz
+> tar ztvf swig-1.3.27.tar.gz
 
 As for Numeric, you have two choices: system-wide installation (files
 will go to /usr/local), or local installation.
@@ -326,6 +338,36 @@ reasons...).
 If you do not want to install yet, but just build, replace "install"
 with "build" in the "python setup.py" commands.
 
+----------------------------
+4f.Installing PyX (optional)
+----------------------------
+
+PyX is a very nice alternative to Gnuplot, better suited to creating
+high-quality PDF and EPS images than to interactive viewing. PyX is a
+Python module which requires requires Python 2.1 or newer, and a
+working TeX installation that includes Type1 fonts.  Try to start
+'python', 'tex' and 'kpsewhich cmr10.pfb' (the later should issue a
+full path of the requested Type1 font) to see if you have
+everything. You can get PyX at the URL
+
+http://sourceforge.net/project/showfiles.php?group_id=45430
+
+For system-wide installation, untar the PyX archive, cd into the
+distribution directory, and issue the command
+
+python setup.py install
+
+For a local installation, cd into the PyX distribution directory and
+issue the command
+
+> python setup.py install --prefix=. --root=[userdir]
+
+where you should replace [userdir] with the directory used to install
+numeric. The setup process will create the directory "etc" (and "lib",
+if needed) within [userdir]. Then the synthlisa-setdir.csh and
+synthlisa-setdir.sh scripts will automatically setup the Python path
+correctly to access PyX.
+
 ========================
 5. System-specific notes
 ========================
@@ -337,13 +379,22 @@ with "build" in the "python setup.py" commands.
 First of all, at this time LISA is known to work correctly with
 Panther (OS X 10.3) and Tiger (OS X 10.4).
 
-Panther has a recent enough version of Python; gcc is included in the
-Apple Development Tools (on your OS X CD, or already installed); you
-can get gnuplot from fink.sourceforge.net, or from
+Panther and Tiger have recent enough versions of Python. To make your
+life easier, install the enhancements suggested at the URL
+
+http://www.vallis.org/blogspace/osxtricks/macpython.html
+
+Most important, enabling readline is vital for interactive Python
+sessions.
+
+As for the other tools, gcc is included in the Apple Development Tools
+(on your OS X CD, or already installed); you can get gnuplot from
+fink.sourceforge.net, or from
 
 http://www.lee-phillips.org/info/Macintosh/gnuplot.html
 
-and probably in other places, as well; if X11 is not installed, you can get it from
+and probably in other places, as well; if X11 is not installed, you can
+get it from
 
 http://www.apple.com/downloads/macosx/apple/x11formacosx.html
 
@@ -359,9 +410,9 @@ Fedora Core 3, which are very similar.
 The packages compiles fine also under Debian Sarge (which should
 become 3.1).
 
-Other recent versions of Linux should also have no problems, as long
-as Python >= 2.3. (For instance, RedHat 9.0 has Python 2.2.2, which
-needs to be upgraded to work with Synthetic LISA.)
+Other recent versions of Linux should also have no problems, as long as
+the Python version >= 2.3. (For instance, RedHat 9.0 has Python 2.2.2,
+which needs to be upgraded to work with Synthetic LISA.)
 
 ------------------------------------------
 4c. Compilation notes for Windows (cygwin)
@@ -502,8 +553,7 @@ There are many aspects that users can help (and help themselves) with:
 
 - Providing compilation tricks and fixes for additional systems
 
-To this purpose, a Synthetic LISA webpage is being set up on the Open
-Channel Foundation website (www.openchannelfoundation.org) with a user
+To this purpose, a SourceForge webpage is being set up with a user
 forum, bug report forms, and other tools for interaction. Be sure to
 use them!
 
@@ -511,10 +561,9 @@ use them!
 9. Asking for help
 ==================
 
-Please refer to the forthcoming Synthetic LISA distribution site at
-the Open Channel Foundation (www.openchannelfoundation.org) to report
-bugs, request features, ask for explanations, and generally interact
-with other Synthetic LISA designers and with other users.
+Please refer to www.vallis.org/syntheticlisa to report bugs, request
+features, ask for explanations, and generally interact with other
+Synthetic LISA designers and with other users.
 
 =============
 10.To do list
