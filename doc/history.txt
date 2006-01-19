@@ -1,3 +1,9 @@
+2005/1/18  Release 1.2.8, beta version
+
+Added experimental lisaXML (XSIL-BFD) output in lisaxml.py. Some use of
+it (and also of PyX plotting) is made in examples/test-tdiequal.py.
+Modified __init__.py to load lisaxml.py.
+
 2005/12/21 Release 1.2.7, beta version
 
 Moved the main PyLISA code to lisasim-lisa.cpp from lisasim-lisa.h.
