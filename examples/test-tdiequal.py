@@ -1,5 +1,10 @@
 #!/usr/bin/python
 
+# $Id$
+# $Date$
+# $Author$
+# $Revision$
+
 # test of first-generation TDI noises for an equal-arm, stationary interferometer
 
 # this script demonstrates the generation of a TDI time series, and
@@ -15,7 +20,6 @@
 
 from synthlisa import *
 from Numeric import *
-
 
 # we create a LISA geometry object corresponding to a stationary LISA
 # with equal armlengths
@@ -39,7 +43,9 @@ originalTDI = TDInoise(originallisa,
 
 # get "samples" values of the noises, at times separated by "stime"
 
-samples = 2**18    # 2**18 takes 60 s on a 1.25GHz G4; 2**21 used for plot
+samples = 2**16    # 2**18 takes 60 s on a 1.25GHz G4; 2**21 used for plot
+
+# number of averaging patches for the spectra
 
 patches = 256
 
@@ -47,38 +53,75 @@ patches = 256
 # here send = 2, link = 3, recv = 1, and all the seven possible delays are set to 0
 # with a similar syntax (but eight delays) you could also get the z's
 
-tdiy231 = lambda t : originalTDI.y(2,3,1,0,0,0,0,0,0,0,t)
+originalTDI.y231 = lambda t : originalTDI.y(2,3,1,0,0,0,0,0,0,0,t)
 
 # notice the call to getobs with a list "[...]" of observables
 # the result is a 2D array with four columns, corresponding to the four observables
-# we use transpose to get the four columns into four separate 1D arrays
+ 
+observables = getobsc(samples,stime,[originalTDI.X,
+                                     originalTDI.alpha,
+                                     originalTDI.zeta,
+                                     originalTDI.U,
+                                     originalTDI.y231])
 
-[noiseX,
- noisea,
- noisez,
- noiseu,
- noisey] = transpose(getobs(samples,stime,[originalTDI.X,
-                                           originalTDI.alpha,
-                                           originalTDI.zeta,
-                                           originalTDI.U,
-                                           tdiy231]))
+outputXML = lisaXML('data/tdiequal',
+                    author='Michele Vallisneri',
+                    comments='OriginalLISA (stationary equal-arm) TDI noises')
 
-# you could also use the observable "time" to get the time at which the others
-# are evaluated
+# save time series to disk
+
+outputXML.TDIData(observables,samples,stime,'Xf,alphaf,zetaf,Uf,y231f')
+
+# collect the columns of 'observables' in single-column arrays
+# for each observable
+
+[noiseX,noisea,noisez,noiseu,noisey] = transpose(observables)
 
 # compute the spectra and write them to disk
 
 myspecX = spect(noiseX,stime,patches)
-writearray('data/tdiequal-X-freq.txt',myspecX[1:])
-
 myspeca = spect(noisea,stime,patches)
-writearray('data/tdiequal-alpha-freq.txt',myspeca[1:])
-
 myspecz = spect(noisez,stime,patches)
-writearray('data/tdiequal-zeta-freq.txt',myspecz[1:])
-
 myspecu = spect(noiseu,stime,patches)
-writearray('data/tdiequal-U-freq.txt',myspecu[1:])
-
 myspecy = spect(noisey,stime,patches)
-writearray('data/tdiequal-y231-freq.txt',myspecy[1:])
+
+outputXML.TDISpectraSelfDescribed(myspecX[1:],'f,Xf')
+outputXML.TDISpectraSelfDescribed(myspeca[1:],'f,alphaf')
+outputXML.TDISpectraSelfDescribed(myspecz[1:],'f,zetaf')
+outputXML.TDISpectraSelfDescribed(myspecu[1:],'f,uf')
+outputXML.TDISpectraSelfDescribed(myspecy[1:],'f,y231f')
+
+# all data is written only on closing the outputXML; thus the arrays referenced
+# in the TDIData and TDISpectra calls should not be altered in the meantime
+
+outputXML.close()
+
+# if PyX is available, plot the spectra
+
+try:
+    import pyx
+
+    # ??? how to choose the plotting range?
+
+    g1 = pyx.graph.graphxy(width=8,
+                           x=pyx.graph.axis.log(),
+                           y=pyx.graph.axis.log())
+
+    g1.plot(pyx.graph.data.list(map(tuple,myspecX[1:]),x=1,y=2),
+            [pyx.graph.style.line([pyx.color.rgb.black])])
+    g1.plot(pyx.graph.data.list(map(tuple,myspeca[1:]),x=1,y=2),
+            [pyx.graph.style.line([pyx.color.rgb.red])])
+    g1.plot(pyx.graph.data.list(map(tuple,myspecz[1:]),x=1,y=2),
+            [pyx.graph.style.line([pyx.color.rgb.green])])
+    g1.plot(pyx.graph.data.list(map(tuple,myspecu[1:]),x=1,y=2),
+            [pyx.graph.style.line([pyx.color.rgb.blue])])
+
+    g1.writeEPSfile("eps/tdiequal-spectra")
+
+    print "Spectra plotted in eps/tdiequal-spectra.eps"
+
+    # ??? encapsulate in lisautils.py?
+    # ??? legend?
+
+except ImportError:
+    print "Cannot find the plotting module PyX; skipping plotting"
