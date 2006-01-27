@@ -3,12 +3,17 @@
 # $Author$
 # $Revision$
 
-import Numeric
-
 import sys
 import os.path
 import time
+import string
 import re
+
+import Numeric
+
+import pyRXP
+# require xmlutils from pyRXP examples
+import xmlutils
 
 class writeXML:
     def __init__(self,filename):
@@ -266,7 +271,7 @@ class lisaXML(writeXML):
         self.coupletag('Param',{'Name': 'Cadence','Unit': 's'},
                                str(LISATimeSeries.cadence))        
 
-        self.coupletag('Duration',{'Name': 'Cadence','Unit': 's'},
+        self.coupletag('Param',{'Name': 'Duration','Unit': 's'},
                                   str(LISATimeSeries.duration))
        
         # ??? use <Column> to define columns (not in XSIL, but in BFD)?
@@ -279,25 +284,26 @@ class lisaXML(writeXML):
        
         self.closetag('XSIL')
 
-    def TDISpectraSelfDescribed(self,myspectrum,mydescription,myencoding='Binary',mycomments=''):
+    def TDISpectraSelfDescribed(self,data,description,encoding='Binary',comments=''):
         """Add a LISAFrequencySeries object to a lisaXML file object.
-        Here 'myspectrum' is the Numeric array containing the time
-        series (simultaneous entries on the same row); 'mydescription'
+        Here 'data' is the Numeric array containing the time
+        series (simultaneous entries on the same row); 'description'
         is a comma-separated string listing the TDI observables
-        represented in the time series; 'myencoding' can be 'Binary'
+        represented in the time series; 'encoding' can be 'Binary'
         for storage in a separate binary file, or 'Text' for inline
-        storage in the XML file; 'mycomments' is added to the
+        storage in the XML file; 'comments' is added to the
         LISAFrequencySeries entry.
         
         The other parameters to TDISpectra are obtained by examining the first
-        column of 'myspectrum', which is assumed to contain frequencies in Hz."""
+        column of 'data', which is assumed to contain frequencies in Hz."""
 
-        return self.TDISpectra(data=myspectrum,
-                               length=len(myspectrum),
-                               deltaf=myspectrum[1,0]-myspectrum[0,0],
-                               description=mydescription,
-                               encoding=myencoding,
-                               comments=mycomments)
+        return self.TDISpectra(data,
+                               len(data),
+                               data[1,0]-data[0,0],
+                               description,
+                               data[0,0],
+                               encoding,
+                               comments)
 
     def TDISpectra(self,data,length,deltaf,description,offset=0,encoding='Binary',comments=''):
         """Add a LISAFrequencySeries object to a lisaXML file object.
@@ -437,3 +443,145 @@ class lisaXML(writeXML):
         # do the actual writing
         
         writeXML.close(self)
+
+
+class readXML:
+    def __init__(self,filename):
+        p = pyRXP.Parser()        
+
+        f = open(filename)
+        tree = p(f.read())
+        f.close()
+
+        if tree[0] != 'XSIL':
+            print 'Not a LISA XSIL file!'
+            raise TypeError
+
+        self.directory = os.path.dirname(filename)
+
+        self.tw = xmlutils.TagWrapper(tree)
+
+    def getTime(self,node):
+        try:
+            # keep Time as string, get Type if provided
+            return (str(node),node.Type)
+        except AttributeError:
+            return (str(node),)
+        
+    def getParam(self,node):
+        try:
+            # convert Param to float, get Unit if provided
+            return (float(str(node)),node.Unit)
+        except AttributeError:
+            return (float(str(node)),)     
+
+    def getDim(self,node):
+        return int(str(node))
+
+    def processSeries(self,node):
+        timeseries = {}
+    
+        timeseries['Type'] = node.Type
+    
+        # I suppose 'Name' must be provided!
+        timeseries['Name'] = node.Name
+        timeseries['Vars'] = node.Name.split(',')
+    
+        for node2 in node:
+            if node2.tagName == 'Time':
+                timeseries[node2.Name] = self.getTime(node2)
+            elif node2.tagName == 'Param':
+                timeseries[node2.Name] = self.getParam(node2)
+            elif node2.tagName == 'Array':
+                for node3 in node2:
+                    if node3.tagName == 'Dim':
+                        timeseries[node3.Name] = self.getDim(node3)
+                    elif node3.tagName == 'Stream':
+                        timeseries['Encoding'] = node3.Encoding
+                        
+                        if node3.Type == 'Remote':
+                            timeseries['Filename'] = str(node3)
+                            
+                            if 'Binary' in timeseries['Encoding']:
+                                # assume length of doubles is 8 (generic?)
+                                readlength = 8*timeseries['Length']*timeseries['Records']
+    
+                                # need to catch reading errors here
+                                binaryfile = open(self.directory + '/' + timeseries['Filename'],'r')
+                                readbuffer = Numeric.fromstring(binaryfile.read(readlength),'double')
+                                binaryfile.close()
+                
+                                if (('BigEndian' in timeseries['Encoding'] and sys.byteorder == 'little') or
+                                    ('LittleEndian' in timeseries['Encoding'] and sys.byteorder == 'big')):
+                                    readbuffer = readbuffer.byteswapped()
+     
+                                if timeseries['Records'] == 1:
+                                    timeseries['Data'] = readbuffer
+                                else:
+                                    timeseries['Data'] = Numeric.reshape(readbuffer,
+                                                                         [timeseries['Length'],timeseries['Records']])
+                            else:
+                                # remote data, not binary
+                                raise NotImplemented
+                        elif node3.Type == 'Local':
+                            if 'Text' in timeseries['Encoding']:
+                                timeseries['Delimiter'] = node3.Delimiter
+                                
+                                datastring = str(node3)
+                                
+                                for delchar in timeseries['Delimiter']:
+                                    datastring = string.join(datastring.split(delchar),' ')
+    
+                                # there may be a more efficient way to initialize an array
+                                datavalues = map(float,datastring.split())
+    
+                                if timeseries['Records'] == 1:
+                                    timeseries['Data'] = Numeric.array(datavalues,'d')
+                                else:
+                                    timeseries['Data'] = Numeric.reshape(Numeric.array(datavalues,'d'),
+                                                                         [timeseries['Length'],timeseries['Records']])
+    
+                                # should try different delimiters
+                            else:
+                                # local data, not textual
+                                raise NotImplemented
+    
+        return timeseries
+
+    def getLISATimeSeries(self):
+        result = []
+        
+        for node in self.tw:
+            # outermost XSIL level container
+            
+            if node.tagName == 'XSIL':
+                if node.Name == 'TDIData':
+                    # inside TDIData
+        
+                    for node2 in node:
+                        if node2.tagName == 'XSIL':
+                            if node2.Type == 'LISATimeSeries':
+                                # got a TimeSeries!
+        
+                                result.append(self.processSeries(node2))
+    
+        return result
+
+    def getLISAFrequencySeries(self):
+        result = []
+        
+        for node in self.tw:
+            # outermost XSIL level container
+            
+            if node.tagName == 'XSIL':
+                if node.Name == 'TDIData':
+                    # inside TDIData
+        
+                    for node2 in node:
+                        if node2.tagName == 'XSIL':
+                            if node2.Type == 'LISAFrequencySeries':
+                                # got a FrequencySeries
+                                
+                                result.append(self.processSeries(node2))
+    
+        return result
