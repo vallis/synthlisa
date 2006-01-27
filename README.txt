@@ -1,5 +1,5 @@
 ====================================
-Synthetic LISA, v. 1.2.7, 01/05/2006
+Synthetic LISA, v. 1.2.8, 01/18/2006
 ====================================
 
 by M. Vallisneri and J. W. Armstrong
@@ -23,6 +23,7 @@ In this file:
    4d. Setting the Python path
    4e. Recompiling and Synthetic LISA
    4f. Installing PyX (optional)
+   4g. Installing pyRXP (optional?)
 5. System-specific notes
    5a. Mac OS X
    5b. Linux
@@ -42,7 +43,7 @@ In this file:
   you want to plot; an alternative is PyX, see 4f below). If you use
   Cygwin, you also need the Cygwin SWIG package.
 
-- Unpack the Synthetic LISA distribution (synthLISA-1.2.5.tar.gz) and
+- Unpack the Synthetic LISA distribution (synthLISA-1.2.8.tar.gz) and
   cd to it; download recent versions of Numeric and SWIG from
   www.vallis.org/syntheticlisa into the unpacked Synthetic LISA
   distribution directory.
@@ -131,7 +132,7 @@ If you need the GNU tools, Python, or Gnuplot, please see
 =================================
 
 To install and use Synthetic LISA from the source distribution
-(synthLISA-1.2.5.tar.gz) you need a working installation of Python and
+(synthLISA-1.2.8.tar.gz) you need a working installation of Python and
 of a Python-interoperable C/C++ compiler, preferably gcc. The setup of
 these is not discussed in this document.
 
@@ -367,6 +368,15 @@ numeric. The setup process will create the directory "etc" (and "lib",
 if needed) within [userdir]. Then the synthlisa-setdir.csh and
 synthlisa-setdir.sh scripts will automatically setup the Python path
 correctly to access PyX.
+
+-------------------------------
+4g.Installing pyRXP (optional?)
+-------------------------------
+
+For a local installation, cd into the pyRXP distribution directory and
+issue the command
+
+> python setup.py install --prefix=[userdir]
 
 ========================
 5. System-specific notes
