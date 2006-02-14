@@ -10,6 +10,8 @@
 #include <iostream>
 #include <cmath>
 
+#include <sys/time.h>
+
 // --- RingBuffer ---
 
 RingBuffer::RingBuffer(long len)
