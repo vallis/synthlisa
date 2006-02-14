@@ -10,6 +10,8 @@ import os
 import glob
 import re
 
+versiontag = '1.2.9'
+
 synthlisa_prefix = ''
 numeric_prefix = ''
 swig_bin = 'swig'
@@ -54,9 +56,17 @@ for file in source_files + header_files:
         line = handle.readline()
 
         if signature.match(line):
-            idcatalog += signature.match(line).group(1) + '\n'
+            if idcatalog:
+                idcatalog += '\n' + signature.match(line).group(1)
+            else:
+                idcatalog = signature.match(line).group(1)
 
     handle.close()
+
+version_py = open('lisasim/version.py','w')
+print >> version_py, "version_full = \"\"\"%s\"\"\"\n" % idcatalog
+print >> version_py, "version_short = \"%s\"\n" % versiontag
+version_py.close()
 
 # Swig away!
 
@@ -163,7 +173,7 @@ else:
     setdir_scripts = []
 
 setup(name = 'synthLISA',
-      version = '1.2.9',
+      version = versiontag,
       description = 'Synthetic LISA Simulator',
       long_description = idcatalog,
 
