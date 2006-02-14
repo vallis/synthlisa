@@ -3,6 +3,8 @@
 # $Author$
 # $Revision$
 
+import synthlisa
+
 import sys
 import os.path
 import time
@@ -417,6 +419,12 @@ class lisaXML(writeXML):
                                self.date)
         
         if self.comments:
+            self.comments += '\n\n'
+            self.comments += 'This file produced by Synthetic LISA v. %s\n' % synthlisa.version_short
+            self.comments += '(c) 2006 Michele Vallisneri, California Institute of Technology\n'
+            self.comments += '---------------------------------------------------------------\n'
+            self.comments += synthlisa.version_full
+
             self.opentag('Comment',{})
             self.content(self.comments)
             self.closetag('Comment')
