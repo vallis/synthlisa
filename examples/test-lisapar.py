@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+
+# $Id$
+# $Date$
+# $Author$
+# $Revision$
+
 import synthlisa
 
 def myfunc(x):
