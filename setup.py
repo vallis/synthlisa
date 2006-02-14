@@ -118,6 +118,14 @@ if numeric_prefix:
 
     pythonpath = pythonpath + get_python_lib(prefix=numeric_prefix) + '/Numeric'
 
+mpi_prefix = numeric_prefix
+
+if mpi_prefix:
+    if pythonpath:
+        pythonpath = pythonpath + ':'
+        
+    pythonpath = pythonpath + get_python_lib(prefix=mpi_prefix) + '/mpi'
+
 print >> setdir_sh, """
 if [ -z "${PYTHONPATH}" ]
 then
@@ -155,7 +163,7 @@ else:
     setdir_scripts = []
 
 setup(name = 'synthLISA',
-      version = '1.2.8',
+      version = '1.2.9',
       description = 'Synthetic LISA Simulator',
       long_description = idcatalog,
 
