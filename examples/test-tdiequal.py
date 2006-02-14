@@ -85,43 +85,14 @@ myspecz = spect(noisez,stime,patches)
 myspecu = spect(noiseu,stime,patches)
 myspecy = spect(noisey,stime,patches)
 
-outputXML.TDISpectraSelfDescribed(myspecX[1:],'f,Xf')
-outputXML.TDISpectraSelfDescribed(myspeca[1:],'f,alphaf')
-outputXML.TDISpectraSelfDescribed(myspecz[1:],'f,zetaf')
-outputXML.TDISpectraSelfDescribed(myspecu[1:],'f,uf')
-outputXML.TDISpectraSelfDescribed(myspecy[1:],'f,y231f')
+allspec = transpose([myspecX[:,0],myspecX[:,1],
+                                  myspeca[:,1],
+                                  myspecz[:,1],
+                                  myspecu[:,1]])
+
+outputXML.TDISpectraSelfDescribed(allspec[1:],'f,Xf,alphaf,zetaf,uf',encoding='Text')
 
 # all data is written only on closing the outputXML; thus the arrays referenced
 # in the TDIData and TDISpectra calls should not be altered in the meantime
 
 outputXML.close()
-
-# if PyX is available, plot the spectra
-
-try:
-    import pyx
-
-    # ??? how to choose the plotting range?
-
-    g1 = pyx.graph.graphxy(width=8,
-                           x=pyx.graph.axis.log(),
-                           y=pyx.graph.axis.log())
-
-    g1.plot(pyx.graph.data.list(map(tuple,myspecX[1:]),x=1,y=2),
-            [pyx.graph.style.line([pyx.color.rgb.black])])
-    g1.plot(pyx.graph.data.list(map(tuple,myspeca[1:]),x=1,y=2),
-            [pyx.graph.style.line([pyx.color.rgb.red])])
-    g1.plot(pyx.graph.data.list(map(tuple,myspecz[1:]),x=1,y=2),
-            [pyx.graph.style.line([pyx.color.rgb.green])])
-    g1.plot(pyx.graph.data.list(map(tuple,myspecu[1:]),x=1,y=2),
-            [pyx.graph.style.line([pyx.color.rgb.blue])])
-
-    g1.writeEPSfile("eps/tdiequal-spectra")
-
-    print "Spectra plotted in eps/tdiequal-spectra.eps"
-
-    # ??? encapsulate in lisautils.py?
-    # ??? legend?
-
-except ImportError:
-    print "Cannot find the plotting module PyX; skipping plotting"
