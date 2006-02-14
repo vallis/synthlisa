@@ -930,6 +930,16 @@ public:
 
     virtual double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t);
     virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
+
+	%extend {
+		double time(double thetime) {
+			return thetime;
+		};
+		
+		double t(double thetime) {
+			return thetime;
+		};
+    }
 };
 
 /* We're holding on to the constructor args so that the LISA object
