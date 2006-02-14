@@ -6,6 +6,7 @@
 from lisaswig import *
 from lisautils import *
 from lisaxml import *
+from version import *
 
 try:
     from lisapar import *
