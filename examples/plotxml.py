@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import synthlisa
 import Numeric                                
@@ -71,12 +71,14 @@ else:
 counter = 0
 
 for spectrum in spectra:
-    multiplot(spectrum['Data'],spectrum['Vars'][1:],basename,counter,loglog=True)
-    counter = counter + 1
+    if counter < len(basename):
+        multiplot(spectrum['Data'],spectrum['Vars'][1:],basename,counter,loglog=True)
+        counter = counter + 1
 
 for series in timeseries:
-    multiplot(series['Data'],series['Vars'][1:],basename,counter,loglog=False)
-    counter = counter + 1
+    if counter < len(basename):
+        multiplot(series['Data'],series['Vars'][1:],basename,counter,loglog=False)
+        counter = counter + 1
 
 # do some magic to do multiple plots by collating single spectra,
 # or by using one multiple spectrum
