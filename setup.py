@@ -39,6 +39,12 @@ gsl_hfiles = glob.glob('lisasim/GSL/*.h')
 
 lisasim_cppfiles = glob.glob('lisasim/*.cpp')
 lisasim_hppfiles = glob.glob('lisasim/*.h')
+lisasim_pyfiles  = glob.glob('lisasim/*.py')
+
+# remove lisasim/lisasim-swig_wrap.h from headers
+
+lisasim_hppfiles = filter(lambda s: s != 'lisasim/lisasim-swig_wrap.h',
+                          lisasim_hppfiles)
 
 source_files = lisasim_cppfiles + gsl_cfiles
 header_files = lisasim_hppfiles + gsl_hfiles
@@ -49,7 +55,7 @@ idcatalog = ""
 
 signature = re.compile('.*\$(Id.*)\$.*')
 
-for file in source_files + header_files:
+for file in source_files + header_files + lisasim_pyfiles:
     handle = open(file)
 
     for i in range(0,5):
