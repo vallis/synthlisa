@@ -295,6 +295,16 @@ Interpolator *getInterpolator(int interplen);
 
 // --- InterpolatedSignal ---
 
+class NoSignal : public Signal {
+ public:
+    NoSignal() {};
+    
+    void reset(unsigned long seed = 0) {};
+    
+    double value(double time) { return 0.0; };
+    double value(double timebase,double timecorr) { return 0.0; }
+};
+
 class InterpolatedSignal : public Signal {
  private:
 	SignalSource *source;
