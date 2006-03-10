@@ -104,7 +104,7 @@ def opwpdg(series,patches,detrend=0):
 
     opwpdgram = Numeric.zeros(pdlen+1,typecode='d')
 
-    for cnt in range(0,2*patches-1):
+    for cnt in xrange(0,2*patches-1):
         opwpdgram[:] += wpdg(series[cnt*pdlen:(cnt+2)*pdlen],detrend)
 
     opwpdgram[:] /= (2.0*patches - 1.0)
@@ -122,7 +122,7 @@ def nopwpdg(series,patches,detrend=0):
 
     opwpdgram = Numeric.zeros(pdlen+1,typecode='d')
 
-    for cnt in range(0,patches):
+    for cnt in xrange(0,patches):
         opwpdgram[:] += wpdg(series[cnt*patlen:(cnt+1)*patlen],detrend)
 
     opwpdgram[:] /= 1.0*patches
@@ -134,10 +134,10 @@ def whiten(series,patches=1):
 
     patlen = samples / patches
     
-    for j in range(0,patches-1):
+    for j in xrange(0,patches-1):
         integ = 0.0
 
-        for i in range(0,patlen):
+        for i in xrange(0,patlen):
             next = series[j*patlen+i]
             series[j*patlen+i] = integ
             integ = integ+next
@@ -145,7 +145,7 @@ def whiten(series,patches=1):
 def darken(spectrum,stime):
     samples = Numeric.shape(spectrum)[0]
 
-    for cnt in range(1,samples):
+    for cnt in xrange(1,samples):
         spectrum[cnt,1] = spectrum[cnt,1] * (2*Numeric.sin(math.pi*spectrum[cnt,0]*stime))**2.0
 
 # make it so that "time" is an observable
@@ -165,7 +165,7 @@ def getobs(snum,stime,observables,zerotime=0.0):
         obslen = Numeric.shape(observables)[0]
         array = Numeric.zeros((snum,obslen),typecode='d')
         for i in Numeric.arange(0,snum):
-            for j in range(0,obslen):
+            for j in xrange(0,obslen):
                 array[i,j] = observables[j](zerotime+i*stime)
     return array
 
@@ -178,7 +178,7 @@ def testobs(snum,stime,observables,zerotime=0.0):
         obslen = Numeric.shape(observables)[0]
         array = Numeric.zeros((snum,obslen),typecode='d')
         for i in Numeric.arange(0,snum):
-            for j in range(0,obslen):
+            for j in xrange(0,obslen):
                 array[i,j] = observables[j](zerotime+i*stime)
     return None
 
@@ -227,7 +227,7 @@ def getobsc(snum,stime,observables,zerotime=0.0):
             obslen = Numeric.shape(observables)[0]
             array = Numeric.zeros((snum,obslen),typecode='d')
             for i in Numeric.arange(0,snum):
-                for j in range(0,obslen):
+                for j in xrange(0,obslen):
                     array[i,j] = observables[j](zerotime+i*stime)
                 if i % 1024 == 0:
                     lasttime = dotime(i,snum,inittime,lasttime)
@@ -295,12 +295,12 @@ def readarray(filename):
     if bshape[1] == 1:
         buffer = Numeric.zeros(bshape[0],'d')
 
-        for index in range(0,bshape[0]):
+        for index in xrange(0,bshape[0]):
             buffer[index] = float(lines[index][0])
     else:
         buffer = Numeric.zeros(bshape,'d')
 
-        for index in range(0,buffer.shape[0]):
+        for index in xrange(0,buffer.shape[0]):
             buffer[index,:] = map(float,lines[index])
 
     return buffer
