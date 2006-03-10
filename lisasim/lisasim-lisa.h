@@ -127,6 +127,10 @@ class LISA {
 	an abstract class. */
     virtual void putp(Vector &p, int craft, double t) = 0;
 
+    /* Simple implementation of spacecraft velocity by first-order
+    one-second finite-difference expression */
+    virtual void putv(Vector &v, int craft, double t);
+
     /* Generic light propagation time along "arm" for reception at
        time t. */
     virtual double armlength(int arm, double t);
@@ -145,6 +149,8 @@ class LISA {
     virtual double armlengthaccurate(int arm, double t) {
 	   return 0.0;
     }
+
+    virtual double dotarmlength(int arm, double t);
 
     virtual void newretardtime(double t);
 

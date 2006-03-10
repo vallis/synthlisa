@@ -37,6 +37,15 @@ void LISA::putn(Vector &n,int arms,double t) {
     n.setnormalized();    
 }
 
+void LISA::putv(Vector &v, int craft, double t) {
+    Vector pp, pm;
+    
+    putp(pp,craft,t + 0.5);
+    putp(pm,craft,t - 0.5);
+    
+    v.setdifference(pp,pm);
+}
+
 /** Generic version of armlength. Will use putp iteratively to
     find the delay corresponding to a photon trajectory backward
     from t along "arm" */
@@ -87,6 +96,10 @@ double LISA::armlength(int arms, double t) {
     } while( fabs(newguess - guess) > tol );
 
     return newguess;
+}
+
+double LISA::dotarmlength(int arm, double t) {
+    return (armlength(arm,t + 0.5) - armlength(arm,t - 0.5));
 }
 
 void LISA::newretardtime(double t) {
