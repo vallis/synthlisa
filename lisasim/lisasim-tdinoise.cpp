@@ -504,3 +504,280 @@ double TDIaccurate::z(int send, int slink, int recv, int ret1, int ret2, int ret
 		- cs[recv]->noise(t,retardation) );
     }
 }
+
+// --- TDIdoppler ---
+
+
+/* TDIdoppler::TDIdoppler(LISA *mylisa, Noise *proofnoise[6],Noise *shotnoise[6],Noise *lasernoise[6],double laserfreqs[6])
+    : TDInoise(mylisa,proofnoise,shotnoise,lasernoise) {
+    lf[1] = laserfreqs[0];
+    lfs[1] = laserfreqs[1];
+    
+    lf[2] = laserfreqs[2];
+    lfs[2] = laserfreqs[3];
+    
+    lf[3] = laserfreqs[4];
+    lfs[3] = laserfreqs[5];
+}; */
+
+double TDIdoppler::y(int send, int slink, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t) {
+    int link = abs(slink);
+
+    // this recursive retardation procedure assumes smart TDI...
+
+    lisa->newretardtime(t);
+    double dopplerfactor = 1.0;
+
+    if(ret7 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret7,t));
+        lisa->retard(ret7);
+    }
+
+    if(ret6 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret6,lisa->retardedtime()));
+        lisa->retard(ret6);
+    }
+
+    if(ret5 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret5,lisa->retardedtime()));
+        lisa->retard(ret5);
+    }
+
+    if(ret4 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret4,lisa->retardedtime()));
+        lisa->retard(ret4);
+    }
+
+    if(ret3 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret3,lisa->retardedtime()));
+        lisa->retard(ret3);
+    }
+
+    if(ret2 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret2,lisa->retardedtime()));
+        lisa->retard(ret2);
+    }
+
+    if(ret1 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret1,lisa->retardedtime()));
+        lisa->retard(ret1);
+    }
+
+    double retardation = -lisa->retardation();
+
+    if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2)) {
+        lisa->retard(phlisa,link);
+        double retardlaser = -lisa->retardation();
+
+        double doppler = 1.0 - phlisa->dotarmlength(link,t + retardation);
+
+        return dopplerfactor * ( doppler * cs[send]->noise(t,retardlaser)
+                                 - doppler * 2.0 * pm[recv]->noise(t,retardation) 
+                                 - c[recv]->noise(t,retardation)
+                                 + shot[send][recv]->noise(t,retardation) );
+    } else {
+        lisa->retard(phlisa,-link);
+        double retardlaser = -lisa->retardation();
+
+        double doppler = 1.0 - phlisa->dotarmlength(-link,t + retardation);
+        
+        return dopplerfactor * ( doppler * c[send]->noise(t,retardlaser)
+                                 + doppler * 2.0 * pms[recv]->noise(t,retardation)
+                                 - cs[recv]->noise(t,retardation)
+                                 + shot[send][recv]->noise(t,retardation) );
+    }
+}
+
+double TDIdoppler::z(int send, int slink, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t) {
+    int link = abs(slink);
+
+    // this recursive retardation procedure assumes smart TDI...
+    // (and the correct order in the retardation expressions)
+
+    lisa->newretardtime(t);
+    double dopplerfactor = 1.0;
+
+    if(ret8 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret8,t));
+        lisa->retard(ret8);
+    }
+
+    if(ret7 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret7,lisa->retardedtime()));
+        lisa->retard(ret7);
+    }
+
+    if(ret6 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret6,lisa->retardedtime()));
+        lisa->retard(ret6);
+    }
+
+    if(ret5 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret5,lisa->retardedtime()));
+        lisa->retard(ret5);
+    }
+
+    if(ret4 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret4,lisa->retardedtime()));
+        lisa->retard(ret4);
+    }
+
+    if(ret3 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret3,lisa->retardedtime()));
+        lisa->retard(ret3);
+    }
+
+    if(ret2 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret2,lisa->retardedtime()));
+        lisa->retard(ret2);
+    }
+
+    if(ret1 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret1,lisa->retardedtime()));
+        lisa->retard(ret1);
+    }
+    
+    double retardation = -lisa->retardation();
+
+    if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2)) {
+        // cyclic combination
+
+        return dopplerfactor * ( cs[recv]->noise(t,retardation)
+                                 - 2.0 * pms[recv]->noise(t,retardation)
+                                 - c[recv]->noise(t,retardation) );
+    } else {
+        // anticyclic combination
+
+        return dopplerfactor * ( c[recv]->noise(t,retardation)
+                                 + 2.0 * pm[recv]->noise(t,retardation)
+                                 - cs[recv]->noise(t,retardation) );
+    }
+}
+
+// --- TDIcarrier ---
+
+TDIcarrier::TDIcarrier(LISA *mylisa,double *laserfreqs)
+    : TDInoise(mylisa,1.0,0.0,1.0,0.0,1.0,0.0) {
+    lf[1] = laserfreqs[0];
+    lfs[1] = laserfreqs[1];
+
+    lf[2] = laserfreqs[2];
+    lfs[2] = laserfreqs[3];
+    
+    lf[3] = laserfreqs[4];
+    lfs[3] = laserfreqs[5];    
+};
+
+double TDIcarrier::y(int send, int slink, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t) {
+    int link = abs(slink);
+
+    // this recursive retardation procedure assumes smart TDI...
+
+    lisa->newretardtime(t);
+    double dopplerfactor = 1.0;
+
+    if(ret7 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret7,t));
+        lisa->retard(ret7);
+    }
+
+    if(ret6 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret6,lisa->retardedtime()));
+        lisa->retard(ret6);
+    }
+
+    if(ret5 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret5,lisa->retardedtime()));
+        lisa->retard(ret5);
+    }
+
+    if(ret4 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret4,lisa->retardedtime()));
+        lisa->retard(ret4);
+    }
+
+    if(ret3 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret3,lisa->retardedtime()));
+        lisa->retard(ret3);
+    }
+
+    if(ret2 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret2,lisa->retardedtime()));
+        lisa->retard(ret2);
+    }
+
+    if(ret1 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret1,lisa->retardedtime()));
+        lisa->retard(ret1);
+    }
+
+    if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2)) {
+        double doppler = 1.0 - phlisa->dotarmlength(link,lisa->retardedtime());
+
+        return dopplerfactor * ( doppler * lfs[send] - lf[recv] );
+    } else {
+        double doppler = 1.0 - phlisa->dotarmlength(-link,lisa->retardedtime());
+        
+        return dopplerfactor * ( doppler * lf[send] - lf[recv] );
+    }
+}
+
+double TDIcarrier::z(int send, int slink, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t) {
+    int link = abs(slink);
+
+    // this recursive retardation procedure assumes smart TDI...
+    // (and the correct order in the retardation expressions)
+
+    lisa->newretardtime(t);
+    double dopplerfactor = 1.0;
+
+    if(ret8 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret8,t));
+        lisa->retard(ret8);
+    }
+
+    if(ret7 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret7,lisa->retardedtime()));
+        lisa->retard(ret7);
+    }
+
+    if(ret6 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret6,lisa->retardedtime()));
+        lisa->retard(ret6);
+    }
+
+    if(ret5 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret5,lisa->retardedtime()));
+        lisa->retard(ret5);
+    }
+
+    if(ret4 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret4,lisa->retardedtime()));
+        lisa->retard(ret4);
+    }
+
+    if(ret3 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret3,lisa->retardedtime()));
+        lisa->retard(ret3);
+    }
+
+    if(ret2 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret2,lisa->retardedtime()));
+        lisa->retard(ret2);
+    }
+
+    if(ret1 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret1,lisa->retardedtime()));
+        // lisa->retard(ret1);
+    }
+    
+    if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2)) {
+        // cyclic combination
+
+        return dopplerfactor * ( lfs[recv] - lf[recv] );
+    } else {
+        // anticyclic combination
+
+        return dopplerfactor * ( lf[recv] - lfs[recv] );
+    }
+}

@@ -16,19 +16,17 @@ class TDInoise : public TDI {
  protected:
     LISA *lisa, *phlisa;
 
-    Noise *pm[4], *pms[4];
-        
-    // I label shot noises by sending and receiving spacecraft, not by link and receiving
-        
-    Noise *shot[4][4];
-
-    Noise *c[4], *cs[4];
-
     // set this to one if we are allocating noise objects
 
     int allocated;
     
  public:
+    // Note: I label shot noises by sending and receiving spacecraft, not by link and receiving
+
+    Noise *pm[4], *pms[4];
+    Noise *shot[4][4];
+    Noise *c[4], *cs[4];
+    
     // standard noises for everybody, same levels
 
     TDInoise(LISA *mylisa, double stproof = 1.0, double sdproof = 2.5e-48, double stshot = 1.0, double sdshot = 1.8e-37, double stlaser = 1.0, double sdlaser = 1.1e-26);
@@ -70,7 +68,8 @@ class TDInoise : public TDI {
 
 class TDIaccurate : public TDInoise {
  public:
-    TDIaccurate(LISA *mylisa, Noise *proofnoise[6],Noise *shotnoise[6],Noise *lasernoise[6]) : TDInoise(mylisa,proofnoise,shotnoise,lasernoise) {};
+    TDIaccurate(LISA *mylisa, Noise *proofnoise[6],Noise *shotnoise[6],Noise *lasernoise[6])
+        : TDInoise(mylisa,proofnoise,shotnoise,lasernoise) {};
     
     ~TDIaccurate() {};
 
@@ -79,10 +78,35 @@ class TDIaccurate : public TDInoise {
 };
 
 
+/* If you do TDIdoppler, you get TDIaccurate for free! */
+
+class TDIdoppler : public TDInoise {
+ public:
+    TDIdoppler(LISA *mylisa, Noise *proofnoise[6],Noise *shotnoise[6],Noise *lasernoise[6])
+        : TDInoise(mylisa,proofnoise,shotnoise,lasernoise) {};
+        
+    ~TDIdoppler() {};
+    
+    double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t);
+    double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
+};
+
+class TDIcarrier : public TDInoise {
+ private:
+    double lf[4], lfs[4];
+
+ public:
+    TDIcarrier(LISA *mylisa,double *laserfreqs);
+
+    ~TDIcarrier() {};
+
+    double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t);
+    double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
+};
+
 // return approx lighttime, for estimation of noise buffer size
 
 extern double lighttime(LISA *lisa);
-
 
 // standard Noise factories (should be static class members somewhere ???)
 
@@ -90,12 +114,10 @@ extern Noise *stdproofnoise(LISA *lisa,double stproof,double sdproof,int interp 
 extern Noise *stdopticalnoise(LISA *lisa,double stshot,double sdshot,int interp = 1);
 extern Noise *stdlasernoise(LISA *lisa,double stlaser,double sdlaser,int interp = 1);
 
-
 // ??? Why is the "extern" needed?
 
 extern TDInoise *stdnoise(LISA *mylisa);
 
-
-extern void retardone(LISA *lisa,int ret,double t,double *retardedtime,double *totalretardbaseline,double *totalretardaccurate);
+extern double retardation(LISA *lisa,int ret1,int ret2,int ret3,int ret4,int ret5,int ret6,int ret7,int ret8,double t);
 
 #endif /* _LISASIM_TDINOISE_H_ */
