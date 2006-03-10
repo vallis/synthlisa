@@ -423,3 +423,14 @@
 %typemap(freearg) Tensor &outtensor {
     delete $1;
 }
+
+%typemap(out) Noise *[ANY] {
+    PyObject *t;
+
+    t = PyTuple_New($1_dim0);
+
+    for(int i=0;i<$1_dim0;i++)
+        PyTuple_SetItem(t,i,SWIG_NewPointerObj($1[i],$descriptor(Noise *),0));
+
+    $result = t;
+}
