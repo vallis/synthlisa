@@ -56,6 +56,9 @@ def multiplot(spectra,titles,filename,number,loglog=False):
     else:
         g.writeEPSfile(thefilename)
 
+    return thefilename
+
+
 r = synthlisa.readXML(sys.argv[1])
 
 spectra = r.getLISAFrequencySeries()
@@ -69,16 +72,24 @@ else:
     basename = sys.argv[2:]
 
 counter = 0
+files = []
 
 for spectrum in spectra:
     if counter < len(basename):
-        multiplot(spectrum['Data'],spectrum['Vars'][1:],basename,counter,loglog=True)
+        files.append(multiplot(spectrum['Data'],spectrum['Vars'][1:],basename,counter,loglog=True))
         counter = counter + 1
 
 for series in timeseries:
     if counter < len(basename):
-        multiplot(series['Data'],series['Vars'][1:],basename,counter,loglog=False)
+        files.append(multiplot(series['Data'],series['Vars'][1:],basename,counter,loglog=False))
         counter = counter + 1
+
+if sys.platform == 'darwin':
+    for file in files:
+        os.system('open ' + file)
+elif 'linux' in sys.platform:
+    for file in files:
+        os.system('gv ' + file + ' &')
 
 # do some magic to do multiple plots by collating single spectra,
 # or by using one multiple spectrum
