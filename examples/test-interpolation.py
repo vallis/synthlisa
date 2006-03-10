@@ -1,4 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+
+# $Id$
+# $Date$
+# $Author$
+# $Revision$
 
 # test of noise distortion with interpolation schemes of increasing order
 
@@ -10,23 +15,22 @@
 from synthlisa import *
 from Numeric import *
 
-
 # generate the same noise object with:
 
 # no interpolation (noise defaults to nearest sample)
-lasernoise0 = InterpolateNoise(1.0,256.0,1.0,0.0,0)
+lasernoise0 = PowerLawNoise(1.0,256.0,1.0,0.0,0)
 
 # linear interpolation
-lasernoise1 = InterpolateNoise(1.0,256.0,1.0,0.0,1)
+lasernoise1 = PowerLawNoise(1.0,256.0,1.0,0.0,1)
 
 # Lagrange interpolation with order = 4 (semiwindow of 2)
-lasernoise2 = InterpolateNoise(1.0,256.0,1.0,0.0,2)
+lasernoise2 = PowerLawNoise(1.0,256.0,1.0,0.0,2)
 
 # Lagrange interpolation with order = 8 (semiwindow of 4)
-lasernoise4 = InterpolateNoise(1.0,256.0,1.0,0.0,4)
+lasernoise4 = PowerLawNoise(1.0,256.0,1.0,0.0,4)
 
 # Lagrange interpolation with order = 32 (semiwindow of 16)
-lasernoise8 = InterpolateNoise(1.0,256.0,1.0,0.0,16)
+lasernoise8 = PowerLawNoise(1.0,256.0,1.0,0.0,16)
 
 # get "samples" values of the noises, at times separated by "stime"
 
@@ -37,16 +41,35 @@ patches = 512
 
 # produce the noises
 
-noise0 = getobs(samples,sstep,lasernoise0.noise)
-noise1 = getobs(samples,sstep,lasernoise1.noise)
-noise2 = getobs(samples,sstep,lasernoise2.noise)
-noise4 = getobs(samples,sstep,lasernoise4.noise)
-noise8 = getobs(samples,sstep,lasernoise8.noise)
+noise0 = getobs(samples,sstep,lasernoise0)
+noise1 = getobs(samples,sstep,lasernoise1)
+noise2 = getobs(samples,sstep,lasernoise2)
+noise4 = getobs(samples,sstep,lasernoise4)
+noise8 = getobs(samples,sstep,lasernoise8)
 
 # compute the spectra and write to disk
 
-writearray('data/interpnoise0-freq.txt',spect(noise0,sstep,patches)[1:])
-writearray('data/interpnoise1-freq.txt',spect(noise1,sstep,patches)[1:])
-writearray('data/interpnoise2-freq.txt',spect(noise2,sstep,patches)[1:])
-writearray('data/interpnoise4-freq.txt',spect(noise4,sstep,patches)[1:])
-writearray('data/interpnoise8-freq.txt',spect(noise8,sstep,patches)[1:])
+spec0 = spect(noise0,sstep,patches)
+spec1 = spect(noise1,sstep,patches)
+spec2 = spect(noise2,sstep,patches)
+spec4 = spect(noise4,sstep,patches)
+spec8 = spect(noise8,sstep,patches)
+
+allspec = transpose([spec0[:,0],spec0[:,1],
+                                spec1[:,1],
+                                spec2[:,1],
+                                spec4[:,1],
+                                spec8[:,1]])
+
+outputXML = lisaXML('data/interpolation',
+                    author='Michele Vallisneri',
+                    comments='Test of interpolated white noise')
+                    
+outputXML.TDISpectraSelfDescribed(allspec[1:],'f,i0,i1,i2,i4,i8',encoding='Text')
+
+outputXML.close()
+
+print "You can plot the results of this script by running"
+print "  ./plotxml.py data/interpolation.xml eps/interpolation-spectra.eps"
+print "or"
+print "  ./plotxml.py data/interpolation.xml eps/interpolation-spectra.pdf"
