@@ -5,6 +5,7 @@
  
 import Numeric
 import FFT
+import arrayfns
 import math
 
 # estimate spectrum
@@ -321,6 +322,81 @@ def readbinary(filename,length):
     # then reshape the buffer if needed
     return buffer
 
+# S/N utility functions
+
+import arrayfns
+
+def sn(signal,noise,stime,npatches):
+    """Compute the optimal S/N for signal, sampled at intervals of
+    stime, and for the total duration represented in the array, against noise
+    represented by the time series noise; npatches overlapping periods are used
+    to estimate the PSD of the noise."""
+
+    # compute signal spectrum without windowing or averaging
+    sspec = spect(signal,stime,0)
+
+    # compute the noise spectrum, using segment averaging
+    nspec = spect(noise,stime,npatches)
+
+    # interpolate the noise to be defined on the same frequencies
+    # of the signal's spectrum
+
+    ispec = Numeric.zeros(Numeric.shape(sspec),typecode='d')
+    ispec[:,0] = sspec[:,0]
+
+    ispec[:,1] = arrayfns.interp(nspec[:,1],nspec[:,0],ispec[:,0])
+
+    # the (S/N)^2 is given by 2T times the integrated ratio
+    # of the spectral densities (the factor of 2 because the spectral
+    # density is one-sided); notice however that the df is 1/T,
+    # so we need only to sum up the array containing the ratio,
+    # and multiply by two
+
+    sratio = Numeric.zeros(Numeric.shape(sspec)[0],typecode='d')
+    sratio[1:] = sspec[1:,1] / ispec[1:,1]
+    sn2 = 2.0 * sum(sratio[1:])
+
+    return math.sqrt(sn2)
+
+import FFT
+
+def real(number):
+	try:
+		return number.real
+	except AttributeError:
+		return abs(number)
+
+def noiseproduct(signal1,signal2,noise,stime,npatches):
+    """Compute the noise inner product for signal1 and signal2, where
+    the two signals are sampled at intervals stime, and the product is computed
+    for the total duration represented in the array, against noise
+    represented by the time series noise; npatches overlapping periods are used
+    to estimate the PSD of the noise."""
+    
+    # compute signal FFT without windowing or averaging
+    # this definition of the FFT satisfied Parseval's theorem, with
+    # sum(signal**2) * stime == sum(abs(sfour)**2) / (stime*length(signal))
+    # [since deltaf = 1 / (totaltime)]
+
+    sfour1 = stime * FFT.fft(signal1)
+    sfour2 = stime * FFT.fft(signal2)
+    
+    # compute the noise spectrum, using segment averaging,
+    # and interpolate the noise to be defined on the same frequencies
+    # of the signal's spectrum
+
+    nspec = spect(noise,stime,npatches)
+
+    siglen = len(signal1)
+    deltaf = 1.0 / (stime * siglen)
+
+    fourlen = siglen/2 + 1
+    ispec = Numeric.zeros([fourlen,2],typecode='d')
+
+    ispec[:,0] = deltaf * Numeric.arange(0,fourlen)
+    ispec[:,1] = arrayfns.interp(nspec[:,1],nspec[:,0],ispec[:,0])
+   
+    return 4.0 * real(sum(sfour1[1:fourlen] * conjugate(sfour2[1:fourlen]) / ispec[1:,1])) * deltaf
 
 # healpix (need to sort out the license)
 
