@@ -100,7 +100,7 @@ class WhiteNoiseSource : public BufferedSignalSource {
 class SampledSignalSource : public SignalSource {
  private:
 	double *data;
-	long length;
+	long length, warn;
 
 	double normalize;
 
@@ -109,9 +109,6 @@ class SampledSignalSource : public SignalSource {
 
 	double operator[](long pos);
 };
-
-
-
 
 
 /* Filters! It might be tempting to inline the getvalue() call, but it
@@ -180,15 +177,12 @@ class SignalFilter : public BufferedSignalSource {
 	SignalSource *source;
 	Filter *filter;
 
-	double normalize;
-
  public:
-	SignalFilter(long length,SignalSource *src,Filter *flt,double norm = 1.0);
+	SignalFilter(long length,SignalSource *src,Filter *flt);
 
 	double getvalue(long pos);
 	
 	void reset(unsigned long seed = 0);  // ??? redefining default
-	double operator[](long pos);
 };
 
 
@@ -264,9 +258,23 @@ class LagrangeInterpolator : public Interpolator {
     LagrangeInterpolator(int semiwin);
     virtual ~LagrangeInterpolator();
 
-        double getvalue(SignalSource &y,long ind,double dind);
+    double getvalue(SignalSource &y,long ind,double dind);
 };
 
+class DotLagrangeInterpolator : public Interpolator {
+ private:
+    int window, semiwindow;
+
+    double *xa,*ya,*yd;
+
+    double dpolint(double x);
+
+ public:
+    DotLagrangeInterpolator(int semiwin);
+    virtual ~DotLagrangeInterpolator();
+
+    double getvalue(SignalSource &y,long ind,double dind);
+};
 
 class NewLagrangeInterpolator : public Interpolator {
  private:
@@ -291,7 +299,7 @@ class NewLagrangeInterpolator : public Interpolator {
 // get one of the above by choosing its length (-1 for Extrapolator)
 
 Interpolator *getInterpolator(int interplen);
-
+Interpolator *getDerivativeInterpolator(int interplen);
 
 // --- InterpolatedSignal ---
 
@@ -310,7 +318,7 @@ class InterpolatedSignal : public Signal {
 	SignalSource *source;
 	Interpolator *interp;
 	
-	double samplingtime, prebuffertime,normalize;
+	double samplingtime, prebuffertime, normalize;
 	
  public:
 	InterpolatedSignal(SignalSource *src,Interpolator *inte,

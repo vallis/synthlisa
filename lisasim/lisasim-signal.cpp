@@ -99,6 +99,9 @@ unsigned long WhiteNoiseSource::getglobalseed() {
 void WhiteNoiseSource::seedrandgen(unsigned long seed) {
     if (seed == 0) {
 		gsl_rng_set(randgen,globalseed);
+		
+		// should replace this simple seed enumeration
+		// with something a bit more sophisticated
 		globalseed++;
     } else {
 		gsl_rng_set(randgen,seed);
@@ -166,19 +169,24 @@ void ResampledSignalSource::reset(unsigned long seed) {
 // does not own the data array!
 
 SampledSignalSource::SampledSignalSource(double *darray,long len,double norm)
-	: data(darray), length(len), normalize(norm) {}
+	: data(darray), length(len), warn(0), normalize(norm) {}
 
 // will pad with zeros on the negative index side
+// NEW BEHAVIOR: will pad with zeros outside the sampled length, but will
+// warn once
 
 double SampledSignalSource::operator[](long pos) {
 	if(pos < 0) {
 		return 0.0;
 	} else if(pos >= length) {
-		std::cerr << "SampledSignalSource::operator[](long): index too large at "
+		if(warn == 0) {
+			std::cerr << "SampledSignalSource::operator[](long): padding with zeros after pos "
 		          << pos << " [" << __FILE__ << ":" << __LINE__ << "]." << std::endl;
 
-		ExceptionOutOfBounds e;
-		throw e;
+			warn = 1;
+		}
+			
+		return 0.0;
 	} else {
 		return normalize * data[pos];
 	}
@@ -262,8 +270,8 @@ double IIRFilter::getvalue(SignalSource &x,SignalSource &y,long pos) {
 
 // --- SignalFilter ---
 
-SignalFilter::SignalFilter(long len,SignalSource *src,Filter *flt,double norm)
-	: BufferedSignalSource(len), source(src), filter(flt), normalize(norm) {}
+SignalFilter::SignalFilter(long len,SignalSource *src,Filter *flt)
+	: BufferedSignalSource(len), source(src), filter(flt) {}
 
 void SignalFilter::reset(unsigned long seed) {
 	source->reset(seed);
@@ -274,11 +282,6 @@ void SignalFilter::reset(unsigned long seed) {
 double SignalFilter::getvalue(long pos) {
 	return filter->getvalue(*source,*this,pos);
 }
-
-double SignalFilter::operator[](long pos) {
-	return normalize * BufferedSignalSource::operator[](pos);
-}
-
 
 // --- Interpolators ---
 
@@ -301,7 +304,60 @@ double LinearExtrapolator::getvalue(SignalSource &y,long ind,double dind) {
 }
 
 
-// --- LagrangeInterpolator ---
+// --- DotLagrangeInterpolator ---
+
+double DotLagrangeInterpolator::getvalue(SignalSource &y,long ind,double dind) {
+	// ya[1] .. ya[2*semiwindow]
+	// xa[1] .. xa[2*semiwindow] = 1 .. 2*semiwindow
+
+	for(int i=0;i<semiwindow;i++) {
+		ya[semiwindow-i] = y[ind-i];
+		ya[semiwindow+i+1] = y[ind+i+1];
+	}
+
+	for(int i=1;i<=window;i++) {
+		yd[i] = 0.0;
+	};
+
+	// x = semiwindow + dind is between ya[semiwindow] and ya[semiwindow+1]
+
+	return dpolint(semiwindow+dind);
+}
+
+double DotLagrangeInterpolator::dpolint(double x) {
+	for(int gen=1;gen<=window-1;gen++) {
+		for(int i=1;i<=window-gen;i++) {
+			double &xb = xa[i+gen];
+			double &xt = xa[i];
+
+			double invden = 1.0 / (xt - xb);
+
+			yd[i] = (ya[i] - ya[i+1] + (x - xb) * yd[i] + (xt - x) * yd[i+1]) * invden;
+			ya[i] = ((x - xb) * ya[i] + (xt - x) * ya[i+1]) * invden;
+		}
+	}
+
+	return yd[1];
+}
+
+DotLagrangeInterpolator::DotLagrangeInterpolator(int semiwin)
+    : window(2*semiwin), semiwindow(semiwin),
+      xa(new double[2*semiwin+1]), ya(new double[2*semiwin+1]),
+      yd(new double[2*semiwin+1]) {
+                
+	for(int i=1;i<=window;i++) {
+		xa[i] = 1.0*i;
+
+		ya[i] = 0.0;
+		yd[i] = 0.0;
+	}    
+}
+
+DotLagrangeInterpolator::~DotLagrangeInterpolator() {
+	delete [] yd;
+    delete [] ya;
+    delete [] xa;
+}
 
 double LagrangeInterpolator::getvalue(SignalSource &y,long ind,double dind) {
 	for(int i=0;i<semiwindow;i++) {
@@ -458,6 +514,19 @@ Interpolator *getInterpolator(int interplen) {
 }
 
 
+Interpolator *getDerivativeInterpolator(int interplen) {
+	if (interplen > 0)
+		return new DotLagrangeInterpolator(interplen);
+	else {
+		std::cerr << "getDerivativeInterpolator(...): undefined interpolator length "
+		          << interplen << " [" << __FILE__ << ":" << __LINE__ << "]." << std::endl;
+	
+		ExceptionUndefined e;
+		throw e;
+	}
+}
+
+
 // InterpolatedSignal
 
 InterpolatedSignal::InterpolatedSignal(SignalSource *src,Interpolator *inte,
@@ -528,6 +597,9 @@ void InterpolatedSignal::setinterp(Interpolator *inte) {
 
 // PowerLawNoise
 
+/* ??? I wonder what the 32 is doing in "prebuffer/deltat+32". Does it imply
+   a maximum length for interpolators? Also in SampledSignal ??? */
+
 PowerLawNoise::PowerLawNoise(double deltat,double prebuffer,
 				double psd,double exponent,int interplen,unsigned long seed) {
 
@@ -552,7 +624,7 @@ PowerLawNoise::PowerLawNoise(double deltat,double prebuffer,
 	}
 
 	whitenoise = new WhiteNoiseSource(long(prebuffer/deltat+32),seed);
-	filterednoise = new SignalFilter(long(prebuffer/deltat+32),whitenoise,filter,normalize);
+	filterednoise = new SignalFilter(long(prebuffer/deltat+32),whitenoise,filter);
 
 	try {
 		interp = getInterpolator(interplen);	
@@ -563,7 +635,7 @@ PowerLawNoise::PowerLawNoise(double deltat,double prebuffer,
 		throw e;		
 	}
 
-	interpolatednoise = new InterpolatedSignal(filterednoise,interp,deltat,prebuffer);
+	interpolatednoise = new InterpolatedSignal(filterednoise,interp,deltat,prebuffer,normalize);
 }
 
 PowerLawNoise::~PowerLawNoise() {
