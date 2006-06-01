@@ -38,19 +38,19 @@ lisa = EccentricInclined()
 
 # creates the SimpleBinary object
 
-mysystem = PhysicalBinary(freq = 1.0e-3,
+mysystem = PhysicalBinary(freq = 1.0e-4,
                           phi0 = 0.0,
-                          inc = math.pi/4.2,
-                          amp = (0.5,0.033,0.05),
-                          elat = math.pi/3.0,
-                          elon = 0.0, 
+                          inc = math.pi/4,
+                          amp = (1.4,1.4,0.6),
+                          elat = -51 * (math.pi/180),
+                          elon = 124 * (math.pi/180), 
                           psi = math.pi/10.0)
                
 # creates a TDIsignal object with lisa and mysystem
                
 signalTDI = TDIsignal(lisa,mysystem)
 
-stime = 32.0
+stime = 128.0
 
 # creates a TDInoise object with standard proof-mass and shot noise
 # no laser noise since it would not be canceled with first-generation TDI
