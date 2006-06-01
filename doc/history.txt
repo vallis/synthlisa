@@ -1,3 +1,78 @@
+2005/5/31  Release 1.3.0, beta version
+
+Worked substantially on lisaxml.py to allow for read/write of lisaXML
+files.
+
+Added differentiating Lagrange interpolator; fixed bug in Signal Filter
+for IIR filters; modified SampledNoise to return zeros (with warning) at
+end of arrays.
+
+Modified CacheLengthLISA to use derivative-interpolator to get
+armlengths; addition of LISA.putv (LISA s/c coordinate velocities) and
+LISA.dotarmlength.
+
+In the SWIG interface, new "intelligent" Python constructor for TDInoise
+(will look at arguments and understand what's being given, and also
+keep Python references to allocated objects).
+
+In lisasim/lisasim-tdinoise, Fixed (perhaps) noise seeds; used more
+precise expressions (hopefully) for Doppler corrections to lasers.
+
+In lisautils, corrected angle conversions in healpix calls; added more
+healpix calls; modified stdSampledLISA to return Cached object that uses
+differentiating interpolator.
+
+Modified setup.py to allow compilation of Stas' lisawp components (added
+to contrib directory).
+
+2005/3/10  Release 1.2.9, beta version
+
+Reorganized distribution directory.
+
+Modified default-install.py to do selected installs only, including
+MMPI. I'm currently distributing a modified version of MMPI. Also,
+added mpi to the PYTHONPATH created in setup.py.
+
+Added first serious version of LISApar (lisapar.py), using MMPI; added
+time and t as TDI observables
+
+Fixed sys/time.h include in lisasim-TDIsignal.h (needed in Linux).
+
+Added time series plotting to plotxml.py; but XML needs to have column
+for time.
+
+Added tagging (from CVS tags) to XML output (Comment field). Included
+.py files among the tagged files.
+
+Removed lisasim-swig_wrap.h from the "depends" file in setup.py.
+Otherwise a simple change to lisasim-swig.i triggers recompilation of
+all cpp files.
+
+Experimental: started adding dumpXML method to TDInoise and Noise;
+problem with having the correct inherited version of Noise being called
+might be solved by moving creation of "standard" Noise objects to the
+Python layer. Should also keep a C++ version though in case anybody
+wants to use the library directly.
+
+Added null noise object NoSignal to lisasim-signal.h
+
+Added methods to return spacecraft velocities (putv) and armlength rates
+of change (dotarmlength) to the base class LISA in lisasim-lisa.[h|cpp].
+So far the derivatives are taken with a simple 1-s finite-difference
+expression.
+
+Experimental: added typemap for retrieving Noise object from C++ Noise*
+pointer; unfortunately, the resulting SWIG pointer does not have any
+derived-class information. Experimented with dynamic casting,
+unsuccessfully. It seems that the best approach would be to have
+object-allocating constructors written directly in Python.
+
+plotXML now tries to open the graphics files it produces by calling
+"open" on OS X and "gv" on Linux.
+
+Added TDIdoppler (TDIaccurate with 1 - Ldot multipliers) and TDIcarrier
+(returns only laser carrier frequency differences) to lisasim-tdinoise.[h|cpp].
+
 2005/1/18  Release 1.2.8, beta version
 
 Added experimental lisaXML (XSIL-BFD) output in lisaxml.py. Some use of
