@@ -92,7 +92,7 @@ def runswig(source,cppfile,pyfile,deps):
             spawn([swig_bin,'-w402','-c++','-python','-o',cppfile,source])
         except:
             print 'Sorry, I am unable to swig the modified ' + lisasim_isource
-            sys.exit(cmd)
+            sys.exit(1)
 
 runswig(lisasim_isource,lisasim_cppfile,lisasim_pyfile,
         header_files + [lisasim_isource,lisasim_iheader])
@@ -178,6 +178,49 @@ if pythonpath:
 else:
     setdir_scripts = []
 
+synthlisapackages = ['synthlisa', 'healpix']
+
+synthlisapackage_dir = {'synthlisa' : 'lisasim','healpix' : 'lisasim/healpix'}
+
+# do contribs (CPP only for the moment...)
+
+contribs = []
+
+for entry in glob.glob('contrib/*'):
+    if os.path.isdir(entry):
+        contrib_packagename = os.path.basename(entry)
+
+        contrib_source_files = glob.glob(entry + '/*.cpp') + glob.glob(entry + '/*.cc')
+        contrib_header_files = glob.glob(entry + '/*.h') + glob.glob(entry + '/*.hh')
+
+        contrib_swigfiles = glob.glob(entry + '/*.i')
+
+        # each SWIG file creates a separate extension
+        for contrib_swigfile in contrib_swigfiles:
+            contrib_basefile = re.sub('\.i$','',contrib_swigfile)
+            contrib_basename = os.path.basename(contrib_basefile)
+    
+            # assume SWIG file has the same name of the module
+            contrib_wrapfile = contrib_basefile + '_wrap.cpp'
+            contrib_pyfile = contrib_basefile + '.py'
+    
+            runswig(contrib_swigfile,contrib_wrapfile,contrib_pyfile,
+                    contrib_header_files + [contrib_swigfile])
+    
+            contrib_extname = contrib_packagename + '/_' + contrib_basename
+            
+            contrib_extension = Extension(contrib_extname,
+                                          contrib_source_files,
+                                          include_dirs = [entry,numeric_hfiles],
+                                          depends = contrib_header_files)
+    
+            contribs.append(contrib_extension)
+
+        synthlisapackages.append(contrib_packagename)
+        synthlisapackage_dir[contrib_packagename] = entry
+
+# do the actual setup
+
 setup(name = 'synthLISA',
       version = versiontag,
       description = 'Synthetic LISA Simulator',
@@ -187,10 +230,9 @@ setup(name = 'synthLISA',
       author_email = 'vallis@vallis.org',
       url = 'http://www.vallis.org/syntheticlisa',
 
-      packages = ['synthlisa', 'healpix'],
+      packages = synthlisapackages,
       
-      package_dir = {'synthlisa' : 'lisasim',
-                     'healpix' : 'lisasim/healpix'},
+      package_dir = synthlisapackage_dir,
 
       scripts = setdir_scripts,
 
@@ -205,5 +247,5 @@ setup(name = 'synthLISA',
                                source_healpix,
                                include_dirs = ['lisasim/healpix',numeric_hfiles],
                                depends = header_healpix
-                               )]
+                               )] + contribs
       )
