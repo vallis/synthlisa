@@ -407,13 +407,18 @@ def hnpix(nside):
 
 def hn2ec(nside,ipix):
     (th,ph) = healpix.healpix.pix2ang_nest(nside,ipix)
-    return (math.pi-th,ph)
+    return (0.5*math.pi-th,ph)
     
 def hr2ec(nside,ipix):
     (th,ph) = healpix.healpix.pix2ang_ring(nside,ipix)
-    return (math.pi-th,ph)
+    return (0.5*math.pi-th,ph)
 
+def ec2hn(nside,elat,elon):
+	return healpix.healpix.ang2pix_nest(nside,0.5*math.pi-elat,elon)
 
+def ec2hr(nside,elat,elon):
+	return healpix.healpix.ang2pix_ring(nside,0.5*math.pi-elat,elon)
+	
 # lisa positions from Ted Sweetser's file
 
 import os
@@ -453,11 +458,14 @@ Ted's Julian date 2457023.5."""
 import lisaswig
 
 def stdSampledLISA(interp=1):
-    """Returns an interpolated SampledLISA object based on the position arrays
-returned by stdLISApositions(); the argument interp sets the semilength
-of the interpolation window, and prebuffering is set to interp times 1
-day (the spacing of the stdLISApositions() data."""
+    """Returns an interpolated and cached SampledLISA object based on the position
+    arrays returned by stdLISApositions(); the argument interp sets the semilength
+    of the interpolation window, and prebuffering is set to interp times 1
+    day (the spacing of the stdLISApositions() data."""
 
     [t,p1,p2,p3] = stdLISApositions()
     
-    return lisaswig.SampledLISA(p1,p2,p3,86400,86400*interp,interp)
+    slisa = lisaswig.SampledLISA(p1,p2,p3,86400,86400*interp,interp)
+
+    return lisaswig.CacheLengthLISA(slisa,86400*interp,86400,interp)
+    
