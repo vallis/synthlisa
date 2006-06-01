@@ -12,6 +12,7 @@ include examples/data/README.txt
 include examples/eps/README.txt
 include examples/bfd.dtd
 include examples/plotxml.py
+include examples/test-bbh.py
 include examples/test-binary.py
 include examples/test-lisapar.py
 include examples/test-tdiequal.py
