@@ -61,8 +61,8 @@ def multiplot(spectra,titles,filename,number,loglog=False):
 
 r = synthlisa.readXML(sys.argv[1])
 
-spectra = r.getLISAFrequencySeries()
-timeseries = r.getLISATimeSeries()
+spectra = r.getTDIFrequencySeries()
+timeseries = r.getTDITimeSeries()
 
 # number 
 
