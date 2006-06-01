@@ -671,9 +671,10 @@ double LISASource::getvalue(long pos) {
 CacheLengthLISA::CacheLengthLISA(LISA *l,long length,double deltat,int interplen)
     : basicLISA(l) {
 	try {
-		interp = getInterpolator(interplen);	
+		interp = getInterpolator(interplen);
+        dinterp = getDerivativeInterpolator(interplen);
 	} catch (ExceptionUndefined &e) {
-		std::cerr << "PowerLawNoise::PowerLawNoise(...): undefined interpolator length "
+		std::cerr << "CacheLengthLISA::CacheLengthLISA(...): undefined interpolator length "
 				  << interplen << " [" << __FILE__ << ":" << __LINE__ << "]." << std::endl;
 			
 		throw e;		
@@ -689,6 +690,10 @@ CacheLengthLISA::CacheLengthLISA(LISA *l,long length,double deltat,int interplen
 	for(int i=1;i<7;i++) {
 		armlengths[i] = new InterpolatedSignal(lisafuncs[i],interp,deltat,prebuffer);
 	}
+
+	for(int i=1;i<7;i++) {
+		dotarmlengths[i] = new InterpolatedSignal(lisafuncs[i],dinterp,deltat,prebuffer,1.0/deltat);
+	}
 		
 	if(l->physlisa() == l) {
 	   physLISA = this;
@@ -696,21 +701,24 @@ CacheLengthLISA::CacheLengthLISA(LISA *l,long length,double deltat,int interplen
 	   physLISA = new CacheLengthLISA(l->physlisa(),length,deltat,interplen);
 	}
 }
-
+    
 CacheLengthLISA::~CacheLengthLISA() {
     if(physLISA != this) delete physLISA;
 
+	for(int i=1;i<7;i++) delete dotarmlengths[i];
 	for(int i=1;i<7;i++) delete armlengths[i];
 
 	for(int i=1;i<7;i++) delete lisafuncs[i];
 
+    delete dinterp;
 	delete interp;
 }
 
 void CacheLengthLISA::reset() {
     if(physLISA != this) physLISA->reset();
 
-	for(int i=1;i<7;i++) armlengths[i]->reset();
+	for(int i=1;i<7;i++) dotarmlengths[i]->reset();
+    for(int i=1;i<7;i++) armlengths[i]->reset();
 }
 
 LISA* CacheLengthLISA::physlisa() {
@@ -733,6 +741,16 @@ double CacheLengthLISA::armlengthbaseline(int arm, double t) {
 
 double CacheLengthLISA::armlengthaccurate(int arm, double t) {
 	return 0.0;
+}
+
+double CacheLengthLISA::dotarmlength(int arm, double t) {
+	assertArm(arm);
+
+	if(arm > 0) {
+		return dotarmlengths[arm]->value(t);
+	} else {
+		return dotarmlengths[3-arm]->value(t);
+	}
 }
 
 // need this because basicLISA's putn will call basicLISA's armlength

@@ -350,7 +350,6 @@ class LISASource : public BufferedSignalSource {
 	double getvalue(long pos);
 };
 
-
 class CacheLengthLISA : public LISA {
  private:
 	LISA *basicLISA, *physLISA;
@@ -358,9 +357,10 @@ class CacheLengthLISA : public LISA {
 	// use {1,2,3,-1,-2,-3} = {1,2,3,4,5,6} indexing for armlengths
 
 	LISASource *lisafuncs[7];
-	Interpolator *interp;
 
-	InterpolatedSignal *armlengths[7];
+	Interpolator *interp, *dinterp;
+
+	InterpolatedSignal *armlengths[7], *dotarmlengths[7];
 
  public:
     CacheLengthLISA(LISA *lisa,long length,double deltat,int interplen = 4);
@@ -374,6 +374,8 @@ class CacheLengthLISA : public LISA {
 
 	double armlengthbaseline(int arm, double t);
     double armlengthaccurate(int arm, double t);
+
+    double dotarmlength(int arm, double t);
 
     void putn(Vector &n, int arm, double t);
     void putp(Vector &p, int craft, double t);
