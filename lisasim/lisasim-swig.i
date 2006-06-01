@@ -33,17 +33,21 @@ Destructor. See above.
 
 %define exceptionhandle(thefunction,theexception,theerror)
 %exception thefunction {
-	try {
-		$action
-	} catch (theexception &e) {
-		PyErr_SetString(theerror,"");
-		return NULL;
-	}
+    try {
+        $action
+    } catch (theexception &e) {
+        PyErr_SetString(theerror,"");
+        return NULL;
+    }
 };
 %enddef
 
 /* -------- LISA objects -------- */
 
+%pythoncode %{
+import math
+import sys
+%}
 
 %feature("docstring") LISA "
 LISA is the base class for all LISA geometries. All derived LISA
@@ -58,10 +62,20 @@ components (normalized) of arm l (1,2,3,-1,-2,-3) at time t [s]."
 LISA.putp(i,t) -> (pix,piy,piz) returns a 3-tuple with the SSB
 coordinates of spacecraft i (1,2,3) at time t [s]."
 
+%feature("docstring") LISA::putv "
+LISA.putv(i,t) -> (vix,viy,viz) returns a 3-tuple with the SSB
+coordinate speed of spacecraft i (1,2,3) at time t [s], given
+in units of the speed of light."
+
 %feature("docstring") LISA::armlength "
 LISA.armlength(l,t) the armlength [s] of LISA link l (1,2,3,-1,-2,-3)
-at time t [s]."
-
+for laser pulse reception at time t [s]."
+    
+%feature("docstring") LISA::dotarmlength "
+LISA.armlength(l,t) the instantaneous rate of change of the armlength
+of LISA link l (1,2,3,-1,-2,-3) for laser pulse reception a time t [s],
+given in units of the speed of light."
+    
 %feature("docstring") LISA::reset "
 LISA.reset() resets any underlying pseudo-random or ring-buffer
 elements used by the LISA object."
@@ -70,10 +84,12 @@ elements used by the LISA object."
 
 class LISA {
   public:
-    virtual void putp(Vector &outvector, int arm, double t);
+    virtual void putp(Vector &outvector, int craft, double t);
     virtual void putn(Vector &outvector, int arm, double t);
-
+    virtual void putv(Vector &outvector, int craft, double t);
+    
     virtual double armlength(int arm, double t);
+    virtual double dotarmlength(int arm, double t);
     
     virtual void reset();
 };
@@ -91,6 +107,8 @@ p1y = 0."
 
 initdoc(OriginalLISA)
 
+initsave(OriginalLISA)
+
 class OriginalLISA : public LISA {
   public:
     OriginalLISA(double arm1 = Lstd,double arm2 = Lstd,double arm3 = Lstd);
@@ -107,6 +125,8 @@ Because of the rotation, the armlengths depend on the
 direction of light propagation."
 
 initdoc(ModifiedLISA)
+
+initsave(ModifiedLISA)
 
 class ModifiedLISA : public OriginalLISA {
   public:
@@ -132,6 +152,8 @@ velocity. The orbits follow Krolak et al, PRD 70, 022003 (2004)."
 
 initdoc(CircularRotating)
 
+initsave(CircularRotating)
+
 class CircularRotating : public LISA {
   public:
     CircularRotating(double eta0=0.0, double xi0=0.0, double sw=0.0, double t0=0.0);
@@ -148,11 +170,13 @@ baricenter and array phase at t0=0; sw<0 swaps spacecraft)."
 
 initdoc(EccentricInclined)
 
+initsave(EccentricInclined)
+
 class EccentricInclined : public LISA {
  public:
     EccentricInclined(double eta0=0.0, double xi0=0.0, double sw=1.0, double t0=0.0);
 
-	double genarmlength(int arm,double t);
+    double genarmlength(int arm,double t);
 };
 
 
@@ -285,9 +309,10 @@ initsave(CacheLengthLISA)
 class CacheLengthLISA : public LISA {
  public:
     CacheLengthLISA(LISA *lisa,long length,double deltat,int interplen = 4);
-	~CacheLengthLISA();
+    ~CacheLengthLISA();
 };
 
+extern double retardation(LISA *lisa,int ret1,int ret2,int ret3,int ret4,int ret5,int ret6,int ret7,int ret8,double t);
 
 /* -------- Signal/Noise objects -------- */
 
@@ -296,13 +321,13 @@ exceptionhandle(SignalSource::__getitem__,ExceptionOutOfBounds,PyExc_IndexError)
 %nodefault SignalSource;
 class SignalSource {
  public:
-	virtual void reset(unsigned long seed = 0);
+    virtual void reset(unsigned long seed = 0);
 
-	%extend {
-		double __getitem__(long pos) {
-			return (*self)[pos];
-		};
-	};
+    %extend {
+        double __getitem__(long pos) {
+            return (*self)[pos];
+        };
+    };
 };
 
 
@@ -322,16 +347,17 @@ increased by one after each creation or initialization. This is a class
 
 class WhiteNoiseSource : public SignalSource {
  public:
-	WhiteNoiseSource(long len,unsigned long seed = 0,double norm = 1.0);	
+    WhiteNoiseSource(long len,unsigned long seed = 0,double norm = 1.0);    
 
     static void setglobalseed(unsigned long seed = 0);
     static unsigned long getglobalseed();
 };
 
+initsave(SampledSignalSource)
 
 class SampledSignalSource : public SignalSource {
  public:
-	SampledSignalSource(double *numarray,long length,double norm = 1.0);
+    SampledSignalSource(double *numarray,long length,double norm = 1.0);
 };
 
 
@@ -340,7 +366,7 @@ class Filter;
 
 class NoFilter : public Filter {
  public:
-	NoFilter();
+    NoFilter();
 };
 
 class IntFilter : public Filter {
@@ -350,22 +376,24 @@ class IntFilter : public Filter {
 
 class DiffFilter : public Filter {
  public:
-	DiffFilter();
+    DiffFilter();
 };
 
 class FIRFilter: public Filter {
  public:
- 	FIRFilter(double *doublearray,int doublenum);
+    FIRFilter(double *doublearray,int doublenum);
 };
 
 class IIRFilter : public Filter {
  public:
- 	IIRFilter(double *doublearray,int doublenum,double *doublearray,int doublenum);
+    IIRFilter(double *doublearray,int doublenum,double *doublearray,int doublenum);
 };
+
+initsave(SignalFilter)
 
 class SignalFilter : public SignalSource {
   public:
-	SignalFilter(long length,SignalSource *src,Filter *flt,double norm = 1.0);
+    SignalFilter(long length,SignalSource *src,Filter *flt);
 };
 
 exceptionhandle(Signal::value,ExceptionOutOfBounds,PyExc_IndexError)
@@ -376,14 +404,14 @@ class Signal {
  public:
     virtual void reset(unsigned long seed = 0);
 
-	virtual double value(double time);
-	virtual double value(double timebase,double timecorr);
-	
-	%extend {
-		double __call__(double time) {
-			return self->value(time);
-		};
-	};
+    virtual double value(double time);
+    virtual double value(double timebase,double timecorr);
+    
+    %extend {
+        double __call__(double time) {
+            return self->value(time);
+        };
+    };
 };
 
 typedef Signal Noise;
@@ -395,19 +423,19 @@ class Interpolator;
 
 class NearestInterpolator : public Interpolator {
  public:
-	NearestInterpolator();
+    NearestInterpolator();
 };
 
 
 class LinearInterpolator : public Interpolator {
  public:
-	LinearInterpolator();
+    LinearInterpolator();
 };
 
 
 class LinearExtrapolator : public Interpolator {
  public:
-	LinearExtrapolator();
+    LinearExtrapolator();
 };
 
 
@@ -417,53 +445,142 @@ class LagrangeInterpolator : public Interpolator {
 };
 
 
+class DotLagrangeInterpolator : public Interpolator {
+ public:
+    DotLagrangeInterpolator(int semiwin);
+};
+
+
 class NewLagrangeInterpolator : public Interpolator {
  public:
     NewLagrangeInterpolator(int semiwin);
 };
 
-
-extern Interpolator *getInterpolator(int interplen);
-
+class NoSignal : public Signal {
+ public:
+    NoSignal();
+};
 
 initsave(InterpolatedSignal)
 
 class InterpolatedSignal : public Signal {
  public:
-	InterpolatedSignal(SignalSource *src,Interpolator *interp,
-					   double deltat,double prebuffer = 0.0,double norm = 1.0);
-	
-	void setinterp(Interpolator *inte);
+    InterpolatedSignal(SignalSource *src,Interpolator *interp,
+                       double deltat,double prebuffer = 0.0,double norm = 1.0);
+    
+    void setinterp(Interpolator *inte);
 };
 
+%pythoncode %{
+def getInterpolator(interplen=1):
+    if interplen == 0:
+        ret = NearestInterpolator()
+        ret.type = 'NearestNeighbor'
+    elif interplen == -1:
+        ret = LinearExtrapolator()
+        ret.type = 'LinearExtrapolator'
+    elif interplen == 1:
+        ret = LinearInterpolator()
+        ret.type = 'Linear'
+    elif interplen > 0:
+        ret = LagrangeInterpolator(interplen)
+        ret.type = 'Lagrange'
+        ret.window = interplen
+    else:
+        raise NotImplementedError, "getInterpolator: undefined interpolator length %s (lisasim-swig.i)." % interplen
 
-%feature("docstring") PowerLawNoise "
-PowerLawNoise(deltat,prebuffer,psd,exponent,interplen = 1,seed = 0)
-"
+    return ret
 
-initdoc(PowerLawNoise)
+def getDerivativeInterpolator(interplen=2):
+    if interplen > 1:
+        return DotLagrangeInterpolator(interplen)
+    else: 
+        raise NotImplementedError, "getDerivativeInterpolator: undefined interpolator length %s (lisasim-swig.i)." % interplen
+%}
 
-class PowerLawNoise : public Signal {
- public:
-	PowerLawNoise(double deltat,double prebuffer,double psd,double exponent,
-				  int interplen = 1,unsigned long seed = 0);
-};
+%pythoncode %{
+def PowerLawNoise(deltat,prebuffer,psd,exponent,interplen=1,seed=0):
+    nyquistf = 0.5 / deltat
 
+    if exponent == 0:
+        filter = NoFilter()
+        normalize = math.sqrt(psd) * math.sqrt(nyquistf)
+        type = 'WhiteFrequency'
+        psdunit = '1/Hz'
+    elif exponent == 2:
+        filter = DiffFilter()
+        normalize = math.sqrt(psd) * math.sqrt(nyquistf) / (2.00 * math.pi * deltat)
+        type = 'WhitePhase'
+        psdunit = '(f/Hz)^2/Hz'
+    elif exponent == -2:
+        filter = IntFilter()
+        normalize = math.sqrt(psd) * math.sqrt(nyquistf) * (2.00 * math.pi * deltat)
+        type = 'WhiteAcceleration'
+        psdunit = '(f/Hz)^-2/Hz'
+    else:
+        raise NotImplementedError, "PowerLawNoise: undefined PowerLaw exponent %s (lisasim-swig.i)." % exponent
 
-%feature("docstring") SampledSignal "
-SampledSignal(numarray,deltat,prebuffer,norm = 1.0,filter = 0,interplen = 1)
-"
+    whitenoise = WhiteNoiseSource(int(prebuffer/deltat+32),seed)
+    filterednoise = SignalFilter(int(prebuffer/deltat+32),whitenoise,filter)
 
-initdoc(SampledSignal)
+    interp = getInterpolator(interplen)
 
-initsave(SampledSignal)
+    noise = InterpolatedSignal(filterednoise,interp,deltat,prebuffer,normalize)
 
-class SampledSignal : public Signal {
- public:
-	SampledSignal(double* numarray,long length,double deltat,double prebuffer,
-				  double norm = 1.0,Filter *filter = 0,int interplen = 1);
-};
+    noise.ident = [
+        ('Param',{'Name': 'SpectralType'},type),
+        ('Param',{'Name': 'Cadence','Unit': 's'},'%s' % deltat),
+        ('Param',{'Name': 'TimeOffset', 'Unit': 's'},'%s' % prebuffer),
+        ('Param',{'Name': 'PowerSpectralDensity', 'Unit': psdunit},'%s' % psd),
+        ('Param',{'Name': 'PseudoRandomGenerator'}, 'taus2-gsl1.4'),
+        ('Param',{'Name': 'PseudoRandomSeed'},'%s' % seed),
+        ('Param',{'Name': 'Interpolator'},interp.type)
+    ]
 
+    if hasattr(interp,'window'):
+        noise.ident.append(('Param',{'Name': 'InterpolatorWindow'},'%s' % interp.window))
+
+    # should append to or modify noise.initargs, if it exists
+
+    return noise
+%}
+
+%pythoncode %{
+def SampledSignal(array,deltat,prebuffer,norm = 1.0,filter = None,interplen = 1):
+    interp = getInterpolator(interplen)
+
+    if interplen > prebuffer/deltat:
+        sys.stderr.write('Warning---SampledSignal: for t = 0, interpolator (semiwin=%s) will stray beyond prebuffer, yielding zeros.' % interplen)
+
+	samplednoise = SampledSignalSource(array,norm)
+
+	if not filter:
+		filteredsamples = 0
+		interpolatednoise = InterpolatedSignal(samplednoise,interp,deltat,prebuffer)		
+	else:
+		filteredsamples = SignalFilter(int(prebuffer/deltat+32),samplednoise,filter)
+		interpolatednoise = InterpolatedSignal(filteredsamples,interp,deltat,prebuffer)
+
+    interpolatednoise.timeseries = array
+
+    interpolatednoise.ident = [
+        ('Param',{'Name': 'Type'},'FractionalFrequencyFluctuation'),
+        ('Param',{'Name': 'Cadence','Unit': 's'},'%s' % deltat),
+        ('Param',{'Name': 'TimeOffset', 'Unit': 's'},'%s' % prebuffer),
+        ('Param',{'Name': 'Interpolator'},interp.type)
+    ]
+
+    if hasattr(interp,'window'):
+        noise.ident.append(('Param',{'Name': 'InterpolatorWindow'},'%s' % interp.window))
+        
+    if norm != 1.0:
+        interpolatednoise.ident.append(('Param',{'Name': 'Normalization'},'%s' % norm))
+
+    if filter != None:
+        interpolatednoise.ident.append(('Param',{'Name': 'Filtering'},'???'))
+
+    return interpolatednoise
+%}
 
 %feature("docstring") CachedSignal "
 CachedSignal(Signal,bufferlen,deltat,interplen = 4)
@@ -559,6 +676,8 @@ following parameters:
   polarization pol."
 
 initdoc(SimpleBinary)
+
+initsave(SimpleBinary)
 
 class SimpleBinary : public Wave {
  public:
@@ -710,7 +829,7 @@ class NoiseWave : public Wave {
     NoiseWave(double sampletime, double prebuffer, double density, double exponent, int swindow, double elat, double elon, double p);
         
     // from sampled buffers (using filters and interpolation...)
-	NoiseWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double norm, Filter *filter, int swindow, double b, double l, double p);
+    NoiseWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double norm, Filter *filter, int swindow, double b, double l, double p);
 
     ~NoiseWave();
 
@@ -931,14 +1050,10 @@ public:
     virtual double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t);
     virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
 
-	%extend {
-		double time(double thetime) {
-			return thetime;
-		};
-		
-		double t(double thetime) {
-			return thetime;
-		};
+    %extend {
+        double time(double thetime) { return thetime; };
+
+        double t(double thetime) { return thetime; };
     }
 };
 
@@ -956,7 +1071,6 @@ class TDIquantize : public TDI {
 
 %feature("docstring") TDInoise "
 TDInoise(lisa,PMnoise[6],      SHnoise[6],      LSnoise[6])
-TDInoise(lisa,PMdt[6],PMpsd[6],SHdt[6],SHpsd[6],LSdt[6],LSpsd[6])
 TDInoise(lisa,PMdt,   PMpsd,   SHdt,   SHpsd,   LSdt,   LSpsd)
 
 all return TDI objects that implement the inter- and intra-spacecraft
@@ -972,19 +1086,17 @@ defined in the base TDI class are available from TDInoise.
   [pn_1,pn_1*,pn_2,pn_2*,pn_3,pn_3*]
   [y^sh_{12},y^sh_{21},y^sh_{23},y^sh_{32},y^sh_{31},y^sh_{13}]
   [C_1,C_1*,C_2,C_2*,C_3,C_3*]
+  
+  TODO: this ordering/naming not consistent with XML format ordering
 
 - In the second form of the constructor, the noise object are created
   internally as pseudorandom noise objects (equivalent to PowerLawNoise)
-  with sampling times PMdt[i], SHdt[i], and LSdt[i] (for the ith
-  proof-mass, shot, and laser-phase noise respectively), and with
-  approximate one-sided power spectral densities
+  with sampling times PMdt, SHdt, and LSdt, and with approximate
+  one-sided power spectral densities
 
   PMpsd*(f/Hz)^-2 Hz^-1
   SHpsd*(f/Hz)^2  Hz^-1
   LSpsd           Hz^-1
-
-- In the third form of the constructor, the same sampling time and psd
-  parameter is used for the six noises of each type.
 
 Note: resetting the TDInoise object will reset all the component noise
 objects. 
@@ -994,45 +1106,111 @@ self-built pseudorandom noise objects."
 
 initdoc(TDInoise)
 
-/* We're holding on to the constructor args so that the LISA/Noise
-   objects won't get destroyed if they fall out of scope: we may still
-   need them! */
-
-/* Note that if TDInoise is initialized with a reference to a list,
-   successive modifications to the list will not be mirrored in the
-   contents of the TDInoise, and could result in unwanted behavior.
-   To avoid the possibility of this, TDInoise should be created with a
-   tuple. */
-
 initsave(TDInoise)
 
-%apply double PYTHON_SEQUENCE_DOUBLE[ANY] {double stproof[6], double sdproof[6], double stshot[6], double sdshot[6], double stlaser[6], double sdlaser[6], double claser[6]}
-
-%apply Noise *PYTHON_SEQUENCE_NOISE[ANY] {Noise *proofnoise[6], Noise *shotnoise[6], Noise *lasernoise[6]}
-
-/* Same for physical LISA objects */
+// not so sure about this...
 
 %feature("addtofunc") TDInoise::setphlisa {
         self.phlisa = args
 }
 
+// utility Python functions needed by TDInoise constructor
+
+%pythoncode %{
+    def lighttime(lisa):
+        # to estimate size of noisebuffer, take maximum armlength at time zero,
+        # and add 10% for uplink-downlink uncertainty and flexing
+
+        return 1.10 * max(lisa.armlength(1,0.0),
+                          lisa.armlength(2,0.0),
+                          lisa.armlength(3,0.0))
+
+    def stdproofnoise(lisa,stproof,sdproof,interp=1):
+        # we need quadruple retardations for the V's appearing in the z's
+        # (octuple for 2nd-gen TDI); we add two sampling times to allow linear
+        # interpolation for large sampling times
+    
+        pbtproof = 8.0 * lighttime(lisa) + 2.0*stproof
+    
+        return PowerLawNoise(stproof,pbtproof,sdproof,-2.0,interp)
+
+    def stdopticalnoise(lisa,stshot,sdshot,interp=1):
+        # we need only triple retardations for the shot's appearing in the y's
+        # (septuple for 2nd-gen TDI); we add two sampling times to allow linear
+        # interpolation for large sampling times
+    
+        pbtshot = 7.0 * lighttime(lisa) + 2.0*stshot
+    
+        return PowerLawNoise(stshot,pbtshot,sdshot,2.0,interp)
+
+    def stdlasernoise(lisa,stlaser,sdlaser,interp=1):
+        pbtlaser = 8.0 * lighttime(lisa) + 2.0*stlaser
+
+        return PowerLawNoise(stlaser,pbtlaser,sdlaser,0.0,interp)
+%}
+
+%feature("pythonprepend") TDInoise::TDInoise %{
+        self.lisa = args[0]
+        args = args[1:]
+        
+        # if no parameters are passed, used default value
+        # if only one parameter is passed, use it as stime
+        
+        if len(args) == 0:
+            args = (1.0, 2.5e-48, 1.0, 1.8e-37, 1.0, 1.1e-26)
+        elif len(args) == 1:
+            args = (args[0], 2.5e-48, args[0], 1.8e-37, args[0], 1.1e-26)
+        
+        # proof-mass: use deltat-psd model if we find a number, or assume
+        # six Noise objects otherwise
+        
+        if type(args[0]) in (int,float):
+            self.pm = [stdproofnoise(self.lisa,args[0],args[1]) for i in range(6)]
+            args = args[2:]
+        else:
+            self.pm = args[0]
+            args = args[1:]
+        
+        # shot noise: same story
+        
+        if type(args[0]) in (int,float):
+            self.pd = [stdopticalnoise(self.lisa,args[0],args[1]) for i in range(6)]
+            args = args[2:]
+        else:
+            self.pd = args[0]
+            args = args[1:]    
+        
+        # laser noise may not be passed: if so, set it to zero
+        
+        if len(args) > 0:
+            if type(args[0]) in (int,float):
+                self.c = [stdlasernoise(self.lisa,args[0],args[1]) for i in range(6)]
+                args = args[2:]
+            else:
+                self.c = args[0]
+                args = args[1:]    
+        else:
+            self.c = [NoSignal() for i in range(6)]
+        
+        args = (self.lisa,self.pm,self.pd,self.c)
+%}
+
+%apply Noise *PYTHON_SEQUENCE_NOISE[ANY] {Noise *proofnoise[6], Noise *shotnoise[6], Noise *lasernoise[6]}
+
+%apply double PYTHON_SEQUENCE_DOUBLE[ANY] {double stproof[6], double sdproof[6], double stshot[6], double sdshot[6], double stlaser[6], double sdlaser[6], double claser[6]}
+
 class TDInoise : public TDI {
-public:
-    TDInoise(LISA *mylisa, double stproof = 1.0, double sdproof = 2.5e-48, double stshot = 1.0, double sdshot = 1.8e-37, double stlaser = 1.0, double sdlaser = 1.1e-26);
+ public:
+    TDInoise(LISA *mylisa, Noise *proofnoise[6], Noise *shotnoise[6], Noise *lasernoise[6]);
 
-    TDInoise(LISA *mylisa, double stproof[6], double sdproof[6], double stshot[6], double sdshot[6], double stlaser[6], double sdlaser[6]);
-
-    TDInoise(LISA *mylisa, Noise *proofnoise[6],Noise *shotnoise[6],Noise *lasernoise[6]);
-
-    // just when are virtual destructors needed?
     virtual ~TDInoise();
 
     void setphlisa(LISA *mylisa);
 
     void lock(int master);
     
-    void reset();
-};
+    void reset(unsigned long seed = 0);
+};        
 
 /* We're holding on to the constructor args so that the LISA/Noise
    objects won't get destroyed if they fall out of scope: we may still
@@ -1050,10 +1228,39 @@ class TDIaccurate : public TDInoise {
    objects won't get destroyed if they fall out of scope: we may still
    need them for TDInoise! */
 
+initsave(TDIdoppler)
+
+class TDIdoppler : public TDInoise {
+ public:
+    TDIdoppler(LISA *mylisa, Noise *proofnoise[6],Noise *shotnoise[6],Noise *lasernoise[6]);
+    ~TDIdoppler();
+};
+
+/* We're holding on to the constructor args so that the LISA/Wave
+   objects won't get destroyed if they fall out of scope: we may still
+   need them for TDInoise! */
+
+%apply double PYTHON_SEQUENCE_DOUBLE[ANY] {double laserfreqs[6]}
+
+initsave(TDIcarrier)
+
+class TDIcarrier : public TDInoise {
+ public:
+    TDIcarrier(LISA *mylisa,double laserfreqs[6]);
+    ~TDIcarrier();
+
+    double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t);
+    double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
+};
+
+/* We're holding on to the constructor args so that the LISA/Wave
+   objects won't get destroyed if they fall out of scope: we may still
+   need them for TDInoise! */
+
 initsave(TDIsignal)
 
 class TDIsignal : public TDI {
-public:
+ public:
     TDIsignal(LISA *mylisa, WaveObject *mywave);
 };
 
