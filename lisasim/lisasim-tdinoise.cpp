@@ -18,6 +18,9 @@ TDInoise::TDInoise(LISA *mylisa, double stproof, double sdproof, double stshot, 
 
     // allocate noise objects
 
+    // set the global random-number seed if it is not set already
+    WhiteNoiseSource::getglobalseed();
+
     for(int craft = 1; craft <= 3; craft++) {
         pm[craft] = stdproofnoise(lisa,stproof,sdproof);
         pms[craft] = stdproofnoise(lisa,stproof,sdproof);
@@ -47,6 +50,9 @@ TDInoise::TDInoise(LISA *mylisa, double *stproof, double *sdproof, double *stsho
 
     // allocate noise objects
     // the convention is {1,1*,2,2*,3,3*}, and {12,21,23,32,31,13}
+
+    // set the global random-number seed if it is not set already
+    WhiteNoiseSource::getglobalseed();
 
     for(int craft = 1; craft <= 3; craft++) {
         pm[craft]  = stdproofnoise(lisa,stproof[2*(craft-1)],  sdproof[2*(craft-1)]);
@@ -251,7 +257,9 @@ TDInoise::~TDInoise() {
     }
 }
 
-void TDInoise::reset() {
+void TDInoise::reset(unsigned long seed) {
+    WhiteNoiseSource::setglobalseed(seed);
+
     for(int craft = 1; craft <= 3; craft++) {
         pm[craft]->reset();
         pms[craft]->reset();
@@ -658,13 +666,13 @@ double TDIdoppler::z(int send, int slink, int recv, int ret1, int ret2, int ret3
 
 TDIcarrier::TDIcarrier(LISA *mylisa,double *laserfreqs)
     : TDInoise(mylisa,1.0,0.0,1.0,0.0,1.0,0.0) {
-    lf[1] = laserfreqs[0];
+    lf[1]  = laserfreqs[0];
     lfs[1] = laserfreqs[1];
 
-    lf[2] = laserfreqs[2];
+    lf[2]  = laserfreqs[2];
     lfs[2] = laserfreqs[3];
     
-    lf[3] = laserfreqs[4];
+    lf[3]  = laserfreqs[4];
     lfs[3] = laserfreqs[5];    
 };
 
@@ -712,13 +720,13 @@ double TDIcarrier::y(int send, int slink, int recv, int ret1, int ret2, int ret3
     }
 
     if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2)) {
-        double doppler = 1.0 - phlisa->dotarmlength(link,lisa->retardedtime());
+        double mdoppler = phlisa->dotarmlength(link,lisa->retardedtime());
 
-        return dopplerfactor * ( doppler * lfs[send] - lf[recv] );
+        return dopplerfactor * ( (lfs[send] - lf[recv]) - mdoppler * lfs[send] );
     } else {
-        double doppler = 1.0 - phlisa->dotarmlength(-link,lisa->retardedtime());
+        double mdoppler = phlisa->dotarmlength(-link,lisa->retardedtime());
         
-        return dopplerfactor * ( doppler * lf[send] - lf[recv] );
+        return dopplerfactor * ( (lf[send] - lfs[recv]) - mdoppler * lf[send] );
     }
 }
 
@@ -768,7 +776,7 @@ double TDIcarrier::z(int send, int slink, int recv, int ret1, int ret2, int ret3
 
     if(ret1 != 0) {
         dopplerfactor *= (1 - lisa->dotarmlength(ret1,lisa->retardedtime()));
-        // lisa->retard(ret1);
+        lisa->retard(ret1);
     }
     
     if( (link == 3 && recv == 1) || (link == 2 && recv == 3) || (link == 1 && recv == 2)) {

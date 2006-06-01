@@ -54,7 +54,7 @@ class TDInoise : public TDI {
 
     // reset all noises
 
-    void reset();
+    void reset(unsigned long seed = 0);
 
     // basic TDI observables
 
