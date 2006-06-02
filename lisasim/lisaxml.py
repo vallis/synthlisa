@@ -34,15 +34,15 @@ outputList = {}
 argumentList['OriginalLISA'] = ( ('Armlength1','Second','16.6782'),
                                  ('Armlength2','Second','16.6782'),
                                  ('Armlength3','Second','16.6782') )
-                            
+
 outputList['OriginalLISA'] = argumentList['OriginalLISA']
+
                             
-argumentList['ModifiedLISA'] = ( ('Armlength1','Second','16.6782'),
-                                 ('Armlength2','Second','16.6782'),
-                                 ('Armlength3','Second','16.6782') )
+argumentList['ModifiedLISA'] = argumentList['OriginalLISA']
 
 outputList['ModifiedLISA'] = argumentList['ModifiedLISA']                            
                             
+
 argumentList['CircularRotating'] = ( ('InitialEta','Radian','0'),
                                      ('InitialXi','Radian','0'),
                                      ('ArmSwitch','1','1'),
@@ -55,6 +55,7 @@ outputList['CircularRotating'] =  ( ('TimeOffset','Second',None),
                                     ('OrbitRadius','Second','499.004'),
                                     ('OrbitApproximation','String','CircularRigid') )
 
+
 argumentList['EccentricInclined'] = ( ('InitialEta','Radian','0'),
                                       ('InitialXi','Radian','0'),
                                       ('ArmSwitch','1','1'),
@@ -65,10 +66,33 @@ outputList['EccentricInclined'] = ( ('TimeOffset','Second',None),
                                     ('InitialRotation','Radian',None),
                                     ('Armlength','Second','16.6782') )
 
+
 # PyLISA, AllPyLISA, CacheLISA (special treatment of initargs), 
 # SimpleLISA, CacheLengthLISA?
 
-# Wave types
+
+# noises
+
+argumentList['PowerLawNoise'] = ( ('Cadence','Second',None),
+                                  ('TimeOffset','Second',None),
+                                  ('PowerSpectralDensity','(f/Hz)^n/Hz',None),
+                                  ('SpectralType','1',None),
+                                  ('InterpolatorLength','1',None),
+                                  ('PseudoRandomSeed','1',None) )
+
+# need to convert SpectralType from Exponent to String,
+# InterpolatorType to Interpolator and InterpolatorWindow
+
+outputList['PowerLawNoise'] = ( ('SpectralType','String',None),
+                                ('Cadence','Second',None),
+                                ('TimeOffset','Second',None),
+                                ('PowerSpectralDensity','(f/Hz)^n/Hz',None),
+                                ('PseudoRandomGenerator','String','taus2-gsl1.4'),
+                                ('PseudoRandomSeed','1',None),
+                                ('Interpolator','String',None),
+                                ('InterpolatorWindow','1','None') )
+
+# Wave objects
 
 argumentList['SimpleBinary'] = ( ('Frequency','Hertz',None),
                                  ('InitialPhase','1',None),
@@ -85,6 +109,7 @@ outputList['SimpleBinary'] = ( ('EclipticLatitude','Radian',None),
                                ('InitialPhase','1',None),
                                ('Inclination','Radian',None),
                                ('Amplitude','1',None) )
+
 
 argumentList['PNBinary'] = ( ('Mass1','SolarMass',None),
                              ('Mass2','SolarMass',None),
@@ -110,12 +135,15 @@ outputList['PNBinary'] = ( ('EclipticLatitude','Radian',None),
                            ('Inclination','Radian',None),
                            ('IntegrationStep','Second',None) )
 
+
 # give translations between synthlisa and XML, and backwards
 
 ObjectToXML = {
     'OriginalLISA': 'OriginalLISA',
     'CircularRotating': 'PseudoLISA',
     'EccentricInclined': 'PseudoLISA',
+
+    'PowerLawNoise': 'PseudoRandomNoise',
 
     'SimpleBinary': 'GalacticBinary',
     'PNBinary': 'BlackHoleBinary'
@@ -134,6 +162,8 @@ XMLToObject = {
     # standard lisaXML objects
 
     'PseudoLISA': ('EccentricInclined',synthlisa.EccentricInclined),    
+
+    'PseudoRandomNoise': ('PowerLawNoise',synthlisa.PowerLawNoise),
 
     'GalacticBinary': ('SimpleBinary',synthlisa.SimpleBinary),
     'BlackHoleBinary': ('PNBinary',lisawp.PNBinary)
@@ -169,6 +199,12 @@ optionalParameterSet['PseudoLISA'] = [
     lambda s: 'Armlength' in s or ('Armlength',(16.6782,'Second')),
     lambda s: 'ArmSwitch' in s or ('ArmSwitch',(-1.0,'1'))
 ]
+
+minimumParameterSet['PseudoRandomNoise'] = []
+optionalParameterSet['PseudoRandomNoise'] = []
+
+# this construction would replicate the outputList as lambda tests
+#  map(lambda p: lambda s: p[0] in s or p[0], outputList['PowerLawNoise'])
 
 # for PlaneWave sources only...
 
@@ -234,7 +270,7 @@ defaultUnits = {
 # - Degree/Minute/Second (DMS), space-separated, to Radian
 # - Hour/Minute/Second (HMS), space-separated, to Radian
 
-def convertUnit(param,unitin,unitout):
+def convertUnit(param,unitin,unitout,paramname=''):
     if unitout == unitin:
         return (param,unitin)
 
@@ -251,6 +287,26 @@ def convertUnit(param,unitin,unitout):
             hms = map(float, param.split())
             
             return ((15.0*math.pi/180.0) * (hms[0] + hms[1]/60.0 + hms[2]/3600.0),'Radian')
+
+    if unitout == 'String':
+        if paramname == 'SpectralType':
+            if unitin == '1':
+                if float(param) == 0.0:
+                    return ('WhiteFrequency','String')
+                elif float(param) == 2.0:
+                    return ('WhitePhase','String')
+                elif float(param) == -2.0:
+                    return ('WhiteAcceleration','String')
+
+    if unitout == '1':
+        if paramname == 'SpectralType':
+            if unitin == 'String':
+                if param == 'WhiteFrequency':
+                    return ('0.0','1')
+                elif param == 'WhitePhase':
+                    return ('2.0','1')
+                elif param == 'WhiteAcceleration':
+                    return ('-2.0','1')                
 
     raise NotImplementedError, "convertUnit(): cannot convert %s from %s to %s" % (param,unitin,unitout)
 
@@ -339,6 +395,49 @@ def convertParameters(param,sourceparams):
                 return ('-1.0','1')
         except KeyError:
             raise AttributeError, "convertParameters(): need PseudoLISA InitialPosition and InitialRotation (in the right units) to return eta/xi/sw"
+    elif param[0] == 'InterpolatorLength':
+        try:
+            interptype = convertUnit(sourceparams['Interpolator'][0],
+                                     sourceparams['Interpolator'][1],
+                                     'String')[0]
+    
+            if interptype == 'NearestNeighbor':
+                return ('0','1')
+            elif interptype == 'LinearExtrapolator':
+                return ('-1','1')
+            elif interptype == 'Linear':
+                return ('1','1')
+            elif interptype == 'Lagrange': 
+                interplen = convertUnit(sourceparams['InterpolatorWindow'][0],
+                                        sourceparams['InterpolatorWindow'][1],
+                                        '1')[0]
+                return (interplen,'1')
+            else:
+                raise AttributeError
+        except KeyError:
+            raise AttributeError, "convertParameters(): need Interpolator/InterpolatorWindow (if Interpolator == 'Lagrange') to return InterpolatorLength"
+    elif param[0] in ('Interpolator','InterpolatorWindow'):
+        try:
+            interplen = float(convertUnit(sourceparams['InterpolatorLength'][0],
+                                          sourceparams['InterpolatorLength'][1],
+                                          '1')[0])
+
+            if param[0] == 'Interpolator':
+                 if interplen == 0.0:
+                    return ('NearestNeighbor','String')
+                 elif interplen == -1.0:
+                    return ('LinearExtrapolator','String')
+                 elif interplen == 1.0:
+                    return ('Linear','String')
+                 elif interplen > 1.0:
+                    return ('Lagrange','String')            
+            elif param[0] == 'InterpolatorWindow':
+                if interplen > 1.0:
+                    return (str(int(interplen)),'1')
+                else:
+                    return ('None','1')
+        except KeyError:
+            raise AttributeError, "convertParameters(): need InterpolatorLength to return Interpolator/InterpolatorWindow"
     else:
         raise AttributeError, "convertParameters(): cannot obtain %s from provided parameters %s" % (param[0],sourceparams)
 
@@ -493,8 +592,9 @@ class lisaXML(writeXML):
         
         self.binaryfiles = 0
         self.theLISAData = []
-        self.theTDIData = []
+        self.theNoiseData = []
         self.theSourceData = []
+        self.theTDIData = []
 
     
     def doComment(self,comments):
@@ -502,7 +602,7 @@ class lisaXML(writeXML):
 
 
     def ProcessObjectData(self,object,name='',comments=''):
-        """Add an object (LISA, Wave) to an XML output file."""
+        """Add an object (LISA, Wave,Noise) to an XML output file."""
     
         # get init arguments and type
 
@@ -521,6 +621,10 @@ class lisaXML(writeXML):
         except KeyError:
             raise KeyError, 'lisaXML.ObjectData: unknown object type %s' % objecttype
 
+        # the synthlisa constructor parameters are contained (as a list)
+        # in object.xmlargs (preferred) or object.initargs
+        # in the order and with the units given by argumentList[objecttype]
+        
         # assign the standard parameters to my structure
 
         objectpars = {}        
@@ -529,31 +633,39 @@ class lisaXML(writeXML):
             param = defaultarglist[i]
 
             try:
-                objectpars[param[0]] = (objectarglist[i],param[1])
+                if param[1]:
+                    # if argumentList[objecttype] specifies a standard Unit, use it
+
+                    objectpars[param[0]] = (objectarglist[i],param[1])
+                else:
+                    # otherwise get it from the element in xmlargs/initargs,
+                    # which is a tuple
+
+                    objectpars[param[0]] = objectarglist[i]
             except IndexError:
                 if param[2] != None:
+                    # if a parameter is missing in xmlargs/initargs, see if
+                    # we have a default value and use it
+                
                     objectpars[param[0]] = (param[2],param[1])
                 else:
-                    raise AttributeError, 'lisaXML.ProcessObjectData(): missing parameter %s in constructor arguments of object %s' % (param[0],object)
+                    raise AttributeError, 'lisaXML.ProcessObjectData(): missing internal parameter %s in object %s' % (param[0],object)
 
-        # add the objecttype to the structure
+        # translate the object to an XML type
 
         xmltype = ObjectToXML[objecttype]
-        
-        # PlaneWave objects need to know the SourceType
-        
-        if isinstance(object,synthlisa.Wave):
-            params = [('Param',{'Name': 'SourceType'},[xmltype])]
-        else:
-            params = []
 
-        # now add all the required output parameters
-        
+        # the Params to be output in the XSIL element are given
+        # in outputList[objecttype]; this allows for parameter reordering,
+        # for converting to the right units, and for setting some default values
+
+        params = []
+
         for param in outputList[objecttype]:
             # first, see if we have the parameter...
 
             if not param[0] in objectpars:
-                # try obtaining the parameter from the other ones
+                # try obtaining the parameter from a transformation of the other ones
 
                 try:
                     thisparam = convertParameters(param,objectpars)
@@ -563,38 +675,87 @@ class lisaXML(writeXML):
                     if param[2] != None:
                         thisparam = (param[2],param[1])
                     else:
-                        raise AttributeError, 'readXML.ProcessObjectData(): cannot find parameter(s) %s in constructor arguments of object %s' % (param[0],object)
+                        raise AttributeError, 'readXML.ProcessObjectData(): missing external parameter(s) %s for object %s' % (param[0],object)
             else:
                 thisparam = objectpars[param[0]]
 
             # convert to the correct units (if we know how to)
 
-            thisparam = convertUnit(thisparam[0],thisparam[1],param[1])
+            if param[1]:
+                thisparam = convertUnit(thisparam[0],thisparam[1],param[1],param[0])
+
+            # add in pyRXP format
 
             params.append(('Param', {'Name': param[0], 'Unit': thisparam[1]}, [thisparam[0]]))
             
         if comments:
             params.append(self.doComment(comments))
 
+        # create the right kind of XSIL element
+
         if isinstance(object,synthlisa.Wave):
             xsildict = {'Type': 'PlaneWave'}
-        elif isinstance(object,synthlisa.LISA):
-            xsildict = {'Type': 'PseudoLISA'}
-            
+            params.append(('Param',{'Name': 'SourceType'},[xmltype]))
+        else:
+            xsildict = {'Type': xmltype}
+           
         if name:
             xsildict['Name'] = name
             
         return ('XSIL', xsildict, params)
+
         
+    # the following calls piggyback on ProcessObjectData
     
     def SourceData(self,source,name='',comments=''):
+        """Add a SourceData entry describing a synthlisa source to
+        a lisaXML file object."""
+
         self.theSourceData.append(self.ProcessObjectData(source,name,comments))
 
 
     def LISAData(self,lisa,comments=''):
-        # allow only one LISA object
+        """Add a LISAData entry describing a synthlisa LISA object to
+        a lisaXML file object."""
         
-        self.theLISAData = [self.ProcessObjectData(lisa,'',comments)]
+        # allow only one LISA object
+        self.theLISAData = [self.ProcessObjectData(lisa,'LISA',comments)]
+
+
+    def NoiseData(self,object,name='',comments=''):
+        """Add a NoiseData entry describing a synthlisa Noise object to
+        a lisaXML file object; if called for a TDInoise object, will
+        loop over all component noises and dump an XML description for
+        each of them."""
+        
+        if object.__class__.__name__ == 'TDInoise':
+            # if we get a TDInoise, do the component noises one by one
+
+            if name:
+                comments = comments + '\n(part of %s) ' % name 
+
+            if not self.theLISAData:
+                self.LISAData(object.initargs[0],comments)
+
+            # proof-mass noise
+            
+            map(lambda noise, name: self.NoiseData(noise,name,comments),
+                object.initargs[1], 
+                ['pm1','pm1s','pm2','pm2s','pm3','pm3s'])
+            
+            # photodetector noise; note mapping per abstract-format.txt
+            
+            map(lambda noise, name: self.NoiseData(noise,name,comments),
+                object.initargs[2], 
+                ['pdm3','pd3','pdm1','pd1','pdm2','pd2'])
+                
+            # laser noise
+                
+            map(lambda noise, name: self.NoiseData(noise,name,comments),
+                object.initargs[3],
+                ['C1','C1s','C2','C2s','C3','C3s'])
+        else:
+            self.theNoiseData.append(self.ProcessObjectData(object,name,comments))
 
 
     def TDIData(self,data,length,cadence,description,offset=0,encoding='Binary',comments=''):
@@ -862,6 +1023,7 @@ class lisaXML(writeXML):
        
         self.closetag('XSIL')
     
+    
     def close(self):
         """Write the XML file to disk. This happens also on destruction of
         the lisaXML object."""
@@ -883,20 +1045,15 @@ class lisaXML(writeXML):
         
         if self.comments:
             self.comments += '\n\n'
-            self.comments += 'This file produced by Synthetic LISA v. %s\n' % synthlisa.version_short
-            self.comments += '(c) 2006 Michele Vallisneri, California Institute of Technology\n'
-            self.comments += '---------------------------------------------------------------\n'
-            self.comments += synthlisa.version_full
 
-            self.opentag('Comment',{})
-            self.content(self.comments)
-            self.closetag('Comment')
+        self.comments += 'This file produced by Synthetic LISA v. %s\n' % synthlisa.version_short
+        self.comments += '(c) 2006 Michele Vallisneri, California Institute of Technology\n'
+        self.comments += '---------------------------------------------------------------\n'
+        self.comments += synthlisa.version_full
 
-        # ??? do the LISAModel (LISAGeometry and LISANoise)
+        self.outputrxp(self.doComment(self.comments))
 
-        # do the SourceData objects
-
-        if len(self.theLISAData) > 0:
+        if self.theLISAData:
             self.opentag('XSIL',{'Type': 'LISAData'})
     
             for object in self.theLISAData:
@@ -904,7 +1061,15 @@ class lisaXML(writeXML):
 
             self.closetag('XSIL')
 
-        if len(self.theSourceData) > 0:
+        if self.theNoiseData:
+            self.opentag('XSIL',{'Type': 'NoiseData'})
+            
+            for object in self.theNoiseData:
+                self.outputrxp(object)
+            
+            self.closetag('XSIL')
+
+        if self.theSourceData:
             self.opentag('XSIL',{'Type': 'SourceData'})
     
             for object in self.theSourceData:
@@ -1087,7 +1252,7 @@ class readXML:
     
         return result
 
-    def getLISANoise(self):
+    def getLISASampledNoise(self):
         result = []
         
         for node in self.tw:
@@ -1152,6 +1317,54 @@ class readXML:
         return result
 
 
+    def getLISANoise(self):
+        result = []
+        
+        for node in self.tw:
+            if node.tagName == 'XSIL':
+                if node.Type == 'NoiseData':        
+                    for node2 in node:
+                        if node2.tagName == 'XSIL':
+                            if node2.Type == 'PseudoRandomNoise':
+                                r = self.processObject(node2)
+
+                                ri = (r[0])(*(r[1]))
+                                ri.name = r[2]                   
+
+                                result.append(ri)
+
+        return result
+
+
+    def getTDInoise(self):
+        try:
+            lisa = self.getLISAGeometry()
+            
+            if not lisa:
+                raise AttributeError
+        except:
+            raise AttributeError, 'readXML.getTDInoise(): problems reading LISA geometry'
+
+        try:
+            noises = self.getLISANoise()
+        except:
+            raise AttributeError, 'readXML.getTDInoise(): problems reading LISA noises'
+
+        noisedict = {}
+
+        for noise in noises:
+            noisedict[noise.name] = noise
+
+        try:
+            pmnoises = [noisedict[id] for id in ('pm1','pm1s','pm2','pm2s','pm3','pm3s')]
+            pdnoises = [noisedict[id] for id in ('pdm3','pd3','pdm1','pd1','pdm2','pd2')]
+            lsnoises = [noisedict[id] for id in ('C1','C1s','C2','C2s','C3','C3s')]
+        except KeyError, k:
+            raise KeyError, 'readXML.getTDInoise(): undefined noise %s needed for TDInoise' % k
+
+        return synthlisa.TDInoise(lisa,pmnoises,pdnoises,lsnoises)
+        
+
     def processObject(self,node):
         objectparams = {}
 
@@ -1172,7 +1385,7 @@ class readXML:
                     raise KeyError, 'readXML.processObject(): need standard parameter(s) %s in source %s' % (test(objectparams),objectname)
 
             objecttype = objectparams['SourceType'][0]
-        elif node.Type == 'PseudoLISA':
+        else:
             objecttype = node.Type
     
         if not objecttype in minimumParameterSet:
@@ -1224,7 +1437,7 @@ class readXML:
 
             # convert to the correct units (if we know how to)
 
-            thisparam = convertUnit(thisparam[0],thisparam[1],param[1])
+            thisparam = convertUnit(thisparam[0],thisparam[1],param[1],param[0])
                         
             try:
                 # we get a string; first try converting to an int...
@@ -1244,7 +1457,7 @@ class readXML:
 
             arglist.append(evalparam)
 
-        return (XMLToObject[objecttype][1],arglist)
+        return (XMLToObject[objecttype][1],arglist,objectname)
 
 
 class LISASourceFactory:

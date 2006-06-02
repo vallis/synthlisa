@@ -475,17 +475,12 @@ class InterpolatedSignal : public Signal {
 def getInterpolator(interplen=1):
     if interplen == 0:
         ret = NearestInterpolator()
-        ret.type = 'NearestNeighbor'
     elif interplen == -1:
         ret = LinearExtrapolator()
-        ret.type = 'LinearExtrapolator'
     elif interplen == 1:
         ret = LinearInterpolator()
-        ret.type = 'Linear'
-    elif interplen > 0:
+    elif interplen > 1:
         ret = LagrangeInterpolator(interplen)
-        ret.type = 'Lagrange'
-        ret.window = interplen
     else:
         raise NotImplementedError, "getInterpolator: undefined interpolator length %s (lisasim-swig.i)." % interplen
 
@@ -505,18 +500,12 @@ def PowerLawNoise(deltat,prebuffer,psd,exponent,interplen=1,seed=0):
     if exponent == 0:
         filter = NoFilter()
         normalize = math.sqrt(psd) * math.sqrt(nyquistf)
-        type = 'WhiteFrequency'
-        psdunit = '1/Hz'
     elif exponent == 2:
         filter = DiffFilter()
         normalize = math.sqrt(psd) * math.sqrt(nyquistf) / (2.00 * math.pi * deltat)
-        type = 'WhitePhase'
-        psdunit = '(f/Hz)^2/Hz'
     elif exponent == -2:
         filter = IntFilter()
         normalize = math.sqrt(psd) * math.sqrt(nyquistf) * (2.00 * math.pi * deltat)
-        type = 'WhiteAcceleration'
-        psdunit = '(f/Hz)^-2/Hz'
     else:
         raise NotImplementedError, "PowerLawNoise: undefined PowerLaw exponent %s (lisasim-swig.i)." % exponent
 
@@ -527,20 +516,8 @@ def PowerLawNoise(deltat,prebuffer,psd,exponent,interplen=1,seed=0):
 
     noise = InterpolatedSignal(filterednoise,interp,deltat,prebuffer,normalize)
 
-    noise.ident = [
-        ('Param',{'Name': 'SpectralType'},type),
-        ('Param',{'Name': 'Cadence','Unit': 's'},'%s' % deltat),
-        ('Param',{'Name': 'TimeOffset', 'Unit': 's'},'%s' % prebuffer),
-        ('Param',{'Name': 'PowerSpectralDensity', 'Unit': psdunit},'%s' % psd),
-        ('Param',{'Name': 'PseudoRandomGenerator'}, 'taus2-gsl1.4'),
-        ('Param',{'Name': 'PseudoRandomSeed'},'%s' % seed),
-        ('Param',{'Name': 'Interpolator'},interp.type)
-    ]
-
-    if hasattr(interp,'window'):
-        noise.ident.append(('Param',{'Name': 'InterpolatorWindow'},'%s' % interp.window))
-
-    # should append to or modify noise.initargs, if it exists
+    noise.xmltype = 'PowerLawNoise'
+    noise.xmlargs = [deltat,prebuffer,psd,exponent,interplen,seed]
 
     return noise
 %}
@@ -1087,8 +1064,6 @@ defined in the base TDI class are available from TDInoise.
   [y^sh_{12},y^sh_{21},y^sh_{23},y^sh_{32},y^sh_{31},y^sh_{13}]
   [C_1,C_1*,C_2,C_2*,C_3,C_3*]
   
-  TODO: this ordering/naming not consistent with XML format ordering
-
 - In the second form of the constructor, the noise object are created
   internally as pseudorandom noise objects (equivalent to PowerLawNoise)
   with sampling times PMdt, SHdt, and LSdt, and with approximate
@@ -1178,7 +1153,7 @@ initsave(TDInoise)
             args = args[2:]
         else:
             self.pd = args[0]
-            args = args[1:]    
+            args = args[1:]
         
         # laser noise may not be passed: if so, set it to zero
         
