@@ -135,6 +135,25 @@ outputList['PNBinary'] = ( ('EclipticLatitude','Radian',None),
                            ('Inclination','Radian',None),
                            ('IntegrationStep','Second',None) )
 
+# let's not support normalization, right now...
+
+argumentList['SampledWave'] = ( ('hparray','Numeric',None),
+                                ('hcarray','Numeric',None),
+                                ('Length','1',None),
+                                ('Cadence','Second',None),
+                                ('TimeOffset','Second',None),
+                                ('Normalization','1',None),
+                                ('Filtering','Filter',None),
+                                ('InterpolatorLength','1',None),
+                                ('EclipticLatitude','Radian',None),
+                                ('EclipticLongitude','Radian',None),
+                                ('Polarization','Radian',None) )
+
+outputList['SampledWave'] = ( ('EclipticLatitude','Radian',None),
+                              ('EclipticLongitude','Radian',None),
+                              ('Polarization','Radian',None),
+                              ('Interpolator','String',None),
+                              ('InterpolatorWindow','1','None') )
 
 # give translations between synthlisa and XML, and backwards
 
@@ -146,7 +165,9 @@ ObjectToXML = {
     'PowerLawNoise': 'PseudoRandomNoise',
 
     'SimpleBinary': 'GalacticBinary',
-    'PNBinary': 'BlackHoleBinary'
+    'PNBinary': 'BlackHoleBinary',
+    
+    'SampledWave': 'SampledPlaneWave'
 }
 
 XMLToObject = {
@@ -522,13 +543,23 @@ class writeXML:
         self.decind()
         self.iprint(string)    
 
+    # it would be better to redefine this function in lisaXML
+    # to implement the binaryData routine
+
     def content(self,thevalue):
         """Output XML characters"""
         
-        # try to keep indentation for multiline content
-        for line in str(thevalue).split('\n'):
-            # look here for content serialization concerns
-            self.iprint(line)
+        if isinstance(thevalue,binaryData):
+            filename = re.sub('\.xml$','',self.filename) + '-' + str(self.binaryfiles) + '.bin'
+            self.iprint(os.path.basename(filename))
+
+            thevalue.dumpdata(filename)          
+            self.binaryfiles += 1
+        else:
+            # try to keep indentation for multiline content
+            for line in str(thevalue).split('\n'):
+                # look here for content serialization concerns
+                self.iprint(line)
 
     def outputrxp(self,rxpexp):
         """Output RXP tuple-based expression"""
@@ -555,6 +586,24 @@ class typeTimeSeries:
 
 class typeFrequencySeries:
     pass
+
+
+class binaryData:
+    def __init__(self,thedata,length):
+        self.thedata = thedata
+
+        self.records = len(thedata)
+        self.length = length
+
+    def dumpdata(self,filename):
+        buffer = Numeric.zeros([self.length,self.records],'d')
+
+        for i in range(self.records):
+            buffer[:,i] = self.thedata[i][0:self.length]
+
+        bfile = open(filename,'w')
+        bfile.write(buffer.tostring())              
+        bfile.close()
 
 
 def dumpXML(object):
@@ -693,7 +742,7 @@ class lisaXML(writeXML):
 
         # create the right kind of XSIL element
 
-        if isinstance(object,synthlisa.Wave):
+        if isinstance(object,synthlisa.Wave) and not xmltype == 'SampledPlaneWave':
             xsildict = {'Type': 'PlaneWave'}
             params.append(('Param',{'Name': 'SourceType'},[xmltype]))
         else:
@@ -701,9 +750,51 @@ class lisaXML(writeXML):
            
         if name:
             xsildict['Name'] = name
-            
+        
+        # add a TimeSeries if needed
+        
+        if objecttype == 'SampledWave':
+            params.append(self.doSampledWaveTimeSeries(objectpars))
+        
         return ('XSIL', xsildict, params)
 
+
+    def doSampledWaveTimeSeries(self,objectpars):
+        children = []
+
+        for name in ('TimeOffset','Cadence'):
+            children.append( ('Param',
+                              {'Name': name, 'Unit': objectpars[name][1]},
+                              [objectpars[name][0]]) )
+
+        children.append( ('Param',
+                         {'Name': 'Duration', 'Unit': objectpars['Cadence'][1]},
+                         [str(float(objectpars['Cadence'][0]) * float(objectpars['Length'][0]))]) )
+
+
+        arraycontent = []
+        
+        arraycontent.append( ( 'Dim', {'Name': 'Length'}, [objectpars['Length'][0]] ) )
+        arraycontent.append( ( 'Dim', {'Name': 'Records'}, [str(2)] ) )        
+
+        # check bigendian, littleendian
+
+        if sys.byteorder == 'big':
+            encoding = 'Binary,BigEndian'
+        elif sys.byteorder == 'little':
+            encoding = 'Binary,LittleEndian'
+
+        arraycontent.append( ('Stream',
+                             {'Type': 'Remote', 'Encoding': encoding},
+                             [ binaryData( (objectpars['hparray'][0], objectpars['hcarray'][0]),
+                                           int(objectpars['Length'][0]) ) ]
+                           ) )
+        
+        children.append( ('Array',
+                         {'Name': 'hp,hc', 'Type': 'double', 'Unit': '1'},
+                         arraycontent) ) 
+
+        return ('XSIL', {'Name': 'hp,hc', 'Type': 'TimeSeries'}, children)
         
     # the following calls piggyback on ProcessObjectData
     
@@ -889,7 +980,7 @@ class lisaXML(writeXML):
         
         # ??? fix the time types to "s" (XSIL extension) for the moment
         
-        self.coupletag('Time',{'Name': 'StartTime','Type': 's'},
+        self.coupletag('Param',{'Name': 'TimeOffset','Type': 's'},
                               str(TimeSeries.start))
 
         self.coupletag('Param',{'Name': 'Cadence','Unit': 's'},
@@ -1033,7 +1124,7 @@ class lisaXML(writeXML):
             raise IOError
         
         self.content('<?xml version="1.0"?>')
-        self.content('<!DOCTYPE XSIL SYSTEM "bfd.dtd">')
+        self.content('<!DOCTYPE XSIL SYSTEM "http://www.vallis.org/lisa-xml.dtd">')
 
         self.content('<?xml-stylesheet type="text/xsl" href="http://www.vallis.org/lisa-xml.xsl"?>')
 
@@ -1120,6 +1211,9 @@ class readXML:
         self.directory = os.path.dirname(filename)
 
         self.tw = xmlutils.TagWrapper(tree)
+
+    def close(self):
+        pass
 
     def getTime(self,node):
         try:
@@ -1287,7 +1381,7 @@ class readXML:
                                 if returnFactory:
                                     result.append(r)
                                 else:
-                                    result.append( (r[0])(*(r[1])) )
+                                    result.append(MakeObject(r))
                             elif node2.Type == 'SampledPlaneWave':
                                 raise NotImplementedError, 'readXML.getLISASources(): cannot currently handle SampledPlaneWave objects'
                                 
@@ -1312,7 +1406,7 @@ class readXML:
                             if node2.Type == 'PseudoLISA':
                                 r = self.processObject(node2)
 
-                                result = (r[0])(*(r[1]))
+                                result = MakeObject(r)
 
         return result
 
@@ -1328,10 +1422,7 @@ class readXML:
                             if node2.Type == 'PseudoRandomNoise':
                                 r = self.processObject(node2)
 
-                                ri = (r[0])(*(r[1]))
-                                ri.name = r[2]                   
-
-                                result.append(ri)
+                                result.append(MakeObject(r))
 
         return result
 
@@ -1460,18 +1551,23 @@ class readXML:
         return (XMLToObject[objecttype][1],arglist,objectname)
 
 
+def MakeObject(s):
+    ret = (s[0])(*(s[1]))
+    ret.name = s[2]
+    
+    return ret
+
+
 class LISASourceFactory:
     def __init__(self,sourcelist):
         self.sourcelist = sourcelist
         self.sourcenumber = len(sourcelist)
         
     def __getitem__(self,index):
-        i = self.sourcelist[index]
-        return (i[0])(*(i[1]))
+        return MakeObject(self.sourcelist[index])
 
     def __getslice__(self,index1,index2):
-        i = self.sourcelist[index]
-        return map((i[0])(*(i[1])),self.sourcelist[index1:index2])
+        return map(MakeObject,self.sourcelist[index1:index2])
     
     def __len__(self):
         return self.sourcenumber
@@ -1496,4 +1592,4 @@ class LISASourceIterator:
             i = self.sourcelist[self.last]
             self.last = self.last + 1
 
-            return (i[0])(*(i[1]))
+            return MakeObject(i)
