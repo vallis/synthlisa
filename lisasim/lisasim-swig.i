@@ -852,7 +852,12 @@ SampledWave is represented internally using NoiseWave.
 TODO: check if the prebuffering formula above is exact or if there is
 another displacement by one or so."""
 
-    return NoiseWave(hparray,hcarray,len,deltat,prebuffer,norm,filter,interp,elat,elon,pol)
+    wave = NoiseWave(hparray,hcarray,len,deltat,prebuffer,norm,filter,interp,elat,elon,pol)
+
+    wave.xmltype = 'SampledWave'
+    wave.xmlargs = [hparray,hcarray,len,deltat,prebuffer,norm,filter,interp,elat,elon,pol]
+
+    return wave
 %}
 
 
