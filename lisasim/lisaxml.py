@@ -95,18 +95,18 @@ outputList['PowerLawNoise'] = ( ('SpectralType','String',None),
 # Wave objects
 
 argumentList['SimpleBinary'] = ( ('Frequency','Hertz',None),
-                                 ('InitialPhase','1',None),
-                                 ('Inclination','Radian',None),
+                                 ('InitialPhase','Radian',None),
+                                 ('SLInclination','Radian',None),
                                  ('Amplitude','1',None),
                                  ('EclipticLatitude','Radian',None),
                                  ('EclipticLongitude','Radian',None),
-                                 ('Polarization','Radian',None) )
+                                 ('SLPolarization','Radian',None) )
 
 outputList['SimpleBinary'] = ( ('EclipticLatitude','Radian',None),
                                ('EclipticLongitude','Radian',None),
                                ('Polarization','Radian',None),
                                ('Frequency','Hertz',None),
-                               ('InitialPhase','1',None),
+                               ('InitialPhase','Radian',None),
                                ('Inclination','Radian',None),
                                ('Amplitude','1',None) )
 
@@ -114,14 +114,14 @@ outputList['SimpleBinary'] = ( ('EclipticLatitude','Radian',None),
 argumentList['PNBinary'] = ( ('Mass1','SolarMass',None),
                              ('Mass2','SolarMass',None),
                              ('Frequency','Hertz',None),
-                             ('InitialPhase','1',None),
+                             ('InitialPhase','Radian',None),
                              ('Distance','Parsec',None),
                              ('Inclination','Radian',None),
                              ('EclipticLatitude','Radian',None),
                              ('EclipticLongitude','Radian',None),
-                             ('Polarization','Radian',None),
-                             ('IntegrationStep','Second','10'),
-                             ('TimeOffset','Second','650') )
+                             ('SLPolarization','Radian',None),
+                             ('TimeOffset','Second','0'),
+                             ('IntegrationStep','Second','10') )
 
 outputList['PNBinary'] = ( ('EclipticLatitude','Radian',None),
                            ('EclipticLongitude','Radian',None),
@@ -130,30 +130,38 @@ outputList['PNBinary'] = ( ('EclipticLatitude','Radian',None),
                            ('Mass1','SolarMass',None),
                            ('Mass2','SolarMass',None),
                            ('Frequency','Hertz',None),
-                           ('InitialPhase','1',None),
+                           ('InitialPhase','Radian',None),
                            ('Distance','Parsec',None),
                            ('Inclination','Radian',None),
                            ('IntegrationStep','Second',None) )
 
 # let's not support normalization, right now...
 
-argumentList['SampledWave'] = ( ('hparray','Numeric',None),
-                                ('hcarray','Numeric',None),
+argumentList['SampledWave'] = ( ('hp','Numeric',None),
+                                ('hc','Numeric',None),
                                 ('Length','1',None),
                                 ('Cadence','Second',None),
-                                ('TimeOffset','Second',None),
-                                ('Normalization','1',None),
-                                ('Filtering','Filter',None),
-                                ('InterpolatorLength','1',None),
+                                ('Prebuffer','Second',None),
+                                ('Normalization','1','1.0'),
+                                ('Filtering','Filter','None'),
+                                ('InterpolatorLength','1','1'),
                                 ('EclipticLatitude','Radian',None),
                                 ('EclipticLongitude','Radian',None),
-                                ('Polarization','Radian',None) )
+                                ('SLPolarization','Radian',None) )
 
 outputList['SampledWave'] = ( ('EclipticLatitude','Radian',None),
                               ('EclipticLongitude','Radian',None),
                               ('Polarization','Radian',None),
                               ('Interpolator','String',None),
                               ('InterpolatorWindow','1','None') )
+
+# this is special...
+
+outputList['TimeSeries'] = ( ('TimeOffset','Second',None),
+                             ('Cadence','Second',None),
+                             ('Length','1',None),
+                             ('hc','Numeric',None),
+                             ('hp','Numeric',None) )
 
 # give translations between synthlisa and XML, and backwards
 
@@ -187,7 +195,9 @@ XMLToObject = {
     'PseudoRandomNoise': ('PowerLawNoise',synthlisa.PowerLawNoise),
 
     'GalacticBinary': ('SimpleBinary',synthlisa.SimpleBinary),
-    'BlackHoleBinary': ('PNBinary',lisawp.PNBinary)
+    'BlackHoleBinary': ('PNBinary',lisawp.PNBinary),
+    
+    'SampledPlaneWave': ('SampledWave',synthlisa.SampledWave)
 }
 
 # begin definitions encoding XML syntax
@@ -210,17 +220,19 @@ optionalParameterSet['EccentricInclined'] = []
 
 # LISA objects (aren't these duplications of what we can get from the above?)
 
-minimumParameterSet['PseudoLISA'] = [
-    lambda s: 'InitialPosition' in s or 'Polarization',
-    lambda s: 'InitialRotation' in s or 'Amplitude',
-    lambda s: 'TimeOffset' in s or 'TimeOffset'
-]
+def makeminimum(parlist):
+    return map(lambda p: lambda s: p in s or p,parlist) 
 
-optionalParameterSet['PseudoLISA'] = [
-    lambda s: 'Armlength' in s or ('Armlength',(16.6782,'Second')),
-    lambda s: 'ArmSwitch' in s or ('ArmSwitch',(-1.0,'1'))
-]
+def makeoptional(parlist):
+    return map(lambda p: lambda s: p[0] in s or p,parlist) 
 
+
+minimumParameterSet['PseudoLISA'] = makeminimum(['InitialPosition',
+                                                 'InitialRotation',
+                                                 'TimeOffset'])
+
+optionalParameterSet['PseudoLISA'] = makeoptional([('Armlength',(16.6782,'Second')),
+                                                   ('ArmSwitch',(-1.0,'1'))])
 minimumParameterSet['PseudoRandomNoise'] = []
 optionalParameterSet['PseudoRandomNoise'] = []
 
@@ -230,41 +242,39 @@ optionalParameterSet['PseudoRandomNoise'] = []
 # for PlaneWave sources only...
 
 standardSourceParameterSet = [
-    lambda s: 'SourceType' in s or 'SourceType',
     lambda s: ( (('EclipticLatitude' in s) and ('EclipticLongitude' in s)) or (('RightAscension' in s) and ('Declination' in s))
-                or 'EclipticLatitude/EclipticLongitude or RightAscension/Declination' )
+                or 'EclipticLatitude/EclipticLongitude or RightAscension/Declination' ),
+    lambda s: 'Polarization' in s or 'Polarization'
 ]
 
 # PlaneWave objects
 
-minimumParameterSet['GalacticBinary'] = [
-    lambda s: 'Polarization' in s or 'Polarization',
-    lambda s: 'Amplitude' in s or 'Amplitude',
-    lambda s: 'Inclination' in s or 'Inclination',
-    lambda s: 'InitialPhase' in s or 'InitialPhase',
-    lambda s: 'Frequency' in s or 'Frequency'
-]
+minimumParameterSet['GalacticBinary'] = makeminimum(['Polarization',
+                                                     'Amplitude',
+                                                     'Inclination',
+                                                     'InitialPhase',
+                                                     'Frequency'])
 
-optionalParameterSet['GalacticBinary'] = [
-    lambda s: 'TimeOffset' in s or ('TimeOffset',('0.0','Second')),
-    lambda s: 'FrequencyDot' in s or ('FrequencyDot',('0.0','Hertz/Second')),
-    lambda s: 'FrequencyDotDot' in s or ('FrequencyDotDot',('0.0','Hertz/Second^2')),
-    lambda s: 'Eccentricity' in s or ('Eccentricity',('0.0','1'))
-]
+optionalParameterSet['GalacticBinary'] = makeoptional([('TimeOffset',('0.0','Second')),
+                                                       ('FrequencyDot',('0.0','Hertz/Second')),
+                                                       ('FrequencyDotDot',('0.0','Hertz/Second^2')),
+                                                       ('Eccentricity',('0.0','1'))])
 
-minimumParameterSet['BlackHoleBinary'] = [
-    lambda s: 'Mass1' in s or 'Mass1',
-    lambda s: 'Mass2' in s or 'Mass2',
-    lambda s: 'Frequency' in s or 'Frequency',
-    lambda s: 'InitialPhase' in s or 'InitialPhase',
-    lambda s: 'Distance' in s or 'Distance',
-    lambda s: 'Inclination' in s or 'Inclination'
-]
+minimumParameterSet['BlackHoleBinary'] = makeminimum(['Mass1',
+                                                      'Mass2',
+                                                      'Frequency',
+                                                      'InitialPhase',
+                                                      'Distance',
+                                                      'Inclination'])
 
-optionalParameterSet['GalacticBinary'] = [
-    lambda s: 'IntegrationStep' in s or ('IntegrationStep',('10','Second')),
-    lambda s: 'TimeOffset' in s or ('TimeOffset',('650','Second'))
-]
+optionalParameterSet['BlackHoleBinary'] = makeoptional([('TimeOffset',('0','Second')),
+                                                        ('IntegrationStep',('10','Second'))])
+
+minimumParameterSet['SampledPlaneWave'] = makeminimum(['TimeOffset',
+                                                       'Cadence',
+                                                       'Duration'])
+
+optionalParameterSet['SampledPlaneWave'] = []
 
 # default units
 
@@ -272,6 +282,7 @@ defaultUnits = {
     'EclipticLatitude': 'Radian',
     'EclipticLongitude': 'Radian',
     'Polarization': 'Radian',
+    'SLPolarization': 'Radian',
     'Amplitude': '1',
     'Inclination': 'Radian',
     'InitialPhase': 'Radian',
@@ -285,183 +296,7 @@ defaultUnits = {
     'Armlength': 'Second'
 }
 
-# so far we can convert
-#
-# - Degree to Radian
-# - Degree/Minute/Second (DMS), space-separated, to Radian
-# - Hour/Minute/Second (HMS), space-separated, to Radian
-
-def convertUnit(param,unitin,unitout,paramname=''):
-    if unitout == unitin:
-        return (param,unitin)
-
-    if unitout == "Radian":
-        if unitin == "Degree":
-            return ((math.pi/180.0) * float(param),'Radian')
-        elif unitin == "DMS":
-            # space separated
-            dms = map(float, param.split())
-
-            return ((math.pi/180.0) * (dms[0] + dms[1]/60.0 + dms[2]/3600.0),'Radian')
-        elif unitin == "HMS":
-            # space separated
-            hms = map(float, param.split())
-            
-            return ((15.0*math.pi/180.0) * (hms[0] + hms[1]/60.0 + hms[2]/3600.0),'Radian')
-
-    if unitout == 'String':
-        if paramname == 'SpectralType':
-            if unitin == '1':
-                if float(param) == 0.0:
-                    return ('WhiteFrequency','String')
-                elif float(param) == 2.0:
-                    return ('WhitePhase','String')
-                elif float(param) == -2.0:
-                    return ('WhiteAcceleration','String')
-
-    if unitout == '1':
-        if paramname == 'SpectralType':
-            if unitin == 'String':
-                if param == 'WhiteFrequency':
-                    return ('0.0','1')
-                elif param == 'WhitePhase':
-                    return ('2.0','1')
-                elif param == 'WhiteAcceleration':
-                    return ('-2.0','1')                
-
-    raise NotImplementedError, "convertUnit(): cannot convert %s from %s to %s" % (param,unitin,unitout)
-
-# so far we can convert:
-#
-# - RightAscension/Declination to EclipticLatitude/EclipticLongitude 
-# - InitialPosition/InitialRotation to InitialEta/InitialXi
-# - InitialEta/InitialXi to InitialPosition/InitialRotation
-
-# we may later move this to a more abstract coding structure (unify
-# the parsing and unit conversion of parameters, call externally stored
-# conversion routines...)
-
-def convertParameters(param,sourceparams):
-    if param[0] in ('EclipticLatitude','EclipticLongitude'):    
-        try:
-            alpha = float(convertUnit(sourceparams['RightAscension'][0],
-                                      sourceparams['RightAscension'][1],
-                                      'Radian')[0])
-                                      
-            delta = float(convertUnit(sourceparams['Declination'][0],
-                                      sourceparams['Declination'][1],
-                                      'Radian')[0])
-
-            # J2000 epoch
-            epsilon = (math.pi/180.0) * 23.439291
-
-            beta = math.asin( math.cos(epsilon) * math.sin(delta) -
-                              math.sin(epsilon) * math.cos(delta) * math.sin(alpha) )
-                              
-            coslambd = math.cos(alpha) * math.cos(delta) / math.cos(beta)
-            sinlambd = ( (math.sin(delta) - math.cos(epsilon) * math.sin(beta)) /
-                         (math.sin(epsilon) * math.cos(beta)) )
-                         
-            lambd = math.atan2(sinlambd,coslambd)
-            if lambd < 0:
-                lambd = lambd + 2.0*math.pi
-
-            if param[0] == 'EclipticLatitude':
-                return (str(beta),'Radian')
-            elif param[0] == 'EclipticLongitude':
-                return (str(lambd),'Radian')
-        except KeyError:
-            raise AttributeError, "convertParameters(): need RightAscension and Declination (in the right units) to return EclipticLatitude and EclipticLongitude"
-    elif param[0] in ('InitialPosition','InitialRotation'):
-        try:
-            eta = float(convertUnit(sourceparams['InitialEta'][0],
-                                    sourceparams['InitialEta'][1],
-                                    'Radian')[0])
-
-            xi  = float(convertUnit(sourceparams['InitialXi'][0],
-                                    sourceparams['InitialXi'][1],
-                                    'Radian')[0])
-
-            sw  = float(sourceparams['ArmSwitch'][0])
-
-            if sw > 0:
-                raise NotImplementedError, "convertParameters(): LISA eta/xi configuration with sw > 0 not compatible with PseudoLISA"
-
-            initpos = eta
-            initrot = xi + initpos - 1.5*math.pi
-    
-            if param[0] == 'InitialPosition':
-                return (str(initpos),'Radian')
-            elif param[0] == 'InitialRotation':
-                return (str(initrot),'Radian')
-        except KeyError:
-            raise AttributeError, "convertParameters(): need LISA eta/xi/sw (in the right units) to return InitialPosition and InitialRotation"
-    elif param[0] in ('InitialEta','InitialXi','ArmSwitch'):
-        try:
-            kappa = float(convertUnit(sourceparams['InitialPosition'][0],
-                                      sourceparams['InitialPosition'][1],
-                                      'Radian')[0])
-
-            lambd = float(convertUnit(sourceparams['InitialRotation'][0],
-                                      sourceparams['InitialRotation'][1],
-                                      'Radian')[0])
-            eta = kappa
-            xi = lambd - kappa + 1.5*math.pi
-
-            if param[0] == 'InitialEta':
-                return (str(eta),'Radian')
-            elif param[0] == 'InitialXi':
-                return (str(xi),'Radian')
-            elif param[0] == 'ArmSwitch':
-                return ('-1.0','1')
-        except KeyError:
-            raise AttributeError, "convertParameters(): need PseudoLISA InitialPosition and InitialRotation (in the right units) to return eta/xi/sw"
-    elif param[0] == 'InterpolatorLength':
-        try:
-            interptype = convertUnit(sourceparams['Interpolator'][0],
-                                     sourceparams['Interpolator'][1],
-                                     'String')[0]
-    
-            if interptype == 'NearestNeighbor':
-                return ('0','1')
-            elif interptype == 'LinearExtrapolator':
-                return ('-1','1')
-            elif interptype == 'Linear':
-                return ('1','1')
-            elif interptype == 'Lagrange': 
-                interplen = convertUnit(sourceparams['InterpolatorWindow'][0],
-                                        sourceparams['InterpolatorWindow'][1],
-                                        '1')[0]
-                return (interplen,'1')
-            else:
-                raise AttributeError
-        except KeyError:
-            raise AttributeError, "convertParameters(): need Interpolator/InterpolatorWindow (if Interpolator == 'Lagrange') to return InterpolatorLength"
-    elif param[0] in ('Interpolator','InterpolatorWindow'):
-        try:
-            interplen = float(convertUnit(sourceparams['InterpolatorLength'][0],
-                                          sourceparams['InterpolatorLength'][1],
-                                          '1')[0])
-
-            if param[0] == 'Interpolator':
-                 if interplen == 0.0:
-                    return ('NearestNeighbor','String')
-                 elif interplen == -1.0:
-                    return ('LinearExtrapolator','String')
-                 elif interplen == 1.0:
-                    return ('Linear','String')
-                 elif interplen > 1.0:
-                    return ('Lagrange','String')            
-            elif param[0] == 'InterpolatorWindow':
-                if interplen > 1.0:
-                    return (str(int(interplen)),'1')
-                else:
-                    return ('None','1')
-        except KeyError:
-            raise AttributeError, "convertParameters(): need InterpolatorLength to return Interpolator/InterpolatorWindow"
-    else:
-        raise AttributeError, "convertParameters(): cannot obtain %s from provided parameters %s" % (param[0],sourceparams)
-
+from convertunit import convertParameters, convertUnit
 
 class writeXML:
     def __init__(self,filename):
@@ -604,6 +439,19 @@ class binaryData:
         bfile = open(filename,'w')
         bfile.write(buffer.tostring())              
         bfile.close()
+
+
+class fileData:
+    def __init__(self,filename,basename,length,records,encoding,index):
+        self.filename = filename
+        self.basename = basename
+        
+        self.length = length
+        self.records = records
+        self.encoding = encoding
+        
+        self.index = index
+
 
 
 def dumpXML(object):
@@ -759,7 +607,26 @@ class lisaXML(writeXML):
         return ('XSIL', xsildict, params)
 
 
-    def doSampledWaveTimeSeries(self,objectpars):
+    def doSampledWaveTimeSeries(self,myobjectpars):
+        objectpars = {}
+
+        for param in outputList['TimeSeries']:
+            if not param[0] in myobjectpars:
+                try:
+                    thisparam = convertParameters(param,myobjectpars)
+                except AttributeError:
+                    if param[2] != None:
+                        thisparam = (param[2],param[1])
+                    else:
+                        raise AttributeError, 'readXML.doSampledWaveTimeSeries(): missing external parameter(s) %s for object %s' % (param[0],object)
+            else:
+                thisparam = myobjectpars[param[0]]
+
+            if param[1]:
+                thisparam = convertUnit(thisparam[0],thisparam[1],param[1],param[0])
+
+            objectpars[param[0]] = thisparam
+
         children = []
 
         for name in ('TimeOffset','Cadence'):
@@ -786,7 +653,7 @@ class lisaXML(writeXML):
 
         arraycontent.append( ('Stream',
                              {'Type': 'Remote', 'Encoding': encoding},
-                             [ binaryData( (objectpars['hparray'][0], objectpars['hcarray'][0]),
+                             [ binaryData( (objectpars['hp'][0], objectpars['hc'][0]),
                                            int(objectpars['Length'][0]) ) ]
                            ) )
         
@@ -813,7 +680,7 @@ class lisaXML(writeXML):
         self.theLISAData = [self.ProcessObjectData(lisa,'LISA',comments)]
 
 
-    def NoiseData(self,object,name='',comments=''):
+    def NoiseData(self,object,name='',comments='',hideseed=0):
         """Add a NoiseData entry describing a synthlisa Noise object to
         a lisaXML file object; if called for a TDInoise object, will
         loop over all component noises and dump an XML description for
@@ -823,29 +690,41 @@ class lisaXML(writeXML):
             # if we get a TDInoise, do the component noises one by one
 
             if name:
-                comments = comments + '\n(part of %s) ' % name 
+                if comments:
+                    comments = comments + '\n(part of %s) ' % name 
+                else:
+                    comments = '(part of %s) ' % name
 
             if not self.theLISAData:
                 self.LISAData(object.initargs[0],comments)
 
             # proof-mass noise
             
-            map(lambda noise, name: self.NoiseData(noise,name,comments),
+            map(lambda noise, name: self.NoiseData(noise,name,comments,hideseed),
                 object.initargs[1], 
                 ['pm1','pm1s','pm2','pm2s','pm3','pm3s'])
             
             # photodetector noise; note mapping per abstract-format.txt
             
-            map(lambda noise, name: self.NoiseData(noise,name,comments),
+            map(lambda noise, name: self.NoiseData(noise,name,comments,hideseed),
                 object.initargs[2], 
                 ['pdm3','pd3','pdm1','pd1','pdm2','pd2'])
                 
             # laser noise
                 
-            map(lambda noise, name: self.NoiseData(noise,name,comments),
+            map(lambda noise, name: self.NoiseData(noise,name,comments,hideseed),
                 object.initargs[3],
                 ['C1','C1s','C2','C2s','C3','C3s'])
+        elif object.__class__.__name__ == 'SumSignal':
+            self.NoiseData(object.initargs[0],name,comments,hideseed)
+            self.NoiseData(object.initargs[1],name,comments,hideseed)
+        elif object.__class__.__name__ == 'NoSignal':
+            return
         else:
+            if hasattr(object,'xmltype') and object.xmltype == 'PowerLawNoise' and hideseed == 1:
+                # hide pseudorandom seed if so requested  
+                object.xmlargs[5] = 0
+            
             self.theNoiseData.append(self.ProcessObjectData(object,name,comments))
 
 
@@ -1261,7 +1140,11 @@ class readXML:
                                 readlength = 8*timeseries['Length']*timeseries['Records']
     
                                 # need to catch reading errors here
-                                binaryfile = open(self.directory + '/' + timeseries['Filename'],'r')
+                                if self.directory:
+                                    binaryfile = open(self.directory + '/' + timeseries['Filename'],'r')
+                                else: 
+                                    binaryfile = open(timeseries['Filename'],'r')
+                                                            
                                 readbuffer = Numeric.fromstring(binaryfile.read(readlength),'double')
                                 binaryfile.close()
                 
@@ -1375,19 +1258,13 @@ class readXML:
                     
                     for node2 in node:
                         if node2.tagName == 'XSIL':
-                            if node2.Type == 'PlaneWave':
+                            if node2.Type in ('PlaneWave','SampledPlaneWave'):
                                 r = self.processObject(node2)
 
                                 if returnFactory:
                                     result.append(r)
                                 else:
                                     result.append(MakeObject(r))
-                            elif node2.Type == 'SampledPlaneWave':
-                                raise NotImplementedError, 'readXML.getLISASources(): cannot currently handle SampledPlaneWave objects'
-                                
-                                # but the idea is to replace r[0] with a class instance that references r[0], and that will
-                                # process all the data loading implicit in the TimeSeries parameters, etc., and will return
-                                # r[0] applied correctly...
 
         if returnFactory:
             return LISASourceFactory(result)
@@ -1444,17 +1321,45 @@ class readXML:
         noisedict = {}
 
         for noise in noises:
-            noisedict[noise.name] = noise
+            if noise.name in noisedict:
+                # handle composite noise
+                
+                noisedict[noise.name] = synthlisa.SumSignal(noisedict[noise.name],noise)
+            else:
+                noisedict[noise.name] = noise
 
-        try:
-            pmnoises = [noisedict[id] for id in ('pm1','pm1s','pm2','pm2s','pm3','pm3s')]
-            pdnoises = [noisedict[id] for id in ('pdm3','pd3','pdm1','pd1','pdm2','pd2')]
-            lsnoises = [noisedict[id] for id in ('C1','C1s','C2','C2s','C3','C3s')]
-        except KeyError, k:
-            raise KeyError, 'readXML.getTDInoise(): undefined noise %s needed for TDInoise' % k
+        # undefined noises are replaced with NoSignal()
+
+        checknoise = lambda id: id in noisedict and noisedict[id] or synthlisa.NoSignal()
+
+        pmnoises = [checknoise(id) for id in ('pm1','pm1s','pm2','pm2s','pm3','pm3s')]
+        pdnoises = [checknoise(id) for id in ('pdm3','pd3','pdm1','pd1','pdm2','pd2')]
+        lsnoises = [checknoise(id) for id in ('C1','C1s','C2','C2s','C3','C3s')]
 
         return synthlisa.TDInoise(lisa,pmnoises,pdnoises,lsnoises)
         
+
+    def processArray(self,node,objectparams):
+        for node2 in node:
+            if node2.tagName == 'Dim':
+                objectparams[node2.Name] = (self.getDim(node2),'1')
+
+        for node2 in node:
+            if node2.tagName == 'Stream':
+                try:
+                    encoding = node2.Encoding
+                except:
+                    raise AttributeError, 'readXML.processArray(): encoding/type not specified in stream'
+
+                if node2.Type == 'Remote':
+                    vars = map(lambda s: string.lstrip(string.rstrip(s)),string.split(node.Name,','))
+
+                    for v in range(len(vars)):
+                        objectparams[vars[v]] = (fileData(self.directory + '/' + str(node2),str(node2),
+                                                          int(objectparams['Length'][0]),int(objectparams['Records'][0]),encoding,v),
+                                                 'Numeric')
+
+                # should handle local data here...
 
     def processObject(self,node):
         objectparams = {}
@@ -1470,14 +1375,34 @@ class readXML:
             if node2.tagName == 'Param':
                 objectparams[node2.Name] = self.getParam(node2)
 
-        if node.Type == 'PlaneWave':
+        if node.Type in ('PlaneWave','SampledPlaneWave'):
             for test in standardSourceParameterSet:
                 if test(objectparams) != True:
                     raise KeyError, 'readXML.processObject(): need standard parameter(s) %s in source %s' % (test(objectparams),objectname)
 
-            objecttype = objectparams['SourceType'][0]
+        if node.Type == 'PlaneWave':
+            try:
+                objecttype = objectparams['SourceType'][0]
+            except:
+                raise KeyError, 'readXML.processObject(): need SourceType for PlaneWave source %s' % objectname
         else:
             objecttype = node.Type
+
+        # look inside included TimeSeries to get more parameters there
+        # can only handle the first TimeSeries within each SampledPlaneWave
+
+        # look inside included Array to get more parameters there
+        # can only handle the first Array
+
+        if node.Type == 'SampledPlaneWave':
+            for node2 in node:
+                if node2.tagName == 'XSIL' and node2.Type == 'TimeSeries':
+                    for node3 in node2:
+                        if node3.tagName == 'Param':
+                            objectparams[node3.Name] = self.getParam(node3)                   
+                        elif node3.tagName == 'Array':
+                            self.processArray(node3,objectparams)
+                    break             
     
         if not objecttype in minimumParameterSet:
             raise NotImplementedError, 'readXML.processObject(): unknown object type %s for object %s' % (objecttype,objectname)
@@ -1489,7 +1414,7 @@ class readXML:
                 raise KeyError, 'readXML.processObject(): need parameter(s) %s for object %s of type %s' % (test(objectparams),objectname,objecttype)
 
         # add the default units if not included and if defined
-        
+    
         for param in objectparams:
             if (not param[1]) and (param[0] in defaultUnits):
                 param[1] = defaultUnits[param[0]]
@@ -1520,40 +1445,90 @@ class readXML:
                 # try obtaining the parameter from the other ones
 
                 try:
-                    thisparam = convertParameters(param,objectparams)            
-                except AttributeError:         
-                    raise AttributeError, 'readXML.processObject(): need parameter(s) %s in object %s of type %s' % (param[0],objectname,objecttype)
+                    thisparam = convertParameters(param,objectparams)
+                except AttributeError:
+                    if param[2]:
+                        thisparam = (param[2],param[1])
+                    else:
+                        raise AttributeError, 'readXML.processObject(): need parameter(s) %s in object %s of type %s' % (param[0],objectname,objecttype)
             else:
                 thisparam = objectparams[param[0]]
 
             # convert to the correct units (if we know how to)
 
             thisparam = convertUnit(thisparam[0],thisparam[1],param[1],param[0])
-                        
-            try:
-                # we get a string; first try converting to an int...
-                
-                evalparam = int(thisparam[0])
-            except ValueError:
-                # if it doesn't work, try a float...
 
+            if param[1] == 'String' or param[1] == 'Numeric':
+                evalparam = thisparam[0]
+            else:
                 try:
-                    evalparam = float(thisparam[0])
+                    # first try converting to an int...
+                    
+                    evalparam = int(thisparam[0])
                 except ValueError:
-                    # if the float does not work, default to str...
-                
-                    evalparam = str(thisparam[0])
+                    # if it doesn't work, try a float...
+    
+                    try:
+                        evalparam = float(thisparam[0])
+                    except ValueError:
+                        # if the float does not work, try calling Python...
 
-            # this will accept ints and floats, but not strings...
+                        evalparam = eval(thisparam[0])
 
             arglist.append(evalparam)
 
-        return (XMLToObject[objecttype][1],arglist,objectname)
+        return (XMLToObject[objecttype][1],arglist,objectname,objectparams)
 
+
+# for the moment handle only remote files...
+
+def handleFiles(args):
+    files = {}
+    
+    for i in range(0,len(args)):
+        if isinstance(args[i],fileData):
+            if not args[i].filename in files:
+                readlength = 8 * args[i].length * args[i].records
+
+                try:
+                    binaryfile = open(args[i].filename,'r')
+                    readbuffer = Numeric.fromstring(binaryfile.read(readlength),'double')
+                    binaryfile.close()
+                except:
+                    try:
+                        binaryfile = open(args[i].basename,'r')
+                        readbuffer = Numeric.fromstring(binaryfile.read(readlength),'double')
+                        binaryfile.close()
+                    except:
+                        raise IOError, 'handleFiles(): problems reading file %s' % args[i].filename
+
+                if (('BigEndian' in args[i].encoding and sys.byteorder == 'little') or
+                    ('LittleEndian' in args[i].encoding and sys.byteorder == 'big')):
+                    readbuffer = readbuffer.byteswapped()
+
+                if args[i].records == 1:
+                    files[args[i].filename] = [readbuffer]
+                else:
+                    readbuffer = Numeric.reshape(readbuffer,[args[i].length,args[i].records])
+                
+                    files[args[i].filename] = [readbuffer[:,j].copy() for j in range(0,args[i].records)]
+
+            args[i] = files[args[i].filename][args[i].index].copy()
 
 def MakeObject(s):
+    # if any data needs to be loaded, do so!
+
+    for arg in s[1]:
+        if isinstance(arg,fileData):
+            handleFiles(s[1])
+            break
+    
     ret = (s[0])(*(s[1]))
     ret.name = s[2]
+    
+    for param in s[3]:
+        if s[3][param][1] != 'Numeric':
+            ret.__setattr__(param,(s[3][param]))
     
     return ret
 
