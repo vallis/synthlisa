@@ -42,12 +42,43 @@ Destructor. See above.
 };
 %enddef
 
-/* -------- LISA objects -------- */
-
 %pythoncode %{
 import math
 import sys
+import random
+import time
 %}
+
+/* ------- random numbers ------- */
+
+%pythoncode %{
+globalseed = 0
+
+cseeds = []
+
+def setglobalseed(seed = 0):
+    globalseed = seed
+    random.seed(globalseed)
+   
+def getglobalseed():
+    if globalseed == 0:
+        setglobalseed(int(time.time()))
+
+    return globalseed
+    
+def getcseed():
+    if globalseed == 0:
+        setglobalseed(int(time.time()))
+
+    while True:
+        ret = random.randint(0,2**32)
+    
+        if not ret in cseeds:
+            cseeds.append(ret)
+            return ret
+%}
+
+/* -------- LISA objects -------- */
 
 %feature("docstring") LISA "
 LISA is the base class for all LISA geometries. All derived LISA
@@ -461,12 +492,20 @@ class NoSignal : public Signal {
     NoSignal();
 };
 
+initsave(SumSignal)
+
+class SumSignal : public Signal {
+ public:
+    SumSignal(Signal *s1,Signal *s2);
+};
+
 initsave(InterpolatedSignal)
 
 class InterpolatedSignal : public Signal {
  public:
     InterpolatedSignal(SignalSource *src,Interpolator *interp,
                        double deltat,double prebuffer = 0.0,double norm = 1.0);
+    ~InterpolatedSignal();
     
     void setinterp(Interpolator *inte);
 };
@@ -506,8 +545,14 @@ def PowerLawNoise(deltat,prebuffer,psd,exponent,interplen=1,seed=0):
     elif exponent == -2:
         filter = IntFilter()
         normalize = math.sqrt(psd) * math.sqrt(nyquistf) * (2.00 * math.pi * deltat)
+    elif exponent == -4:
+        filter = IIRFilter([1,2,1],[0,0.9999*2,-0.9999])
+        normalize = math.sqrt(psd) * math.sqrt(nyquistf) * (math.pi * deltat)**2
     else:
         raise NotImplementedError, "PowerLawNoise: undefined PowerLaw exponent %s (lisasim-swig.i)." % exponent
+
+    if seed == 0:
+        seed = getcseed()
 
     whitenoise = WhiteNoiseSource(int(prebuffer/deltat+32),seed)
     filterednoise = SignalFilter(int(prebuffer/deltat+32),whitenoise,filter)
@@ -526,35 +571,14 @@ def PowerLawNoise(deltat,prebuffer,psd,exponent,interplen=1,seed=0):
 def SampledSignal(array,deltat,prebuffer,norm = 1.0,filter = None,interplen = 1):
     interp = getInterpolator(interplen)
 
-    if interplen > prebuffer/deltat:
-        sys.stderr.write('Warning---SampledSignal: for t = 0, interpolator (semiwin=%s) will stray beyond prebuffer, yielding zeros.' % interplen)
+    samplednoise = SampledSignalSource(array,norm)
 
-	samplednoise = SampledSignalSource(array,norm)
-
-	if not filter:
-		filteredsamples = 0
-		interpolatednoise = InterpolatedSignal(samplednoise,interp,deltat,prebuffer)		
-	else:
-		filteredsamples = SignalFilter(int(prebuffer/deltat+32),samplednoise,filter)
-		interpolatednoise = InterpolatedSignal(filteredsamples,interp,deltat,prebuffer)
-
-    interpolatednoise.timeseries = array
-
-    interpolatednoise.ident = [
-        ('Param',{'Name': 'Type'},'FractionalFrequencyFluctuation'),
-        ('Param',{'Name': 'Cadence','Unit': 's'},'%s' % deltat),
-        ('Param',{'Name': 'TimeOffset', 'Unit': 's'},'%s' % prebuffer),
-        ('Param',{'Name': 'Interpolator'},interp.type)
-    ]
-
-    if hasattr(interp,'window'):
-        noise.ident.append(('Param',{'Name': 'InterpolatorWindow'},'%s' % interp.window))
-        
-    if norm != 1.0:
-        interpolatednoise.ident.append(('Param',{'Name': 'Normalization'},'%s' % norm))
-
-    if filter != None:
-        interpolatednoise.ident.append(('Param',{'Name': 'Filtering'},'???'))
+    if not filter:
+        filteredsamples = 0
+        interpolatednoise = InterpolatedSignal(samplednoise,interp,deltat,prebuffer)
+    else:
+        filteredsamples = SignalFilter(int(prebuffer/deltat+32),samplednoise,filter)
+        interpolatednoise = InterpolatedSignal(filteredsamples,interp,deltat,prebuffer)
 
     return interpolatednoise
 %}
@@ -1039,6 +1063,16 @@ public:
     }
 };
 
+initsave(SampledTDI)
+
+%apply Noise *PYTHON_SEQUENCE_NOISE[ANY] {Noise *yijk[6], Noise *zijk[6]}
+
+class SampledTDI : public TDI {
+ public:
+    SampledTDI(LISA *lisa,Noise *yijk[6],Noise *zijk[6]);
+    ~SampledTDI();
+};
+
 /* We're holding on to the constructor args so that the LISA object
    won't get destroyed if they fall out of scope: we may still need
    them! */
@@ -1105,28 +1139,37 @@ initsave(TDInoise)
                           lisa.armlength(2,0.0),
                           lisa.armlength(3,0.0))
 
-    def stdproofnoise(lisa,stproof,sdproof,interp=1):
+    def stdproofnoise(lisa,stproof,sdproof,interp=1,seed=0):
         # we need quadruple retardations for the V's appearing in the z's
         # (octuple for 2nd-gen TDI); we add two sampling times to allow linear
         # interpolation for large sampling times
     
         pbtproof = 8.0 * lighttime(lisa) + 2.0*stproof
     
-        return PowerLawNoise(stproof,pbtproof,sdproof,-2.0,interp)
+        return PowerLawNoise(stproof,pbtproof,sdproof,-2.0,interp,seed)
 
-    def stdopticalnoise(lisa,stshot,sdshot,interp=1):
+    def stdproofnoisepink(lisa,stproof,sdproof,sf0proof,interp=1,seed=0):
+        # we need quadruple retardations for the V's appearing in the z's
+        # (octuple for 2nd-gen TDI); we add two sampling times to allow linear
+        # interpolation for large sampling times
+    
+        pbtproof = 8.0 * lighttime(lisa) + 2.0*stproof
+    
+        return PowerLawNoise(stproof,pbtproof,sdproof * sf0proof**2,-4.0,interp,seed)
+
+    def stdopticalnoise(lisa,stshot,sdshot,interp=1,seed=0):
         # we need only triple retardations for the shot's appearing in the y's
         # (septuple for 2nd-gen TDI); we add two sampling times to allow linear
         # interpolation for large sampling times
     
         pbtshot = 7.0 * lighttime(lisa) + 2.0*stshot
     
-        return PowerLawNoise(stshot,pbtshot,sdshot,2.0,interp)
+        return PowerLawNoise(stshot,pbtshot,sdshot,2.0,interp,seed)
 
-    def stdlasernoise(lisa,stlaser,sdlaser,interp=1):
+    def stdlasernoise(lisa,stlaser,sdlaser,interp=1,seed=0):
         pbtlaser = 8.0 * lighttime(lisa) + 2.0*stlaser
 
-        return PowerLawNoise(stlaser,pbtlaser,sdlaser,0.0,interp)
+        return PowerLawNoise(stlaser,pbtlaser,sdlaser,0.0,interp,seed)
 %}
 
 %feature("pythonprepend") TDInoise::TDInoise %{
