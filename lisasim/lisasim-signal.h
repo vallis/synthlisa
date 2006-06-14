@@ -7,7 +7,7 @@
 #ifndef _LISASIM_SIGNAL_H_
 #define _LISASIM_SIGNAL_H_
 
-
+#include <iostream>
 #include <stdlib.h>
 
 class RingBuffer {
@@ -313,6 +313,30 @@ class NoSignal : public Signal {
     double value(double timebase,double timecorr) { return 0.0; }
 };
 
+
+class SumSignal : public Signal {
+ private:
+    Signal *signal1, *signal2;
+
+ public:
+    SumSignal(Signal *s1,Signal *s2) : signal1(s1), signal2(s2) {};
+    
+    void reset(unsigned long seed = 0) {
+        signal1->reset();
+        signal2->reset();        
+    };
+
+    double value(double time) {
+        return signal1->value(time) + signal2->value(time);
+    };
+
+    double value(double timebase,double timecorr) {
+        return signal1->value(timebase,timecorr) +
+               signal2->value(timebase,timecorr);
+    };
+};
+
+
 class InterpolatedSignal : public Signal {
  private:
 	SignalSource *source;
@@ -323,6 +347,7 @@ class InterpolatedSignal : public Signal {
  public:
 	InterpolatedSignal(SignalSource *src,Interpolator *inte,
 					   double deltat,double prebuffer = 0.0,double norm = 1.0);
+    ~InterpolatedSignal() {};
 
     void reset(unsigned long seed = 0);  // ??? redefining default
 
