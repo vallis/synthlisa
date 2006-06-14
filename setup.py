@@ -10,7 +10,7 @@ import os
 import glob
 import re
 
-versiontag = '1.2.9'
+versiontag = '1.3.0'
 
 synthlisa_prefix = ''
 numeric_prefix = ''
@@ -85,11 +85,14 @@ lisasim_pyfile = 'lisasim/lisaswig.py'
 # Should I clean the swig-generated files when setup.py clean is issued?
 # Better not, since it could engender problems if swig is not available.
 
-def runswig(source,cppfile,pyfile,deps):
+def runswig(source,cppfile,pyfile,deps,cpp=1):
     if not os.path.isfile(cppfile) or not os.path.isfile(pyfile) \
            or newer_group(deps,cppfile) or newer_group(deps,pyfile):
         try:
-            spawn([swig_bin,'-w402','-c++','-python','-o',cppfile,source])
+            if cpp:
+                spawn([swig_bin,'-w402','-c++','-python','-o',cppfile,source])
+            else:
+                spawn([swig_bin,'-w402','-python','-o',cppfile,source])
         except:
             print 'Sorry, I am unable to swig the modified ' + lisasim_isource
             sys.exit(1)
@@ -193,6 +196,13 @@ for entry in glob.glob('contrib/*'):
         contrib_source_files = glob.glob(entry + '/*.cpp') + glob.glob(entry + '/*.cc')
         contrib_header_files = glob.glob(entry + '/*.h') + glob.glob(entry + '/*.hh')
 
+        iscpp = 1
+
+        if not contrib_source_files:
+            # do C extension
+            contrib_source_files = glob.glob(entry + '/*.c')
+            iscpp = 0
+
         contrib_swigfiles = glob.glob(entry + '/*.i')
 
         # each SWIG file creates a separate extension
@@ -205,7 +215,7 @@ for entry in glob.glob('contrib/*'):
             contrib_pyfile = contrib_basefile + '.py'
     
             runswig(contrib_swigfile,contrib_wrapfile,contrib_pyfile,
-                    contrib_header_files + [contrib_swigfile])
+                    contrib_header_files + [contrib_swigfile],iscpp)
     
             contrib_extname = contrib_packagename + '/_' + contrib_basename
             
