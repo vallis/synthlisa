@@ -177,14 +177,21 @@ SampledSignalSource::SampledSignalSource(double *darray,long len,double norm)
 
 double SampledSignalSource::operator[](long pos) {
 	if(pos < 0) {
-		return 0.0;
-	} else if(pos >= length) {
-		if(warn == 0) {
-			std::cerr << "SampledSignalSource::operator[](long): padding with zeros after pos "
+		/* if(!(warn & 1)) {
+			std::cerr << "SampledSignalSource::operator[](long): padding with zeros at pos "
 		          << pos << " [" << __FILE__ << ":" << __LINE__ << "]." << std::endl;
 
-			warn = 1;
-		}
+			warn |= 1;
+		} */
+
+		return 0.0;
+	} else if(pos >= length) {
+		/* if(!(warn & 2)) {
+			std::cerr << "SampledSignalSource::operator[](long): padding with zeros at pos "
+		          << pos << " [" << __FILE__ << ":" << __LINE__ << "]." << std::endl;
+
+			warn |= 2;
+		} */
 			
 		return 0.0;
 	} else {
@@ -655,7 +662,7 @@ void PowerLawNoise::reset(unsigned long seed) {
 
 SampledSignal::SampledSignal(double *narray,long length,double deltat,double prebuffer,
 	double norm,Filter *filter,int interplen) {
-
+	
 	try {
 		interp = getInterpolator(interplen);	
 	} catch (ExceptionUndefined &e) {
@@ -665,11 +672,11 @@ SampledSignal::SampledSignal(double *narray,long length,double deltat,double pre
 		throw e;
 	}
 
-	if (interplen > prebuffer/deltat) {
+	/* if (interplen > prebuffer/deltat) {
 		std::cerr << "WARNING: SampledSignal::SampledSignal(...): for t = 0, interpolator (semiwin=" 
 				  << interplen << ") will stray beyond prebuffer, yielding zeros." << std::endl;
 	
-	}
+	} */
 
 	samplednoise = new SampledSignalSource(narray,length,norm);
 
@@ -677,7 +684,7 @@ SampledSignal::SampledSignal(double *narray,long length,double deltat,double pre
 		filteredsamples = 0;
 		interpolatednoise = new InterpolatedSignal(samplednoise,interp,deltat,prebuffer);		
 	} else {
-		filteredsamples = new SignalFilter(long(prebuffer/deltat+32),samplednoise,filter);
+		filteredsamples = new SignalFilter(long(160.0/deltat+32.0),samplednoise,filter);
 		interpolatednoise = new InterpolatedSignal(filteredsamples,interp,deltat,prebuffer);
 	}
 }
