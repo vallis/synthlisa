@@ -9,6 +9,8 @@
 # - Degree/Minute/Second (DMS), space-separated, to Radian
 # - Hour/Minute/Second (HMS), space-separated, to Radian
 
+import math
+
 def convertUnit(param,unitin,unitout,paramname=''):
     if unitout == unitin:
         return (param,unitin)
@@ -36,6 +38,8 @@ def convertUnit(param,unitin,unitout,paramname=''):
                     return ('WhitePhase','String')
                 elif float(param) == -2.0:
                     return ('WhiteAcceleration','String')
+                elif float(param) == -4.0:
+                    return ('RedAcceleration','String')
 
     if unitout == '1':
         if paramname == 'SpectralType':
@@ -46,6 +50,8 @@ def convertUnit(param,unitin,unitout,paramname=''):
                     return ('2.0','1')
                 elif param == 'WhiteAcceleration':
                     return ('-2.0','1')                
+                elif param == 'RedAcceleration':
+                    return ('-4.0','1')
 
     raise NotImplementedError, "convertUnit(): cannot convert %s from %s to %s (parameter %s)" % (param,unitin,unitout,paramname)
 
@@ -61,10 +67,20 @@ conversionRules['Prebuffer'] =      ( [('TimeOffset','Second')],
                                       lambda x: ( str(-float(x)), 'Second' ) ) 
 
 conversionRules['Polarization'] =   ( [('SLPolarization','Radian')],
-                                      lambda x: ( str(2.0*math.pi - float(x)), 'Radian' ) )
+                                      lambda x: ( float(x) != 0 and str(2.0*math.pi - float(x)) or '0', 'Radian' ) )
 
 conversionRules['SLPolarization'] = ( [('Polarization','Radian')],
-                                      lambda x: ( str(2.0*math.pi - float(x)), 'Radian' ) )
+                                      lambda x: ( float(x) != 0 and str(2.0*math.pi - float(x)) or '0', 'Radian' ) )
+
+conversionRules['Inclination'] =    ( [('SLInclination','Radian')],
+                                      lambda x: ( str(float(x) < math.pi and
+                                                  math.pi - float(x) or
+                                                  3.0*math.pi - float(x)), 'Radian' ) )
+                                      
+conversionRules['SLInclination'] =  ( [('Inclination','Radian')],
+                                      lambda x: ( str(float(x) < math.pi and
+                                                  math.pi - float(x) or
+                                                  3.0*math.pi - float(x)), 'Radian' ) )                                      
 
 def eq2ec(a,d):
     alpha = float(a)
@@ -106,10 +122,10 @@ def ex2ipr(e,x,s):
     return ( (str(initpos),'Radian'), (str(initrot),'Radian') )
 
 
-conversionRules['InitialPosition'] = ( [('InitialEta','Radian'),('InitialXi','Radian'),('Armswitch','1')],
+conversionRules['InitialPosition'] = ( [('InitialEta','Radian'),('InitialXi','Radian'),('ArmSwitch','1')],
                                        lambda x,y,z: ex2ipr(x,y,z)[0] )
 
-conversionRules['InitialRotation'] = ( [('InitialEta','Radian'),('InitialXi','Radian'),('Armswitch','1')],
+conversionRules['InitialRotation'] = ( [('InitialEta','Radian'),('InitialXi','Radian'),('ArmSwitch','1')],
                                        lambda x,y,z: ex2ipr(x,y,z)[1] )
 
 
@@ -170,18 +186,18 @@ conversionRules['InterpolatorWindow'] = ( [('InterpolatorLength','1')],
                                     
                                     
 def convertParameters(param,sourceparams):
-    if param in sourceparams:
-        return sourceparams[param]
+    if param[0] in sourceparams:
+        return sourceparams[param[0]]
 
     args = []
     
     try:
-        for arg in conversionRules[param][0]:
+        for arg in conversionRules[param[0]][0]:
             try:
                 args.append(convertUnit(sourceparams[arg[0]][0],sourceparams[arg[0]][1],arg[1])[0])
             except KeyError:
-                raise AttributeError, "convertParameters(): need %s to return %s" % (arg[0],param)
+                raise AttributeError, "convertParameters(): need %s to return %s" % (arg[0],param[0])
     except KeyError:
-        raise NotImplementedError, "convertParameters(): have no rule to obtain %s" % param
+        raise AttributeError
     
-    return conversionRules[param][1](*args)
+    return conversionRules[param[0]][1](*args)
