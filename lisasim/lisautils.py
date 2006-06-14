@@ -17,18 +17,18 @@ import math
 
 # detrend controls the subtraction of DC components
 
-def spect(series,sampling,patches=1,detrend=0,overlap=1):
+def spect(series,sampling,patches=1,detrend=0,overlap=1,win='triangle'):
     nyquistf = 0.5 / sampling
 
     if patches==0:
         period = pdg(series)
     elif patches==1:
-        period = wpdg(series,detrend)
+        period = wpdg(series,detrend,win)
     else:
         if overlap==0:
-            period = nopwpdg(series,patches,detrend)
+            period = nopwpdg(series,patches,detrend,win)
         else:
-            period = opwpdg(series,patches,detrend)
+            period = opwpdg(series,patches,detrend,win)
 
     pdlen = Numeric.shape(period)[0]-1
 
@@ -70,20 +70,25 @@ def pdg(series):
 # - since series is a reference to successive overlapping slices,
 #   we should not modify its value
 
-def wpdg(series,detrend=0):
+def wpdg(series,detrend=0,win='triangle'):
     samples = Numeric.shape(series)[0]
 
-    #pdlen = (samples-1)/2.0
-    #window = 1.0 - abs(arange(0,samples,typecode='d') - pdlen) / (pdlen)
-
-    # try Blackman
     wrange = Numeric.arange(0,samples,typecode='d') / (samples - 1.0);
-    window = 0.42 - 0.5 * Numeric.cos(2*math.pi*wrange) + 0.08 * Numeric.cos(4*math.pi*wrange)
+
+    if win == 'blackman':
+        window = 0.42 - 0.5 * Numeric.cos(2*math.pi*wrange) + 0.08 * Numeric.cos(4*math.pi*wrange)
+    elif win == 'sin4':
+        window = Numeric.sin(math.pi*wrange)**4.0
+    else:
+        # if we don't recognize a window, default to triangle
+        
+        pdlen = (samples - 1) / 2.0
+        window = 1.0 - abs(Numeric.arange(0,samples,typecode='d') - pdlen) / (pdlen)
 
     weight = samples * Numeric.sum(window ** 2)
 
     # detrending
-    if detrend==0:
+    if detrend == 0:
         mean = 0.0
     else:
         mean = sum(series) / (1.0*samples)
@@ -96,7 +101,7 @@ def wpdg(series,detrend=0):
 
 # overlapping-averaged, triangle-windowed periodogram
 
-def opwpdg(series,patches,detrend=0):
+def opwpdg(series,patches,detrend=0,win='triangle'):
     samples = Numeric.shape(series)[0]
     serlen = samples - (samples % (4*patches))
 
@@ -106,7 +111,7 @@ def opwpdg(series,patches,detrend=0):
     opwpdgram = Numeric.zeros(pdlen+1,typecode='d')
 
     for cnt in xrange(0,2*patches-1):
-        opwpdgram[:] += wpdg(series[cnt*pdlen:(cnt+2)*pdlen],detrend)
+        opwpdgram[:] += wpdg(series[cnt*pdlen:(cnt+2)*pdlen],detrend,win)
 
     opwpdgram[:] /= (2.0*patches - 1.0)
 
@@ -114,7 +119,7 @@ def opwpdg(series,patches,detrend=0):
 
 # nonoverlapping-averaged, triangle-windowed periodogram
 
-def nopwpdg(series,patches,detrend=0):
+def nopwpdg(series,patches,detrend=0,win='triangle'):
     samples = Numeric.shape(series)[0]
     serlen = samples - (samples % (4*patches))
 
@@ -124,13 +129,13 @@ def nopwpdg(series,patches,detrend=0):
     opwpdgram = Numeric.zeros(pdlen+1,typecode='d')
 
     for cnt in xrange(0,patches):
-        opwpdgram[:] += wpdg(series[cnt*patlen:(cnt+1)*patlen],detrend)
+        opwpdgram[:] += wpdg(series[cnt*patlen:(cnt+1)*patlen],detrend,win)
 
     opwpdgram[:] /= 1.0*patches
 
     return opwpdgram
 
-def whiten(series,patches=1):
+def whitentime(series,patches=1):
     samples = Numeric.shape(series)[0]
 
     patlen = samples / patches
@@ -143,11 +148,26 @@ def whiten(series,patches=1):
             series[j*patlen+i] = integ
             integ = integ+next
 
-def darken(spectrum,stime):
+def darkenspectrum(spectrum,stime):
     samples = Numeric.shape(spectrum)[0]
 
     for cnt in xrange(1,samples):
         spectrum[cnt,1] = spectrum[cnt,1] * (2*Numeric.sin(math.pi*spectrum[cnt,0]*stime))**2.0
+
+def darkentime(series,patches=1):
+    samples = Numeric.shape(series)[0]
+
+    patlen = samples / patches
+    
+    for j in xrange(0,patches-1):
+        for i in xrange(0,patlen-1):
+            series[j*patlen+i] = series[j*patlen+i+1] - series[j*patlen+i]
+
+def whitenspectrum(spectrum,stime):
+    samples = Numeric.shape(spectrum)[0]
+
+    for cnt in xrange(1,samples):
+        spectrum[cnt,1] = spectrum[cnt,1] / (2*Numeric.sin(math.pi*spectrum[cnt,0]*stime))**2.0
 
 # make it so that "time" is an observable
 
