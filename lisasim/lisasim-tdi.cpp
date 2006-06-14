@@ -667,3 +667,64 @@ double TDI::X3(double t) {
 	   -z(2,-1, 3, 1,-1, 0, 0, t)
 	   +z(2,-1, 3, 0, 0, 0, 0, t) ) );
 }
+
+
+SampledTDI::SampledTDI(LISA *l,Noise *yijk[6],Noise *zijk[6]) {
+    // the convention is {12,21,23,32,31,13}
+
+	lisa = l;
+
+    for(int craft1 = 1; craft1 <= 3; craft1++) {
+        for(int craft2 = 1; craft2 <= 3; craft2++) {
+            if(craft1 != craft2) {
+				if( (craft1 == 1 && craft2 == 2) || (craft1 == 2 && craft2 == 3) || (craft1 == 3 && craft2 == 1) ) {
+		    		yobj[craft1][craft2] = yijk[2*(craft1-1)];
+		    		zobj[craft1][craft2] = zijk[2*(craft1-1)];
+		        } else {
+		    	    yobj[craft1][craft2] = yijk[2*(craft2-1)+1];
+		    	    zobj[craft1][craft2] = zijk[2*(craft2-1)+1];
+		        }		        
+	    	}
+        }
+    }
+}
+
+void SampledTDI::reset(unsigned long seed) {
+    for(int craft1 = 1; craft1 <= 3; craft1++) {
+        for(int craft2 = 1; craft2 <= 3; craft2++) {
+            if(craft1 != craft2) {
+                yobj[craft1][craft2]->reset();
+                zobj[craft1][craft2]->reset();
+            }
+        }
+    }
+}
+
+double SampledTDI::y(int send, int slink, int recv, int ret1, int ret2, int ret3, double t) {
+    return y(send,slink,recv,ret1,ret2,ret3,0,0,0,0,t);
+}
+
+double SampledTDI::z(int send, int slink, int recv, int ret1, int ret2, int ret3, int ret4, double t) {
+    return z(send,slink,recv,ret1,ret2,ret3,ret4,0,0,0,0,t);
+}
+
+// can improve precision by calling value with two times
+// (assuming the underlying implementation supports it)
+
+double SampledTDI::y(int send, int slink, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t) {
+    lisa->newretardtime(t);
+
+    lisa->retard(ret7); lisa->retard(ret6); lisa->retard(ret5);
+    lisa->retard(ret4); lisa->retard(ret3); lisa->retard(ret2); lisa->retard(ret1);
+
+    return yobj[send][recv]->value(lisa->retardedtime());
+}
+
+double SampledTDI::z(int send, int slink, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t) {
+    lisa->newretardtime(t);
+
+    lisa->retard(ret8); lisa->retard(ret7); lisa->retard(ret6); lisa->retard(ret5);
+    lisa->retard(ret4); lisa->retard(ret3); lisa->retard(ret2); lisa->retard(ret1);
+
+    return zobj[send][recv]->value(lisa->retardedtime());
+}

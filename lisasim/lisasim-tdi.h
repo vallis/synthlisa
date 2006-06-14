@@ -132,4 +132,23 @@ class TDIgamma : public Signal {
     double value(double t) { return tdi->gamma(t); };
 };
 
+class SampledTDI : public TDI {
+ private:
+    LISA *lisa;
+
+    Signal *yobj[4][4], *zobj[4][4];
+
+ public:
+    SampledTDI(LISA *lisa,Noise *yijk[6],Noise *zijk[6]);
+    ~SampledTDI() {};
+
+    void reset(unsigned long seed = 0);
+
+    double y(int send, int link, int recv, int ret1, int ret2, int ret3, double t);
+    double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, double t);
+
+    double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t);
+    double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
+};
+
 #endif /* _LISASIM_TDI_H_ */
