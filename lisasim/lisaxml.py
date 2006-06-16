@@ -113,15 +113,17 @@ outputList['SimpleBinary'] = ( ('EclipticLatitude','Radian',None),
 
 argumentList['PNBinary'] = ( ('Mass1','SolarMass',None),
                              ('Mass2','SolarMass',None),
-                             ('Frequency','Hertz',None),
-                             ('InitialPhase','Radian',None),
+                             ('InitialAngularOrbitalFrequency','Radian/Second',None),
+                             ('InitialAngularOrbitalPhase','Radian',None),
                              ('Distance','Parsec',None),
                              ('Inclination','Radian',None),
                              ('EclipticLatitude','Radian',None),
                              ('EclipticLongitude','Radian',None),
                              ('SLPolarization','Radian',None),
                              ('TimeOffset','Second','0'),
-                             ('IntegrationStep','Second','10') )
+                             ('IntegrationStep','Second','10'),
+			                 ('TruncationTime','Second','0'),
+			                 ('TaperApplied','TotalMass','7') )
 
 outputList['PNBinary'] = ( ('EclipticLatitude','Radian',None),
                            ('EclipticLongitude','Radian',None),
@@ -129,12 +131,14 @@ outputList['PNBinary'] = ( ('EclipticLatitude','Radian',None),
                            ('TimeOffset','Second',None),
                            ('Mass1','SolarMass',None),
                            ('Mass2','SolarMass',None),
-                           ('Frequency','Hertz',None),
-                           ('InitialPhase','Radian',None),
+                           ('InitialAngularOrbitalFrequency','Radian/Second',None),
+                           ('InitialAngularOrbitalPhase','Radian',None),
                            ('Distance','Parsec',None),
                            ('Inclination','Radian',None),
-                           ('IntegrationStep','Second',None) )
-
+                           ('IntegrationStep','Second',None),
+                           ('TruncationTime','Second','0'),
+			               ('TaperApplied','TotalMass','7') )
+    
 # let's not support normalization, right now...
 
 argumentList['SampledWave'] = ( ('hp','Numeric',None),
@@ -262,19 +266,93 @@ optionalParameterSet['GalacticBinary'] = makeoptional([('TimeOffset',('0.0','Sec
 
 minimumParameterSet['BlackHoleBinary'] = makeminimum(['Mass1',
                                                       'Mass2',
-                                                      'Frequency',
-                                                      'InitialPhase',
+                                                      'InitialAngularOrbitalFrequency',
+                                                      'InitialAngularOrbitalPhase',
                                                       'Distance',
                                                       'Inclination'])
 
 optionalParameterSet['BlackHoleBinary'] = makeoptional([('TimeOffset',('0','Second')),
-                                                        ('IntegrationStep',('10','Second'))])
+                                                        ('IntegrationStep',('10','Second')),
+                                                        ('TruncationTime',('0','Second')),
+                                                        ('TaperApplied',('7','TotalMass'))])
 
 minimumParameterSet['SampledPlaneWave'] = makeminimum(['TimeOffset',
                                                        'Cadence',
                                                        'Duration'])
 
 optionalParameterSet['SampledPlaneWave'] = []
+
+# optional contribs
+
+try:
+    import lisawp_emri
+    
+    argumentList['EMRI'] = ( ('Spin','SMNHMassSquare', None),
+                             ('InitialEccentricity','Units',None),
+                             ('MassOfCompactObject','SolarMass',None),
+                             ('MassOfSMBH','SolarMass',None),
+                             ('InitialAzimuthalOrbitalPhase','Radian',None),
+                             ('Distance','Parsec',None),
+                             ('InitialTildaGamma','Radiant',None),
+                             ('InitialAlphaAngle','Radiant',None),
+                             ('LambdaAngle','Radiant',None),
+                             ('EclipticLatitude','Radian',None),
+                             ('EclipticLongitude','Radian',None),
+                             ('SLPolarization','Radian',None),
+                             ('PolarAngleOFSpin','Radian',None),
+                             ('AzimuthalAngleOFSpin','Radian',None),
+                             ('InitialAzimuthalOrbitalFrequency','Hertz',None),
+                             ('MaximumDuration','Second','94371840'),
+                             ('TimeOffset','Second','0'),
+                             ('IntegrationStep','Second','10') )
+             
+    outputList['EMRI'] = ( ('EclipticLatitude','Radian',None),
+                           ('EclipticLongitude','Radian',None),
+                           ('Polarization','Radian',None),
+                           ('PolarAngleOFSpin','Radian',None),
+                           ('AzimuthalAngleOFSpin','Radian',None),
+                           ('TimeOffset','Second',None),
+                           ('Spin','SMNHMassSquare',None),
+                           ('MassOfCompactObject','SolarMass',None),
+                           ('MassOfSMBH','SolarMass',None),
+                           ('InitialAzimuthalOrbitalFrequency','Hertz',None),
+                           ('InitialAzimuthalOrbitalPhase','Radian',None),
+                           ('InitialEccentricity','Units',None),
+                           ('InitialTildaGamma','Radiant',None),
+                           ('InitialAlphaAngle','Radiant',None),
+                           ('LambdaAngle','Radiant',None),      
+                           ('Distance','Parsec',None),
+                           ('IntegrationStep','Second',None),
+                           ('MaximumDuration','Second','94371840') )    
+
+    ObjectToXML['EMRI'] = 'ExtremeMassRatioInspiral'
+
+    XMLToObject['EMRI'] = ('EMRI',lisawp_emri.EMRI)
+
+    minimumParameterSet['ExtremeMassRatioInspiral'] = makeminimum(['Spin',
+                                                                   'InitialEccentricity',
+                                                                   'MassOfCompactObject',
+                                                                   'MassOfSMBH',
+                                                                   'InitialAzimuthalOrbitalPhase',
+                                                                   'Distance',
+                                                                   'InitialTildaGamma',
+                                                                   'InitialAlphaAngle',
+                                                                   'LambdaAngle',
+                                                                   'EclipticLatitude',
+                                                                   'EclipticLongitude',
+                                                                   'Polarization',
+                                                                   'PolarAngleOFSpin',
+                                                                   'AzimuthalAngleOFSpin',
+                                                                   'InitialAzimuthalOrbitalFrequency'])
+
+    optionalParameterSet['ExtremeMassRatioInspiral'] = makeoptional([('MaximumDuration',('94371840','Second')),
+                                                                     ('TimeOffset',('0','Second')),
+                                                                     ('IntegrationStep',('10','Second'))])
+
+except ImportError:
+    pass
+
+
 
 # default units
 
@@ -291,6 +369,8 @@ defaultUnits = {
     'FrequencyDot': 'Hertz/Second',
     'FrequencyDotDot': 'Hertz/Second^2',
     'Eccentricity': '1',
+    'InitialAngularOrbitalPhase': 'Radian',
+    'InitialAngularOrbitalFrequency': 'Radian/Second',
     'InitialPosition': 'Radian',
     'InitialRotation': 'Radian',
     'Armlength': 'Second'
