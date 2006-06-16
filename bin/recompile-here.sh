@@ -2,4 +2,4 @@
 
 # $Id$
 
-python setup.py install --with-numeric=`pwd` --with-swig=`pwd`/bin/swig --prefix=`pwd`
+python setup.py install --with-numeric=`pwd` --with-swig=`pwd`/bin/swig --prefix=`pwd` $1
