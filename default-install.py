@@ -130,6 +130,15 @@ try:
     if dosynthlisa:
 	    assert os.system(('python setup.py install --with-numeric=' + escapespace(thisdir) +
     	                  ' --with-swig=' + escapespace(thisdir) + '/bin/swig --prefix=' + escapespace(thisdir))) == 0
+
+		print """Now (and before every synthLISA session) you should run the command
+
+		         source bin/synthlisa-setdir.sh  [if you use bash or]
+		         source bin/synthlisa-setdir.csh [if you use t/csh].
+
+		         Even better, add these commands to your .profile (for bash) or
+		         .cshrc/.tcshrc (for t/csh)."""
+		         		
 except AssertionError:
     print "Error while compiling and installing synthLISA"
     raise
