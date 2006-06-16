@@ -15,6 +15,7 @@ versiontag = '1.3.0'
 synthlisa_prefix = ''
 numeric_prefix = ''
 swig_bin = 'swig'
+gsl_prefix = ''
 
 # At the moment, this setup script does not deal with --home.
 # I should also modify the --help text to discuss these options
@@ -27,6 +28,8 @@ for arg in sys.argv:
         argv_replace.append(arg)
     elif arg.startswith('--with-numeric='):
         numeric_prefix = arg.split('=', 1)[1]
+    elif arg.startswith('--with-gsl='):
+        gsl_prefix = arg.split('=', 1)[1]
     elif arg.startswith('--with-swig='):
         swig_bin = arg.split('=', 1)[1]
     else:
@@ -205,8 +208,23 @@ for entry in glob.glob('contrib/*'):
 
         contrib_swigfiles = glob.glob(entry + '/*.i')
 
+        extensions = 0
+
         # each SWIG file creates a separate extension
         for contrib_swigfile in contrib_swigfiles:
+
+            # let's check if GSL is needed
+            gsl_required = 0
+
+            for line in open(contrib_swigfile).readlines():
+                if 'requires GSL' in line:
+                    # the magic words are "requires GSL"
+                    gsl_required = 1
+
+            if gsl_required == 1 and gsl_prefix == '':
+                print "No GSL, skipping " + contrib_swigfile
+                break
+
             contrib_basefile = re.sub('\.i$','',contrib_swigfile)
             contrib_basename = os.path.basename(contrib_basefile)
     
@@ -218,16 +236,31 @@ for entry in glob.glob('contrib/*'):
                     contrib_header_files + [contrib_swigfile],iscpp)
     
             contrib_extname = contrib_packagename + '/_' + contrib_basename
-            
-            contrib_extension = Extension(contrib_extname,
-                                          contrib_source_files,
-                                          include_dirs = [entry,numeric_hfiles],
-                                          depends = contrib_header_files)
+
+            if not contrib_wrapfile in contrib_source_files: 
+                contrib_source_files.append(contrib_wrapfile)
+
+            if gsl_required == 1:
+                contrib_extension = Extension(contrib_extname,
+                                              contrib_source_files,
+                                              include_dirs = [entry,numeric_hfiles,gsl_prefix + '/include'],
+                                              library_dirs = [gsl_prefix + '/lib'],
+                                              runtime_library_dirs = [gsl_prefix + '/lib'],
+                                              libraries=['gsl', 'gslcblas'],
+                                              depends = contrib_header_files)            
+            else:
+                contrib_extension = Extension(contrib_extname,
+                                              contrib_source_files,
+                                              include_dirs = [entry,numeric_hfiles],
+                                              depends = contrib_header_files)
     
             contribs.append(contrib_extension)
+            
+            extensions = extensions + 1
 
-        synthlisapackages.append(contrib_packagename)
-        synthlisapackage_dir[contrib_packagename] = entry
+        if extensions:
+            synthlisapackages.append(contrib_packagename)
+            synthlisapackage_dir[contrib_packagename] = entry
 
 # do the actual setup
 
