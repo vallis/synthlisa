@@ -327,7 +327,7 @@ try:
 
     ObjectToXML['EMRI'] = 'ExtremeMassRatioInspiral'
 
-    XMLToObject['EMRI'] = ('EMRI',lisawp_emri.EMRI)
+    XMLToObject['ExtremeMassRatioInspiral'] = ('EMRI',lisawp_emri.EMRI)
 
     minimumParameterSet['ExtremeMassRatioInspiral'] = makeminimum(['Spin',
                                                                    'InitialEccentricity',
@@ -936,16 +936,14 @@ class lisaXML(writeXML):
             self.opentag('Comment',{})
             self.content(TimeSeries.comments)
             self.closetag('Comment')
-        
-        # ??? fix the time types to "s" (XSIL extension) for the moment
-        
-        self.coupletag('Param',{'Name': 'TimeOffset','Type': 's'},
+                
+        self.coupletag('Param',{'Name': 'TimeOffset','Type': 'Second'},
                               str(TimeSeries.start))
 
-        self.coupletag('Param',{'Name': 'Cadence','Unit': 's'},
+        self.coupletag('Param',{'Name': 'Cadence','Unit': 'Second'},
                                str(TimeSeries.cadence))        
 
-        self.coupletag('Param',{'Name': 'Duration','Unit': 's'},
+        self.coupletag('Param',{'Name': 'Duration','Unit': 'Second'},
                                   str(TimeSeries.duration))
        
         # ??? use <Column> to define columns (not in XSIL, but in BFD)?
@@ -1085,6 +1083,7 @@ class lisaXML(writeXML):
         self.content('<?xml version="1.0"?>')
         self.content('<!DOCTYPE XSIL SYSTEM "http://www.vallis.org/lisa-xml.dtd">')
 
+        self.content('<?xml-stylesheet type="text/xsl" href="lisa-xml.xsl"?>')
         self.content('<?xml-stylesheet type="text/xsl" href="http://www.vallis.org/lisa-xml.xsl"?>')
 
         self.opentag('XSIL',{})
@@ -1160,8 +1159,17 @@ class readXML:
         p = pyRXP.Parser()        
 
         f = open(filename)
-        tree = p(f.read())
+        lines = f.read()
         f.close()
+        
+        try:
+            tree = p(lines)
+        except pyRXP.error:
+            print "XML validation error! (Or perhaps I couldn't access the DTD)."
+            print "I'll try to use the file anyway by removing the DTD..."
+
+            lines = re.sub('<!DOCTYPE XSIL SYSTEM ".*">','',lines)
+            tree = p(lines)
 
         if tree[0] != 'XSIL':
             print 'Not a LISA XSIL file!'
