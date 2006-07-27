@@ -62,6 +62,22 @@ class TDI {
 
     virtual double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t) {return 0.0;};
     virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t) {return 0.0;};
+
+    double y123(double t) {return y(1,2,3,0,0,0,0,0,0,0,t);};
+    double y231(double t) {return y(2,3,1,0,0,0,0,0,0,0,t);};
+    double y312(double t) {return y(3,1,2,0,0,0,0,0,0,0,t);};
+
+    double y321(double t) {return y(3,-2,1,0,0,0,0,0,0,0,t);};
+    double y132(double t) {return y(1,-3,2,0,0,0,0,0,0,0,t);};
+    double y213(double t) {return y(2,-1,3,0,0,0,0,0,0,0,t);};
+    
+    double z123(double t) {return z(1,2,3,0,0,0,0,0,0,0,0,t);};
+    double z231(double t) {return z(2,3,1,0,0,0,0,0,0,0,0,t);};
+    double z312(double t) {return z(3,1,2,0,0,0,0,0,0,0,0,t);};
+    
+    double z321(double t) {return z(3,-2,1,0,0,0,0,0,0,0,0,t);};
+    double z132(double t) {return z(1,-3,2,0,0,0,0,0,0,0,0,t);};
+    double z213(double t) {return z(2,-1,3,0,0,0,0,0,0,0,0,t);};
 };
 
 class TDIquantize : public TDI {
