@@ -382,6 +382,16 @@ class CacheLengthLISA : public LISA {
 };
 
 
+class ZeroLISA : public OriginalLISA {
+ public:
+    ZeroLISA() {};
+    virtual ~ZeroLISA() {};
+
+    double armlength(int arm, double t) {return 0.0;};
+    double dotarmlength(int arm, double t) {return 0.0;};
+};
+
+
 // --- PyLISA ---
 
 #include <Python.h>
