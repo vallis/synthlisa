@@ -1,5 +1,5 @@
 ====================================
-Synthetic LISA, v. 1.3.0, 2006-05-31
+Synthetic LISA, v. 1.3.1, 2006-06-21
 ====================================
 
 by M. Vallisneri and J. W. Armstrong
@@ -43,12 +43,12 @@ In this file:
   you want to plot; an alternative is PyX, see 4f below). If you use
   Cygwin, you also need the Cygwin SWIG package.
 
-- Unpack the Synthetic LISA distribution (synthLISA-1.3.0.tar.gz) and
+- Unpack the Synthetic LISA distribution (synthLISA-1.3.1.tar.gz) and
   cd to it.
 
 - Run "./default-install.py". This will install Numeric,
   SWIG, and Synthetic LISA locally in the Synthetic LISA
-  distribution directory "synthLISA-1.3.0". If you don't get
+  distribution directory "synthLISA-1.3.1". If you don't get
   any fatal errors, you're set. Otherwise, I'm afraid you'll
   have to read all the installation instructions below.
   [Note: this quickstart procedure is currently untested on Cygwin.]
@@ -123,7 +123,7 @@ http://sourceforge.net/projects/numpy
 
 - pyRXP (v. 1.07), see http://www.reportlab.org/pyrxp.html
 
-- SWIG (v. 1.3.27), see http://www.swig.org
+- SWIG (v. 1.3.29), see http://www.swig.org
 
 - PyX (v. 0.8.1), see http://pyx.sourceforge.net
 
@@ -143,7 +143,7 @@ If you need the GNU tools, Python, or Gnuplot, please see
 =================================
 
 To install and use Synthetic LISA from the source distribution
-(synthLISA-1.3.0.tar.gz) you need a working installation of Python and
+(synthLISA-1.3.1.tar.gz) you need a working installation of Python and
 of a Python-interoperable C/C++ compiler, preferably gcc. The setup of
 these is not discussed in this document.
 
@@ -463,10 +463,10 @@ which needs to be upgraded to work with Synthetic LISA.)
 4c. Compilation notes for Windows (cygwin)
 ------------------------------------------
 
-Note: synthLISA 1.3.0 is currently untested under Cygwin. I hope to
-resolve this situation by the time 1.3.0 is out. If you do try this
-out, the following discussion may or may not apply to your experience.
-Let me know!
+Note: synthLISA 1.3.1 is currently untested under Cygwin. I
+hope to resolve this situation in the future. If you do try
+this out, the following discussion may or may not apply to
+your experience. Let me know!
 
 Synthetic LISA is known to work correctly with Cygwin 1.5.16-1, under
 Windows ME (but I don't see why other flavors of Windows should have
