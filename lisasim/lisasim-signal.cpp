@@ -164,6 +164,109 @@ void ResampledSignalSource::reset(unsigned long seed) {
 }
 
 
+// --- FileSignalSource ---
+
+// reads in batches from a file, owns the data buffer array
+
+/* Endianness conversion: a bit rough, but should work */
+/* From http://www.codeproject.com/cpp/endianness.asp */
+
+#define BIGENDIAN      0
+#define LITTLEENDIAN   1
+
+static int testbyteorder()
+{
+   short int word = 0x0001;
+   char *byte = (char *) &word;
+   return(byte[0] ? LITTLEENDIAN : BIGENDIAN);
+}
+
+/* This will work as long as doubles are 8 bytes */
+
+static void convertendianness(double *val) {
+    unsigned char cval[8];
+    
+    cval[0] = ((unsigned char *)val)[7];
+    cval[1] = ((unsigned char *)val)[6];
+    cval[2] = ((unsigned char *)val)[5];
+    cval[3] = ((unsigned char *)val)[4];
+    cval[4] = ((unsigned char *)val)[3];    
+    cval[5] = ((unsigned char *)val)[2];
+    cval[6] = ((unsigned char *)val)[1];
+    cval[7] = ((unsigned char *)val)[0];
+    
+    *val = *((double *)cval);
+}
+
+// pass 0 for bigendian, 1 for littleendian, -1 for native
+
+FileSignalSource::FileSignalSource(char *filename,long bufferlen,long prebuffer,int endianness,double norm)
+    : BufferedSignalSource(prebuffer) {
+    file = fopen(filename,"rb");
+    if(file == NULL) {
+		std::cerr << "FileSignalSource::FileSignalSource(...): cannot open file "
+		          << filename << " [" << __FILE__ << ":" << __LINE__ << "]." << std::endl;
+	
+		ExceptionFileError e;
+		throw e;
+    }
+    
+    length = bufferlen;    
+    filebuffer = new double[length];
+    
+    if(endianness == -1 || endianness == testbyteorder()) {
+        convert = 0;
+    } else {
+        convert = 1;
+    }
+    
+    initpos = 0;
+    loadbuffer();
+    
+    normalize = norm;
+}
+
+FileSignalSource::~FileSignalSource() {
+    delete [] filebuffer;
+
+    fclose(file);
+}
+
+void FileSignalSource::loadbuffer() {
+    long actuallyread = fread(filebuffer,sizeof(double),length,file);
+
+    // convert endianness if necessary
+
+    if(convert == 1) {
+        for(int i=0;i<actuallyread;i++)
+            convertendianness(&filebuffer[i]);
+    }
+
+    // pad with zeros if we haven't read enough
+
+    if(actuallyread < length) {
+        for(int i=actuallyread;i<length;i++)
+            filebuffer[i] = 0.0;
+    } 
+}
+
+double FileSignalSource::getvalue(long pos) {
+    while(pos - initpos >= length) {
+        initpos += length;
+        loadbuffer();
+    }
+    
+    return normalize * filebuffer[pos - initpos];
+}
+
+void FileSignalSource::reset(unsigned long seed ) {
+    rewind(file);
+    
+    initpos = 0;
+    loadbuffer();
+}
+
+
 // --- SampledSignalSource ---
 
 // does not own the data array!

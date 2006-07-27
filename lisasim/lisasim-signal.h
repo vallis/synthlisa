@@ -8,6 +8,8 @@
 #define _LISASIM_SIGNAL_H_
 
 #include <iostream>
+
+#include <stdio.h>
 #include <stdlib.h>
 
 class RingBuffer {
@@ -108,6 +110,28 @@ class SampledSignalSource : public SignalSource {
 	SampledSignalSource(double *darray,long len,double norm = 1.0);
 
 	double operator[](long pos);
+};
+
+
+class FileSignalSource : public BufferedSignalSource {
+ private:
+    FILE *file;
+    int convert;
+    
+    double *filebuffer;
+    long length, initpos;
+
+    double normalize;
+
+    void loadbuffer();
+ 
+ public:
+    FileSignalSource(char *filename,long bufferlen,long prebuffer,int endianness = -1,double norm = 1.0);
+    ~FileSignalSource();
+    
+	double getvalue(long pos);
+	
+	void reset(unsigned long seed = 0);  // ??? redefining default
 };
 
 
