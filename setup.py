@@ -10,7 +10,7 @@ import os
 import glob
 import re
 
-versiontag = '1.3.0'
+versiontag = '1.3.1'
 
 synthlisa_prefix = ''
 numeric_prefix = ''
@@ -279,7 +279,10 @@ setup(name = 'synthLISA',
 
       scripts = setdir_scripts,
 
-      data_files = [('share/synthlisa',['data/positions.txt'])],
+      data_files = [('share/synthlisa',['data/positions.txt',
+                                        'data/lisa-xml.dtd',
+                                        'data/lisa-xml.xsl',
+                                        'data/lisa-xml.css'])],
 
       ext_modules = [Extension('synthlisa/_lisaswig',
                                source_files,
