@@ -328,9 +328,14 @@ def readarray(filename):
 
 # how is the record order going to be?
 
-def writebinary(filename,a):
-    file = open(filename, 'w')
+def writebinary(filename,a,append=0):
+    if append:
+        file = open(filename, 'a')
+    else:
+        file = open(filename, 'w')
+
     file.write(a.tostring())
+
     file.close()
 
 # in a future version, this should also get the length from the file
