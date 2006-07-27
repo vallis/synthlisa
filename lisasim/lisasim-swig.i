@@ -43,6 +43,8 @@ Destructor. See above.
 %enddef
 
 %pythoncode %{
+import Numeric
+
 import math
 import sys
 import random
@@ -208,6 +210,12 @@ class EccentricInclined : public LISA {
     EccentricInclined(double eta0=0.0, double xi0=0.0, double sw=1.0, double t0=0.0);
 
     double genarmlength(int arm,double t);
+};
+
+
+class ZeroLISA : public LISA {
+  public:
+    ZeroLISA();
 };
 
 
@@ -391,6 +399,14 @@ class SampledSignalSource : public SignalSource {
     SampledSignalSource(double *numarray,long length,double norm = 1.0);
 };
 
+initsave(SampledSignalSource)
+
+class FileSignalSource : public SignalSource {
+ public:
+    FileSignalSource(char *filename,long bufferlen,long prebuffer,int endianness = -1,double norm = 1.0);
+    ~FileSignalSource();
+};
+
 
 %nodefault Filter;
 class Filter;
@@ -568,17 +584,34 @@ def PowerLawNoise(deltat,prebuffer,psd,exponent,interplen=1,seed=0):
 %}
 
 %pythoncode %{
-def SampledSignal(array,deltat,prebuffer,norm = 1.0,filter = None,interplen = 1):
+def SampledSignal(array,deltat,buffer = 136.0,norm = 1.0,filter = None,interplen = 1,timeoffset = 0.0,endianness = -1,readbuffer=2**20):
     interp = getInterpolator(interplen)
 
-    samplednoise = SampledSignalSource(array,norm)
+    if isinstance(array,Numeric.ArrayType):
+        samplednoise = SampledSignalSource(array,norm)
+    elif isinstance(array,str):
+        readbuffer = max(int(buffer/deltat),int(readbuffer))
+
+        # the endianness parameter supports the MATLAB convention,
+        # as well as the XSIL descriptors
+
+        if endianness == 'n':
+            endianness = -1
+        elif endianness == 'b' or endianness == 'BigEndian':
+            endianness = 0
+        elif endianness == 'l' or endianness == 'LittleEndian':
+            endianness = 1
+        
+        samplednoise = FileSignalSource(array,readbuffer,int(buffer/deltat),endianness,norm)
+    else:
+        raise NotImplementedError, "SampledSignal: need Numeric array or filename as first argument (lisasim-swig.i)."
 
     if not filter:
         filteredsamples = 0
-        interpolatednoise = InterpolatedSignal(samplednoise,interp,deltat,prebuffer)
+        interpolatednoise = InterpolatedSignal(samplednoise,interp,deltat,-timeoffset)
     else:
-        filteredsamples = SignalFilter(int(prebuffer/deltat+32),samplednoise,filter)
-        interpolatednoise = InterpolatedSignal(filteredsamples,interp,deltat,prebuffer)
+        filteredsamples = SignalFilter(int(buffer/deltat),samplednoise,filter)
+        interpolatednoise = InterpolatedSignal(filteredsamples,interp,deltat,-timeoffset)
 
     return interpolatednoise
 %}
@@ -1002,6 +1035,20 @@ exceptionhandle(TDI::Z3,ExceptionOutOfBounds,PyExc_IndexError)
 exceptionhandle(TDI::y,ExceptionOutOfBounds,PyExc_IndexError)
 exceptionhandle(TDI::z,ExceptionOutOfBounds,PyExc_IndexError)
 
+exceptionhandle(TDI::y123,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::y231,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::y312,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::y321,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::y132,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::y213,ExceptionOutOfBounds,PyExc_IndexError)
+
+exceptionhandle(TDI::z123,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::z231,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::z312,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::z321,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::z132,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::z213,ExceptionOutOfBounds,PyExc_IndexError)
+
 class TDI {
 public:
     TDI() {};
@@ -1056,9 +1103,24 @@ public:
     virtual double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t);
     virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
 
+    virtual double y123(double t);
+    virtual double y231(double t);
+    virtual double y312(double t);
+
+    virtual double y321(double t);
+    virtual double y132(double t);
+    virtual double y213(double t);
+    
+    virtual double z123(double t);
+    virtual double z231(double t);
+    virtual double z312(double t);
+    
+    virtual double z321(double t);
+    virtual double z132(double t);
+    virtual double z213(double t);
+
     %extend {
         double time(double thetime) { return thetime; };
-
         double t(double thetime) { return thetime; };
     }
 };
