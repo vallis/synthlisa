@@ -113,7 +113,7 @@ outputList['SimpleBinary'] = ( ('EclipticLatitude','Radian',None),
 
 argumentList['PNBinary'] = ( ('Mass1','SolarMass',None),
                              ('Mass2','SolarMass',None),
-                             ('InitialAngularOrbitalFrequency','Radian/Second',None),
+                             ('CoalescenceTime','Second',None),
                              ('InitialAngularOrbitalPhase','Radian',None),
                              ('Distance','Parsec',None),
                              ('Inclination','Radian',None),
@@ -122,8 +122,9 @@ argumentList['PNBinary'] = ( ('Mass1','SolarMass',None),
                              ('SLPolarization','Radian',None),
                              ('TimeOffset','Second','0'),
                              ('IntegrationStep','Second','10'),
-			                 ('TruncationTime','Second','0'),
-			                 ('TaperApplied','TotalMass','7') )
+                             ('TruncationTime','Second','0'),
+                             ('TaperApplied','TotalMass','7'),
+                             ('MaxDuration','Second','31459080'))
 
 outputList['PNBinary'] = ( ('EclipticLatitude','Radian',None),
                            ('EclipticLongitude','Radian',None),
@@ -131,13 +132,14 @@ outputList['PNBinary'] = ( ('EclipticLatitude','Radian',None),
                            ('TimeOffset','Second',None),
                            ('Mass1','SolarMass',None),
                            ('Mass2','SolarMass',None),
-                           ('InitialAngularOrbitalFrequency','Radian/Second',None),
+                           ('CoalescenceTime','Second',None),
                            ('InitialAngularOrbitalPhase','Radian',None),
                            ('Distance','Parsec',None),
                            ('Inclination','Radian',None),
                            ('IntegrationStep','Second',None),
                            ('TruncationTime','Second','0'),
-			               ('TaperApplied','TotalMass','7') )
+                           ('TaperApplied','TotalMass','7'),
+                           ('MaxDuration','Second','31459080'))
     
 # let's not support normalization, right now...
 
@@ -266,7 +268,7 @@ optionalParameterSet['GalacticBinary'] = makeoptional([('TimeOffset',('0.0','Sec
 
 minimumParameterSet['BlackHoleBinary'] = makeminimum(['Mass1',
                                                       'Mass2',
-                                                      'InitialAngularOrbitalFrequency',
+                                                      'CoalescenceTime',
                                                       'InitialAngularOrbitalPhase',
                                                       'Distance',
                                                       'Inclination'])
@@ -274,7 +276,8 @@ minimumParameterSet['BlackHoleBinary'] = makeminimum(['Mass1',
 optionalParameterSet['BlackHoleBinary'] = makeoptional([('TimeOffset',('0','Second')),
                                                         ('IntegrationStep',('10','Second')),
                                                         ('TruncationTime',('0','Second')),
-                                                        ('TaperApplied',('7','TotalMass'))])
+                                                        ('TaperApplied',('7','TotalMass')),
+                                                        ('MaxDuration',('31459080','Second'))])
 
 minimumParameterSet['SampledPlaneWave'] = makeminimum(['TimeOffset',
                                                        'Cadence',
@@ -370,7 +373,7 @@ defaultUnits = {
     'FrequencyDotDot': 'Hertz/Second^2',
     'Eccentricity': '1',
     'InitialAngularOrbitalPhase': 'Radian',
-    'InitialAngularOrbitalFrequency': 'Radian/Second',
+    'CoalescenceTime': 'Second',
     'InitialPosition': 'Radian',
     'InitialRotation': 'Radian',
     'Armlength': 'Second'
