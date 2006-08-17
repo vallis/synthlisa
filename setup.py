@@ -3,6 +3,8 @@
 from distutils.core import setup, Extension
 from distutils.sysconfig import get_python_inc, get_python_lib
 from distutils.dep_util import newer_group
+from distutils.dir_util import mkpath
+from distutils.util import get_platform
 from distutils.spawn import spawn
 
 import sys
@@ -10,10 +12,10 @@ import os
 import glob
 import re
 
-versiontag = '1.3.1'
+versiontag = '1.3.2'
 
 synthlisa_prefix = ''
-numeric_prefix = ''
+numpy_prefix = ''
 swig_bin = 'swig'
 gsl_prefix = ''
 
@@ -26,8 +28,8 @@ for arg in sys.argv:
     if arg.startswith('--prefix='):
         synthlisa_prefix = arg.split('=', 1)[1]
         argv_replace.append(arg)
-    elif arg.startswith('--with-numeric='):
-        numeric_prefix = arg.split('=', 1)[1]
+    elif arg.startswith('--with-numpy='):
+        numpy_prefix = arg.split('=', 1)[1]
     elif arg.startswith('--with-gsl='):
         gsl_prefix = arg.split('=', 1)[1]
     elif arg.startswith('--with-swig='):
@@ -106,26 +108,14 @@ runswig(lisasim_isource,lisasim_cppfile,lisasim_pyfile,
 if lisasim_cppfile not in source_files:
     source_files.append(lisasim_cppfile)
 
-# Healpix
-
-source_healpix = glob.glob('lisasim/healpix/*.cpp')
-header_healpix = glob.glob('lisasim/healpix/*.h')
-
-healpix_cppfile = 'lisasim/healpix/healpix_wrap.cpp'
-healpix_pyfile = 'lisasim/healpix/healpix.py'
-
-healpix_isource = 'lisasim/healpix/healpix.i'
-
-runswig(healpix_isource,healpix_cppfile,healpix_pyfile,header_healpix)
-
-if healpix_cppfile not in source_healpix:
-    source_healpix.append(healpix_cppfile)
-
 # Create the setdir.sh and setdir.csh scripts; they will be recreated
 # each time setup.py is run, but it does not matter.
 
-setdir_sh = open('lisasim/synthlisa-setdir.sh','w')
-setdir_csh = open('lisasim/synthlisa-setdir.csh','w')
+scripttempdir = 'build/temp.' + get_platform() + '-%s.%s' % sys.version_info[0:2]
+mkpath(scripttempdir)
+
+setdir_sh  = open(scripttempdir + '/synthlisa-setdir.sh','w')
+setdir_csh = open(scripttempdir + '/synthlisa-setdir.csh','w')
 
 pythonpath = ''
 installpath = sys.exec_prefix
@@ -134,13 +124,15 @@ if synthlisa_prefix:
     pythonpath = get_python_lib(prefix=synthlisa_prefix)
     installpath = synthlisa_prefix
 
-if numeric_prefix:
-    if pythonpath:
-        pythonpath = pythonpath + ':'
+# not needed with numpy, which can find the module from site-packages
 
-    pythonpath = pythonpath + get_python_lib(prefix=numeric_prefix) + '/Numeric'
+# if numpy_prefix:
+#     if pythonpath:
+#         pythonpath = pythonpath + ':'
+#
+#     pythonpath = pythonpath + get_python_lib(prefix=numpy_prefix) + '/numpy'
 
-mpi_prefix = numeric_prefix
+mpi_prefix = numpy_prefix
 
 if mpi_prefix:
     if pythonpath:
@@ -174,19 +166,28 @@ setdir_sh.close()
 
 # Ready to setup, build, install!
 
-if numeric_prefix:
-    numeric_hfiles = get_python_inc(prefix=numeric_prefix)
-else:
-    numeric_hfiles = get_python_inc()
+# this used to get the location of the Numeric C headers
 
+# if numpy_prefix:
+#     numpy_hfiles = get_python_inc(prefix=numpy_prefix)
+# else:
+#     numpy_hfiles = get_python_inc()
+
+# get the location of the numpy C headers
+
+if numpy_prefix:
+	numpy_hfiles = get_python_lib(prefix=numpy_prefix) + '/numpy/core/include'
+else:
+	numpy_hfiles = get_python_lib() + '/numpy/core/include'
+	
 if pythonpath:
-    setdir_scripts = ['lisasim/synthlisa-setdir.sh','lisasim/synthlisa-setdir.csh']
+    setdir_scripts = [scripttempdir + '/synthlisa-setdir.sh',scripttempdir + '/synthlisa-setdir.csh']
 else:
     setdir_scripts = []
 
-synthlisapackages = ['synthlisa', 'healpix']
+synthlisapackages = ['synthlisa']
 
-synthlisapackage_dir = {'synthlisa' : 'lisasim','healpix' : 'lisasim/healpix'}
+synthlisapackage_dir = {'synthlisa' : 'lisasim'}
 
 # do contribs (CPP only for the moment...)
 
@@ -199,19 +200,21 @@ for entry in glob.glob('contrib/*'):
         contrib_source_files = glob.glob(entry + '/*.cpp') + glob.glob(entry + '/*.cc')
         contrib_header_files = glob.glob(entry + '/*.h') + glob.glob(entry + '/*.hh')
 
-        iscpp = 1
-
-        if not contrib_source_files:
-            # do C extension
-            contrib_source_files = glob.glob(entry + '/*.c')
-            iscpp = 0
-
         contrib_swigfiles = glob.glob(entry + '/*.i')
 
         extensions = 0
 
         # each SWIG file creates a separate extension
         for contrib_swigfile in contrib_swigfiles:
+
+            # let's check if this is a C or C++ extension
+            iscpp = 1
+
+            for line in open(contrib_swigfile).readlines():
+                if 'is C extension' in line:
+                    # do C extension
+                    iscpp = 0
+                    contrib_source_files = glob.glob(entry + '/*.c')
 
             # let's check if GSL is needed
             gsl_required = 0
@@ -229,7 +232,11 @@ for entry in glob.glob('contrib/*'):
             contrib_basename = os.path.basename(contrib_basefile)
     
             # assume SWIG file has the same name of the module
-            contrib_wrapfile = contrib_basefile + '_wrap.cpp'
+            if iscpp == 1:
+                contrib_wrapfile = contrib_basefile + '_wrap.cpp'
+            else:
+                contrib_wrapfile = contrib_basefile + '_wrap.c'
+                
             contrib_pyfile = contrib_basefile + '.py'
     
             runswig(contrib_swigfile,contrib_wrapfile,contrib_pyfile,
@@ -243,7 +250,7 @@ for entry in glob.glob('contrib/*'):
             if gsl_required == 1:
                 contrib_extension = Extension(contrib_extname,
                                               contrib_source_files,
-                                              include_dirs = [entry,numeric_hfiles,gsl_prefix + '/include'],
+                                              include_dirs = [entry,numpy_hfiles,gsl_prefix + '/include'],
                                               library_dirs = [gsl_prefix + '/lib'],
                                               runtime_library_dirs = [gsl_prefix + '/lib'],
                                               libraries=['gsl', 'gslcblas'],
@@ -251,7 +258,7 @@ for entry in glob.glob('contrib/*'):
             else:
                 contrib_extension = Extension(contrib_extname,
                                               contrib_source_files,
-                                              include_dirs = [entry,numeric_hfiles],
+                                              include_dirs = [entry,numpy_hfiles],
                                               depends = contrib_header_files)
     
             contribs.append(contrib_extension)
@@ -286,12 +293,7 @@ setup(name = 'synthLISA',
 
       ext_modules = [Extension('synthlisa/_lisaswig',
                                source_files,
-                               include_dirs = [numeric_hfiles],
+                               include_dirs = [numpy_hfiles],
                                depends = header_files
-                               ),
-                     Extension('healpix/_healpix',
-                               source_healpix,
-                               include_dirs = ['lisasim/healpix',numeric_hfiles],
-                               depends = header_healpix
                                )] + contribs
       )
