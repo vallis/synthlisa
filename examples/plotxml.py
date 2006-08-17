@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import synthlisa
-import Numeric                                
+import numpy                                
 import pyx
 
 import sys
@@ -31,9 +31,9 @@ def multiplot(spectra,titles,filename,number,loglog=False):
     #         g.plot(pyx.graph.data.list(map(tuple,spectra[i]),
     #                                    x=1,y=2,title=titles[i]),
     #                [style[i]])
-    # elif type(spectra) == Numeric.ArrayType:
+    # elif type(spectra) == numpy.ndarray:
     
-    for i in range(1,Numeric.shape(spectra)[1]):
+    for i in range(1,spectra.shape[1]):
         g.plot(pyx.graph.data.list(map(tuple,spectra),
                                    x=1,y=i+1,title=titles[i-1]),
                [style[i-1]])
@@ -98,7 +98,7 @@ elif 'linux' in sys.platform:
 # titles = []
 
 # for spectrum in spectra:
-#     if Numeric.shape(spectrum['Data'])[1] > 2:
+#     if spectrum['Data'].shape[1] > 2:
 #         if collect:
 #             multiplot(collect,titles,basename,counter)
 #             counter = counter + 1

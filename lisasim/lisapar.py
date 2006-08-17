@@ -1,7 +1,7 @@
 import mpi
 
 import synthlisa
-import Numeric
+import numpy
 
 import time
 import pickle
@@ -96,7 +96,7 @@ class LISApar:
                 print "and a set of TDI observables given as class methods (such as synthlisa.TDI.X)."
             raise IndexError
         
-        if type(parameters) not in (list,tuple,Numeric.arraytype):
+        if type(parameters) not in (list,tuple,numpy.ndarray):
             if myrank == 0:
                 print "LISApar.getobsp(...): needs a list of parameters to feed to the factory!"
             raise IndexError
@@ -147,7 +147,7 @@ class LISApar:
             print "CPU ", myrank, " received ", len(mypars), " source parameters ", mypars
         
         try:
-            if type(mypars[0]) in (list,tuple,Numeric.arraytype):
+            if type(mypars[0]) in (list,tuple,numpy.ndarray):
                 sources = map(lambda x: srcfunc(*x),mypars)
             else:
                 sources = map(srcfunc,mypars)
@@ -179,15 +179,15 @@ class LISApar:
         if type(obs) == list or type(obs) == tuple:
             multobs = len(obs)
     
-            array = Numeric.zeros((snum,multobs),typecode='d')
-            for i in Numeric.arange(0,snum):
+            array = numpy.zeros((snum,multobs),dtype='d')
+            for i in numpy.arange(0,snum):
                 for j in range(0,multobs):
                     array[i,j] = obs[j](tdisignal,zerotime+i*stime)
         else:
             multobs = 1
     
-            array = Numeric.zeros(snum,typecode='d')
-            for i in Numeric.arange(0,snum):
+            array = numpy.zeros(snum,dtype='d')
+            for i in numpy.arange(0,snum):
                 array[i] = obs(tdisignal,zerotime+i*stime)
     
         sumresults = mpi.reduce(array,snum*multobs,mpi.MPI_DOUBLE,mpi.MPI_SUM,0,mpi.MPI_COMM_WORLD)
@@ -202,6 +202,6 @@ class LISApar:
             if multobs == 1:
                 return sumresults
             else:
-                return Numeric.reshape(sumresults,(snum,multobs))
+                return sumresults.reshape(snum,multobs)
         else:
             return None
