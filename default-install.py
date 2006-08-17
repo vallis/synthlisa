@@ -8,7 +8,7 @@ import operator
 import re
 
 def escapespace(dirname):
-	return re.sub(' ','\ ',dirname)
+    return re.sub(' ','\ ',dirname)
 
 def findpackage(packagename,dirname):
     packagetargz = glob.glob(packagename + '-*.tar.gz')
@@ -38,24 +38,28 @@ def findpackage(packagename,dirname):
 # install; otherwise install everything that we find
 
 if len(sys.argv) > 1:
-	donumeric,doswig,dorxp,dopyx,dosynthlisa,dommpi = 0,0,0,0,0,0
+    donumpy,doswig,dorxp,dopyx,dosynthlisa,dommpi = 0,0,0,0,0,0
+    donumeric = 0
 
-	for arg in sys.argv:
-		if arg == 'Numeric' or arg == 'numeric':
-			donumeric = 1
-		elif arg == 'swig' or arg == 'SWIG':
-			doswig = 1
-		elif arg == 'rxp' or arg == 'RXP' or arg == 'pyRXP':
-			dorxp = 1
-		elif arg == 'pyx' or arg == 'PyX':
-			dopyx = 1
-		elif arg == 'synthlisa' or arg == 'synthLISA':
-			dosynthlisa = 1
-		elif arg == 'mmpi' or arg == 'mpi' or arg == 'MMPI' or arg == 'MPI':
-			dommpi = 1
+    for arg in sys.argv:
+        if arg == 'Numeric' or arg == 'numeric':
+            donumeric = 1
+        elif arg == 'numpy':
+            donumpy = 1
+        elif arg == 'swig' or arg == 'SWIG':
+            doswig = 1
+        elif arg == 'rxp' or arg == 'RXP' or arg == 'pyRXP':
+            dorxp = 1
+        elif arg == 'pyx' or arg == 'PyX':
+            dopyx = 1
+        elif arg == 'synthlisa' or arg == 'synthLISA':
+            dosynthlisa = 1
+        elif arg == 'mmpi' or arg == 'mpi' or arg == 'MMPI' or arg == 'MPI':
+            dommpi = 1
 else:
-	# don't do MMPI by default
-	donumeric,doswig,dorxp,dopyx,dosynthlisa,dommpi = 1,1,1,1,1,0
+    # don't do MMPI by default
+    donumpy,doswig,dorxp,dopyx,dosynthlisa,dommpi = 1,1,1,1,1,0
+    donumeric = 0
 
 thisdir = os.getcwd()
 
@@ -64,15 +68,17 @@ os.chdir('packages')
 pckgdir = os.getcwd()
 
 if donumeric:
-	numericdir = findpackage('Numeric','Numeric')
+    numericdir = findpackage('Numeric','Numeric')
+if donumpy:
+    numpydir   = findpackage('numpy','numpy')
 if doswig:
-	swigdir    = findpackage('swig','SWIG')
+    swigdir    = findpackage('swig','SWIG')
 if dorxp:
-	rxpdir     = findpackage('pyRXP','pyRXP')
+    rxpdir     = findpackage('pyRXP','pyRXP')
 if dopyx:
-	pyxdir     = findpackage('PyX','PyX')
+    pyxdir     = findpackage('PyX','PyX')
 if dommpi:
-	mmpidir    = findpackage('mikempi','mikempi')
+    mmpidir    = findpackage('mikempi','mikempi')
 
 if donumeric and numericdir:
     try:
@@ -81,6 +87,15 @@ if donumeric and numericdir:
         os.chdir(pckgdir)
     except AssertionError:
         print "Error while compiling and installing Numeric"
+        raise
+
+if donumpy and numpydir:
+    try:
+        os.chdir(numpydir)
+        assert os.system('python setup.py install --prefix=' + escapespace(thisdir)) == 0
+        os.chdir(pckgdir)
+    except AssertionError:
+        print "Error while compiling and installing numpy"
         raise
 
 if doswig and swigdir:
@@ -113,23 +128,25 @@ if dorxp and rxpdir:
         raise
 
 if dommpi and mmpidir:
-	try:
-		assert sys.version_info[0] + 0.1*sys.version_info[1] >= 2.4, "Need at least Python 2.4 to compile MMPI!"
-		assert os.system('mpicc --version > /dev/null') == 0, "Need to have mpicc in your path!"
-		
-		os.chdir(mmpidir)
-		assert os.system('python setup.py install --prefix=' + escapespace(thisdir) + ' --with-numeric=' + escapespace(thisdir)) == 0 
-		os.chdir(pckgdir)
-	except AssertionError:
-		print "Error while compiling and installing MMPI"
-		raise
+    try:
+        assert sys.version_info[0] + 0.1*sys.version_info[1] >= 2.4, "Need at least Python 2.4 to compile MMPI!"
+        assert os.system('mpicc --version > /dev/null') == 0, "Need to have mpicc in your path!"
+        
+        os.chdir(mmpidir)
+        assert os.system('python setup.py install --prefix=' + escapespace(thisdir) + ' --with-numeric=' + escapespace(thisdir)) == 0 
+        os.chdir(pckgdir)
+    except AssertionError:
+        print "Error while compiling and installing MMPI"
+        raise
 
 os.chdir(thisdir)
         
 try:
     if dosynthlisa:
-        assert os.system(('python setup.py install --with-numeric=' + escapespace(thisdir) +
-                          ' --with-swig=' + escapespace(thisdir) + '/bin/swig --prefix=' + escapespace(thisdir))) == 0
+        assert os.system(('python setup.py install'+
+                          ' --with-numpy=' + escapespace(thisdir) +
+                          ' --with-swig=' + escapespace(thisdir) +
+                          '/bin/swig --prefix=' + escapespace(thisdir))) == 0
 
         print """Now (and before every synthLISA session) you should run the command
 
