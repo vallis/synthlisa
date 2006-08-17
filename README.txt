@@ -21,9 +21,10 @@ In this file:
                         recompile Synthetic LISA)
    4c.Installing pyRXP (required)
    4d.Installing PyX (optional)
-   4e.Installing Synthetic LISA
-   4f.Setting the Python path
-   4g.Recompiling and Synthetic LISA
+   4e.Installing matplotlib (optional)
+   4f.Installing Synthetic LISA
+   4g.Setting the Python path
+   4h.Recompiling and Synthetic LISA
 5. System-specific notes
    5a. Mac OS X
    5b. Linux
@@ -321,8 +322,47 @@ if needed) within [userdir]. Then the synthlisa-setdir.csh and
 synthlisa-setdir.sh scripts will automatically setup the Python path
 correctly to access PyX.
 
+4e.Installing matplotlib
+------------------------
+
+Use matplotlib to get MATLAB-style plotting in Python. But I warn you, the installation is a bit involved. Get it from http://matplotlib.sourceforge.net
+
+- matplotlib will happily use numpy, which is now standard with synthLISA;
+  the Python path to include numpy needs to be set before running
+  matplotlib's setup.py;
+
+- it seems that OS X 10.4 already has two of the required libraries for
+  matplotlib (freetype and zlib); these are included with the X server, or
+  at least with the X development kit. However, it's necessary to tell
+  matplotlib (specifically, setupext.py's basedir for the right platform)
+  where to find them ('/usr/X11R6/lib');
+
+- on the contrary, libpng must be downloaded
+  (http://libpng.sourceforge.net), built, and put in a directory reachable
+  by setupext.py (changing it if necessary);
+
+- matplotlib-calling code may need to be run with pythonw if it uses the
+  Tk frontend; the best way to run it is from ipython -pylab;
+
+- on OS X, there are some problems with system fonts, resulting in broken
+  EPS output; the workaround is to put the matplotlib-provided fonts first
+  in the 'font.sans-serif', 'font.serif', 'font.monospace' fields in
+  matplotlibrc (copy it from the matplotlib distribution directory into
+  ~/.matplotlib); at runtime, you can still do something like
+
+  rcParams['font.sans-serif'] = ['Bitstream Vera Sans']
+  rcParams['font.serif'] = ['Bitstream Vera Serif']
+  rcParams['font.monospace'] = ['Bitstream Vera Sans Mono']
+
+- otherwise, you can also use the matplotlib LaTeX output by setting
+  text.usetex to True in matplotlibrc (or at runtime in rcParams); this
+  will be slower (and it will require a working installation of LaTeX
+  including dvipng), but probably better-looking; some older versions of
+  libpng require text.dvipnghack to be set to True to avoid jagging in the
+  Tk display (but the postscript is fine anyway).
+
 ----------------------------
-4e.Installing Synthetic LISA
+4f.Installing Synthetic LISA
 ----------------------------
 
 If you're reading this file, you have already unpacked the Synthetic
@@ -367,7 +407,7 @@ next section, and you're ready to go. If you need to recompile
 Synthetic LISA after modifying it, see section 4e.
 
 --------------------------
-4f.Setting the Python path
+4g.Setting the Python path
 --------------------------
 
 To use Numeric and Synthetic LISA, the Python interpreter needs to
@@ -388,7 +428,7 @@ to be done automatically, you can call the correct synthlisa-setdir
 script to your .cshrc, .profile, or .login file.
 
 ---------------------------------
-4g.Recompiling and Synthetic LISA
+4h.Recompiling and Synthetic LISA
 ---------------------------------
 
 All the Synthetic LISA files that you may want to modify are in the
@@ -430,7 +470,9 @@ life easier, install the enhancements suggested at the URL
 http://www.vallis.org/blogspace/osxtricks/macpython.html
 
 Most important, enabling readline is vital for interactive Python
-sessions.
+sessions. Try the following:
+
+python `python -c "import pimp; print pimp.__file__"` -i readline
 
 As for the other tools, gcc is included in the Apple Development Tools
 (on your OS X CD, or already installed); you can get gnuplot from
