@@ -72,15 +72,15 @@ conversionRules['Polarization'] =   ( [('SLPolarization','Radian')],
 conversionRules['SLPolarization'] = ( [('Polarization','Radian')],
                                       lambda x: ( float(x) != 0 and str(2.0*math.pi - float(x)) or '0', 'Radian' ) )
 
-conversionRules['Inclination'] =    ( [('SLInclination','Radian')],
+conversionRules['Inclination'] =    ( [('ThetaInclination','Radian')],
                                       lambda x: ( str(float(x) < math.pi and
                                                   math.pi - float(x) or
                                                   3.0*math.pi - float(x)), 'Radian' ) )
                                       
-conversionRules['SLInclination'] =  ( [('Inclination','Radian')],
-                                      lambda x: ( str(float(x) < math.pi and
-                                                  math.pi - float(x) or
-                                                  3.0*math.pi - float(x)), 'Radian' ) )                                      
+conversionRules['ThetaInclination'] = ( [('Inclination','Radian')],
+                                        lambda x: ( str(float(x) < math.pi and
+                                                    math.pi - float(x) or
+                                                    3.0*math.pi - float(x)), 'Radian' ) )
 
 def eq2ec(a,d):
     alpha = float(a)
