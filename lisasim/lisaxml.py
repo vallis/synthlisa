@@ -4,7 +4,6 @@
 # $Revision$
 
 import synthlisa
-import lisawp
 
 import sys
 import os.path
@@ -13,7 +12,7 @@ import string
 import re
 import math
 
-import Numeric
+import numpy.oldnumeric as Numeric
 
 import pyRXP
 # require xmlutils from pyRXP examples
@@ -96,7 +95,7 @@ outputList['PowerLawNoise'] = ( ('SpectralType','String',None),
 
 argumentList['SimpleBinary'] = ( ('Frequency','Hertz',None),
                                  ('InitialPhase','Radian',None),
-                                 ('SLInclination','Radian',None),
+                                 ('ThetaInclination','Radian',None),
                                  ('Amplitude','1',None),
                                  ('EclipticLatitude','Radian',None),
                                  ('EclipticLongitude','Radian',None),
@@ -109,37 +108,6 @@ outputList['SimpleBinary'] = ( ('EclipticLatitude','Radian',None),
                                ('InitialPhase','Radian',None),
                                ('Inclination','Radian',None),
                                ('Amplitude','1',None) )
-
-
-argumentList['PNBinary'] = ( ('Mass1','SolarMass',None),
-                             ('Mass2','SolarMass',None),
-                             ('CoalescenceTime','Second',None),
-                             ('InitialAngularOrbitalPhase','Radian',None),
-                             ('Distance','Parsec',None),
-                             ('Inclination','Radian',None),
-                             ('EclipticLatitude','Radian',None),
-                             ('EclipticLongitude','Radian',None),
-                             ('SLPolarization','Radian',None),
-                             ('TimeOffset','Second','0'),
-                             ('IntegrationStep','Second','10'),
-                             ('TruncationTime','Second','0'),
-                             ('TaperApplied','TotalMass','7'),
-                             ('MaxDuration','Second','31459080'))
-
-outputList['PNBinary'] = ( ('EclipticLatitude','Radian',None),
-                           ('EclipticLongitude','Radian',None),
-                           ('Polarization','Radian',None),
-                           ('TimeOffset','Second',None),
-                           ('Mass1','SolarMass',None),
-                           ('Mass2','SolarMass',None),
-                           ('CoalescenceTime','Second',None),
-                           ('InitialAngularOrbitalPhase','Radian',None),
-                           ('Distance','Parsec',None),
-                           ('Inclination','Radian',None),
-                           ('IntegrationStep','Second',None),
-                           ('TruncationTime','Second','0'),
-                           ('TaperApplied','TotalMass','7'),
-                           ('MaxDuration','Second','31459080'))
     
 # let's not support normalization, right now...
 
@@ -179,7 +147,6 @@ ObjectToXML = {
     'PowerLawNoise': 'PseudoRandomNoise',
 
     'SimpleBinary': 'GalacticBinary',
-    'PNBinary': 'BlackHoleBinary',
     
     'SampledWave': 'SampledPlaneWave'
 }
@@ -192,7 +159,6 @@ XMLToObject = {
     'EccentricInclined': ('EccentricInclined',synthlisa.EccentricInclined),
     
     'SimpleBinary': ('SimpleBinary',synthlisa.SimpleBinary),
-    'PNBinary': ('PNBinary',lisawp.PNBinary),
 
     # standard lisaXML objects
 
@@ -201,7 +167,6 @@ XMLToObject = {
     'PseudoRandomNoise': ('PowerLawNoise',synthlisa.PowerLawNoise),
 
     'GalacticBinary': ('SimpleBinary',synthlisa.SimpleBinary),
-    'BlackHoleBinary': ('PNBinary',lisawp.PNBinary),
     
     'SampledPlaneWave': ('SampledWave',synthlisa.SampledWave)
 }
@@ -266,96 +231,11 @@ optionalParameterSet['GalacticBinary'] = makeoptional([('TimeOffset',('0.0','Sec
                                                        ('FrequencyDotDot',('0.0','Hertz/Second^2')),
                                                        ('Eccentricity',('0.0','1'))])
 
-minimumParameterSet['BlackHoleBinary'] = makeminimum(['Mass1',
-                                                      'Mass2',
-                                                      'CoalescenceTime',
-                                                      'InitialAngularOrbitalPhase',
-                                                      'Distance',
-                                                      'Inclination'])
-
-optionalParameterSet['BlackHoleBinary'] = makeoptional([('TimeOffset',('0','Second')),
-                                                        ('IntegrationStep',('10','Second')),
-                                                        ('TruncationTime',('0','Second')),
-                                                        ('TaperApplied',('7','TotalMass')),
-                                                        ('MaxDuration',('31459080','Second'))])
-
 minimumParameterSet['SampledPlaneWave'] = makeminimum(['TimeOffset',
                                                        'Cadence',
                                                        'Duration'])
 
 optionalParameterSet['SampledPlaneWave'] = []
-
-# optional contribs
-
-try:
-    import lisawp_emri
-    
-    argumentList['EMRI'] = ( ('Spin','SMBHMassSquared', None),
-                             ('InitialEccentricity','1',None),
-                             ('MassOfCompactObject','SolarMass',None),
-                             ('MassOfSMBH','SolarMass',None),
-                             ('InitialAzimuthalOrbitalPhase','Radian',None),
-                             ('Distance','Parsec',None),
-                             ('InitialTildeGamma','Radian',None),
-                             ('InitialAlphaAngle','Radian',None),
-                             ('LambdaAngle','Radian',None),
-                             ('EclipticLatitude','Radian',None),
-                             ('EclipticLongitude','Radian',None),
-                             ('SLPolarization','Radian',None),
-                             ('PolarAngleOfSpin','Radian',None),
-                             ('AzimuthalAngleOfSpin','Radian',None),
-                             ('InitialAzimuthalOrbitalFrequency','Hertz',None),
-                             ('MaximumDuration','Second','94371840'),
-                             ('TimeOffset','Second','0'),
-                             ('IntegrationStep','Second','10') )
-             
-    outputList['EMRI'] = ( ('EclipticLatitude','Radian',None),
-                           ('EclipticLongitude','Radian',None),
-                           ('Polarization','Radian',None),
-                           ('PolarAngleOfSpin','Radian',None),
-                           ('AzimuthalAngleOfSpin','Radian',None),
-                           ('TimeOffset','Second',None),
-                           ('Spin','SMBHMassSquared',None),
-                           ('MassOfCompactObject','SolarMass',None),
-                           ('MassOfSMBH','SolarMass',None),
-                           ('InitialAzimuthalOrbitalFrequency','Hertz',None),
-                           ('InitialAzimuthalOrbitalPhase','Radian',None),
-                           ('InitialEccentricity','1',None),
-                           ('InitialTildeGamma','Radian',None),
-                           ('InitialAlphaAngle','Radian',None),
-                           ('LambdaAngle','Radian',None),      
-                           ('Distance','Parsec',None),
-                           ('IntegrationStep','Second',None),
-                           ('MaximumDuration','Second','94371840') )    
-
-    ObjectToXML['EMRI'] = 'ExtremeMassRatioInspiral'
-
-    XMLToObject['ExtremeMassRatioInspiral'] = ('EMRI',lisawp_emri.EMRI)
-
-    minimumParameterSet['ExtremeMassRatioInspiral'] = makeminimum(['Spin',
-                                                                   'InitialEccentricity',
-                                                                   'MassOfCompactObject',
-                                                                   'MassOfSMBH',
-                                                                   'InitialAzimuthalOrbitalPhase',
-                                                                   'Distance',
-                                                                   'InitialTildeGamma',
-                                                                   'InitialAlphaAngle',
-                                                                   'LambdaAngle',
-                                                                   'EclipticLatitude',
-                                                                   'EclipticLongitude',
-                                                                   'Polarization',
-                                                                   'PolarAngleOfSpin',
-                                                                   'AzimuthalAngleOfSpin',
-                                                                   'InitialAzimuthalOrbitalFrequency'])
-
-    optionalParameterSet['ExtremeMassRatioInspiral'] = makeoptional([('MaximumDuration',('94371840','Second')),
-                                                                     ('TimeOffset',('0','Second')),
-                                                                     ('IntegrationStep',('10','Second'))])
-
-except ImportError:
-    pass
-
-
 
 # default units
 
@@ -842,7 +722,7 @@ class lisaXML(writeXML):
             TimeSeries.dim = len(Numeric.shape(data))
             TimeSeries.alength = Numeric.shape(data)[0]
             
-            if data.typecode() != 'd':
+            if data.dtype.char != 'd':
                 raise TypeError
         except:
             print "lisaXML::TDIData: data must be a proper Numeric array of doubles"
@@ -1011,7 +891,7 @@ class lisaXML(writeXML):
             FrequencySeries.dim = len(Numeric.shape(data))
             FrequencySeries.alength = Numeric.shape(data)[0]
             
-            if data.typecode() != 'd':
+            if data.dtype.char != 'd':
                 raise TypeError
         except:
             print "lisaXML::TDISpectra: data must be a proper Numeric array of doubles"
@@ -1241,7 +1121,7 @@ class readXML:
                 
                                 if (('BigEndian' in timeseries['Encoding'] and sys.byteorder == 'little') or
                                     ('LittleEndian' in timeseries['Encoding'] and sys.byteorder == 'big')):
-                                    readbuffer = readbuffer.byteswapped()
+                                    readbuffer = readbuffer.byteswap()
      
                                 if timeseries['Records'] == 1:
                                     timeseries['Data'] = readbuffer
@@ -1595,7 +1475,7 @@ def handleFiles(args):
 
                 if (('BigEndian' in args[i].encoding and sys.byteorder == 'little') or
                     ('LittleEndian' in args[i].encoding and sys.byteorder == 'big')):
-                    readbuffer = readbuffer.byteswapped()
+                    readbuffer = readbuffer.byteswap()
 
                 if args[i].records == 1:
                     files[args[i].filename] = [readbuffer]
