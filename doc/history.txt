@@ -1,6 +1,111 @@
-2006/19/05  Release 1.3.1, beta version
+TO DO:
 
+- Ideas for the extension of lisaXML to tables of parameters
+	- It should not be too hard to read them in
+	- The same for XSL transformation to make a table of them
+	- Read the columns first, make table headings
+		- Parse parameter name + unit, separate with <br>
+	- But it will be necessary to extend the width of the divs
+	  to the maximum width of the page, or to give them scroll
+	  bars; the first option is probably less bad
 
+- Ideas for the parsing of MLDC source parameters
+	- Make them into class attributes with their standard name
+	- Let them have Units, and have the assignment handle
+	  that intelligently
+		- src.Frequency = 2 (set Unit to DefaultUnit)
+		- src.Frequency = (2, 'Hertz') (set Unit to 'Hertz')
+	- SourceType too... make them check for parameter names
+	  automatically based on this
+	- Much better than parameter lists
+	- The XML parsing for synthlisa could also use this
+	  mechanism, and this is how source parameters should
+	  be returned when sources are read into synthlisa
+	- But this requires inheriting from a SWIG class to make
+	  a Python more intelligent source class? 
+	- Could also do arithmetic of Units (or at least standard
+	  conversions, but there may be a library to do that)
+	- Would it be possible to make all the source generation
+	  and parsing independent from synthlisa (but still in 
+	  Python)?
+		- yes, but pyRXP is troublesome in that respect;
+		  better to use some XML parsing from the standard
+		  library
+	- Any way to backport this into C?
+	- Cool...
+
+- Code management and documentation
+	- Migrate from CVS to SVN
+	- Work on docstrings documentation first... then C++
+	- Start a Trac server
+
+- Build system
+	- Add system-wide installation to default-install.py
+	- Check on optimization options for SWIG extensions
+	- Adaptive importing for plugins... (import line for MLDC?)
+	- Check SCons again?
+
+- Code organization
+	- Separate more extensive Python wrappers from lisasim-swig.i
+	- Reformat XML-parsing code
+	- Simplify and remove obsolete functionality
+	- Complete movement toward handling garbage collection on the Python 
+	  side
+
+- Code fixes and checks
+	- More unit tests (phase in with module updates)
+	- Check/remove buffer/timeoffset duality
+	- Check/extend exception throwing everywhere
+
+- New functionality
+	- Distribute physical orbits as an XML file
+	- Bundle xsl with xml output (simple!)
+	- scipy.numexpr (in sandbox) for lisarigid?
+	- look for data files relative to the synthlisa distribution
+	  (place them there?), perhaps numpy.distutils has clue
+
+2006/08/17  Release 1.3.2, numpy version
+
+Added Phi method in lisasim-tdisignal.(cpp|h), for debugging. Might go away at
+some point.
+
+Added ApproxLISA interface to CircularRotating and EccentricInclined. Modified
+lisasim-swig.i and lisasim-lisa.(cpp|h).
+
+Implemented fastgetobs, written directly in C++, which takes TDIobject
+functors. These are returned by empty calls such as TDI.X(). Modified
+lisautils.py, lisasim-swig.i, lisasim-typemaps.i, lisasim-tdi.h,
+lisasim-tdi.cpp.
+
+Modified MANIFEST.in to distribute numpy, and healpix only in contrib
+directory. Switched default-install.py to unpack and install numpy rather
+than Numeric. Same for bin/recompile-here.sh
+
+Changed setup.py to use numpy, to correctly build pure-C plugins (in
+contrib), including healpix, to build setdir scripts in a temporary
+directory rather than in lisasim.
+
+Changed examples/plotxml.py for numpy. Changed lisasim/lisapar.py to
+numpy. Changed lisautils.py to numpy (some calls, interpolation now
+done by hand for SN.) Changed lisasim-typemaps.i for numpy typemaps.
+
+Healpix is now a plugin, and is not included in the main CVS anymore.
+
+Improved plugin architecture, moving XML definitions to .i files in contrib.
+Modified lisaXML accordingly. Changed lisasim/__init.py__ to import lisawp,
+lisawp_emri (MLDC), and lisarigid (experimental).
+
+Added some notes to README.txt on the installation and use of matplotlib.
+
+========================================================================
+
+2006/08/12  Release 1.3.1b, second correction to official challenge version
+
+Changed SLInclination to ThetaInclination; updated XML definitions for BBH.
+
+========================================================================
+
+2006/08/12  Release 1.3.1a, correction to official challenge version
 
 Added appending to writebinary in lisasim/lisautils.py.
 
@@ -22,6 +127,10 @@ Added lisawp_emri (from Stas) to contrib directory.
 
 Added XML support files to the data directory (modified setup.py and
 MANIFEST.in accordingly).
+
+========================================================================
+
+2006/05/21  Release 1.3.1, official challenge version
 
 In lisaxml.py, fixed some parameter names for EMRIs.
 
@@ -63,6 +172,8 @@ writing mechanism (through outputrxp) will eventually replace the
 present facility. Also moved reference to standard DTD and XSL to
 www.vallis.org.
 
+========================================================================
+
 2005/05/31  Release 1.3.0, beta version
 
 Worked substantially on lisaxml.py to allow for read/write of lisaXML
@@ -89,6 +200,8 @@ differentiating interpolator.
 
 Modified setup.py to allow compilation of Stas' lisawp components (added
 to contrib directory).
+
+========================================================================
 
 2005/3/10  Release 1.2.9, beta version
 
@@ -138,11 +251,15 @@ plotXML now tries to open the graphics files it produces by calling
 Added TDIdoppler (TDIaccurate with 1 - Ldot multipliers) and TDIcarrier
 (returns only laser carrier frequency differences) to lisasim-tdinoise.[h|cpp].
 
+========================================================================
+
 2005/1/18  Release 1.2.8, beta version
 
 Added experimental lisaXML (XSIL-BFD) output in lisaxml.py. Some use of
 it (and also of PyX plotting) is made in examples/test-tdiequal.py.
 Modified __init__.py to load lisaxml.py.
+
+========================================================================
 
 2005/12/21 Release 1.2.7, beta version
 
