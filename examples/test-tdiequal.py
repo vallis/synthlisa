@@ -20,7 +20,7 @@
 # import all the libraries that are needed
 
 from synthlisa import *
-from Numeric import *
+from numpy.oldnumeric import transpose
 
 # we create a LISA geometry object corresponding to a stationary LISA
 # with equal armlengths
@@ -44,11 +44,11 @@ originalTDI = TDInoise(originallisa,
 
 # get "samples" values of the noises, at times separated by "stime"
 
-samples = 2**16    # 2**18 takes 60 s on a 1.25GHz G4; 2**21 used for plot
+samples = 2**18   # 2**18 takes 60 s on a 1.25GHz G4; 2**21 used for plot
 
 # number of averaging patches for the spectra
 
-patches = 256
+patches = 64
 
 # getting the value of one of the basic Doppler observables requires a
 # little trick: here send = 2, link = 3, recv = 1, and all the seven
@@ -63,13 +63,18 @@ originalTDI.y231 = lambda t : originalTDI.y(2,3,1,0,0,0,0,0,0,0,t)
 # observables
 
 # getobsc (as opposed to getobs) prints status information during evaluation
- 
+
 observables = getobsc(samples,stime,[originalTDI.time,
-                                     originalTDI.X,
-                                     originalTDI.alpha,
-                                     originalTDI.zeta,
-                                     originalTDI.U,
-                                     originalTDI.y231])
+                                     originalTDI.Xm,
+                                     originalTDI.Ym,
+                                     originalTDI.Zm])
+ 
+# observables = getobsc(samples,stime,[originalTDI.time,
+#                                     originalTDI.Xm,
+#                                     originalTDI.alpha,
+#                                     originalTDI.zeta,
+#                                     originalTDI.U,
+#                                     originalTDI.y231])
 
 # create the output XML file
 
@@ -79,33 +84,45 @@ outputXML = lisaXML('data/tdiequal',
 
 # save time series to the XML file
 
-outputXML.TDIData(observables,samples,stime,'t,Xf,alphaf,zetaf,Uf,y231f')
+# outputXML.TDIData(observables,samples,stime,'t,Xmf,Ymf,Zmf')
+# outputXML.TDIData(observables,samples,stime,'t,Xf,alphaf,zetaf,Uf,y231f')
 
 # collect the columns of 'observables' in single-column arrays
 # for each observable
 
-[time,noiseX,noisea,noisez,noiseu,noisey] = transpose(observables)
+[time,noiseX,noiseY,noiseZ] = transpose(observables)
+
+# [time,noiseX,noisea,noisez,noiseu,noisey] = transpose(observables)
 
 # compute the spectra and save them to the XML file
 
 myspecX = spect(noiseX,stime,patches)
-myspeca = spect(noisea,stime,patches)
-myspecz = spect(noisez,stime,patches)
-myspecu = spect(noiseu,stime,patches)
-myspecy = spect(noisey,stime,patches)
+myspecY = spect(noiseY,stime,patches)
+myspecZ = spect(noiseZ,stime,patches)
+
+# myspeca = spect(noisea,stime,patches)
+# myspecz = spect(noisez,stime,patches)
+# myspecu = spect(noiseu,stime,patches)
+# myspecy = spect(noisey,stime,patches)
 
 allspec = transpose([myspecX[:,0],myspecX[:,1],
-                                  myspeca[:,1],
-                                  myspecz[:,1],
-                                  myspecu[:,1],
-                                  myspecy[:,1]])
+                                  myspecY[:,1],
+                                  myspecZ[:,1]])
+
+#                                  myspeca[:,1],
+#                                  myspecz[:,1],
+#                                  myspecu[:,1],
+#                                  myspecy[:,1]])
 
 # the first column of the spectra contains the frequency abscissa, so
 # information about minimum and maximum frequency and about frequency
 # cadence may be gotten there; we omit the DC component, which may be
 # problematic to plot log-log
 
-outputXML.TDISpectraSelfDescribed(allspec[1:],'f,Xf,alphaf,zetaf,Uf,y231f',encoding='Text')
+outputXML.TDISpectraSelfDescribed(allspec[1:],'f,Xmf,Ymf,Zmf',encoding='Text')
+outputXML.TDISpectraSelfDescribed(allspec[1:],'f,Xmf2,Ymf2,Zmf2',encoding='Text')
+
+# outputXML.TDISpectraSelfDescribed(allspec[1:],'f,Xf,alphaf,zetaf,Uf,y231f',encoding='Text')
 
 # all data is written only on closing the outputXML; thus the arrays
 # referenced in the TDIData and TDISpectra calls should not be altered

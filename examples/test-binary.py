@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from synthlisa import *
-from Numeric import *
+from numpy.oldnumeric import transpose
 
 import math
 

@@ -13,7 +13,7 @@
 # import all the libraries that are needed
 
 from synthlisa import *
-from Numeric import *
+from numpy.oldnumeric import transpose
 
 # generate the same noise object with:
 

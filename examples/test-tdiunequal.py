@@ -19,7 +19,7 @@
 # import all the libraries that are needed
 
 from synthlisa import *
-from Numeric import *
+from numpy.oldnumeric import transpose
 
 # we create the stationary LISA (with unequal arms) and the standard
 # TDI noise objects
