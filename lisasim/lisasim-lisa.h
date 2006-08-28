@@ -214,7 +214,16 @@ class ModifiedLISA : public OriginalLISA {
 
 /// Rigidly rotating, orbiting LISA.
 
-class CircularRotating : public LISA {
+class ApproxLISA {
+    public:
+      virtual ~ApproxLISA() {};
+
+      virtual double geteta0() = 0;
+      virtual double getxi0() = 0;
+      virtual double getsw() = 0;
+};
+
+class CircularRotating : public LISA, public ApproxLISA {
  private:
     double scriptl;
     double R;
@@ -224,6 +233,7 @@ class CircularRotating : public LISA {
 
     double eta0;
     double xi0;
+    double sw;
 
     // Trick: we use 1-3 indexing for LISA positions and vectors, so we need to allocate 4 of everything
 
@@ -259,13 +269,17 @@ class CircularRotating : public LISA {
     double armlengthaccurate(int arm, double t);
 
     double genarmlength(int arm, double t);
+    
+    double geteta0() {return eta0;};
+    double getxi0() {return xi0;};
+    double getsw() {return sw;};
 };
 
 
 /** Orbiting LISA with eccentric orbits. In the future it would be
     nice to have the eccentricity as a parameter */
 
-class EccentricInclined : public LISA {
+class EccentricInclined : public LISA, public ApproxLISA {
  private:
     // LISA armlength 
 
@@ -276,6 +290,9 @@ class EccentricInclined : public LISA {
     // used internally, but computed from eta0 and xi0
 
     double toffset;
+
+    double eta0;
+    double xi0;
 
     double kappa; 
     double lambda;
@@ -309,6 +326,10 @@ class EccentricInclined : public LISA {
     double armlengthaccurate(int arm, double t);
 
     double genarmlength(int arm, double t);
+    
+    double geteta0() {return eta0;};
+    double getxi0() {return xi0;};
+    double getsw() {return swi;};
 };
 
 

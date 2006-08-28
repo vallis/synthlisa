@@ -275,19 +275,19 @@ double ModifiedLISA::genarmlength(int arm, double t) {
 // measure everything in seconds
 // if the last argument is negative, switch 2 and 3; needed for coherence with the Montana simulator
 
-CircularRotating::CircularRotating(double myL, double e0, double x0, double sw, double t0)
+CircularRotating::CircularRotating(double myL, double e0, double x0, double s, double t0)
     : L(myL), toffset(t0) {
 
-	initialize(e0,x0,sw);
+	initialize(e0,x0,s);
 }
 
-CircularRotating::CircularRotating(double e0, double x0, double sw, double t0)
+CircularRotating::CircularRotating(double e0, double x0, double s, double t0)
     : L(Lstd), toffset(t0) {
 
-	initialize(e0,x0,sw);
+	initialize(e0,x0,s);
 }
 
-void CircularRotating::initialize(double e0, double x0, double sw) {
+void CircularRotating::initialize(double e0, double x0, double s) {
     // set distance from the Sun (s)
 
     R = Rgc;
@@ -305,6 +305,7 @@ void CircularRotating::initialize(double e0, double x0, double sw) {
 
     eta0 = e0;
     xi0 = x0;
+    sw = s;
 
     // construct the arms
 
@@ -413,7 +414,7 @@ double CircularRotating::genarmlength(int arm, double t) {
 
 // --- EccentricInclined LISA class -----------------------------------------------------
 
-EccentricInclined::EccentricInclined(double eta0,double xi0,double sw,double t0) {
+EccentricInclined::EccentricInclined(double e0,double x0,double sw,double t0) {
     L = Lstd;
     toffset = t0;
 
@@ -421,8 +422,11 @@ EccentricInclined::EccentricInclined(double eta0,double xi0,double sw,double t0)
 
     guessL[1] = L; guessL[2] = L; guessL[3] = L;
 
-    kappa = eta0;
-    lambda = xi0 + eta0 - 3.*M_PI/2.0;
+    eta0 = e0;
+    xi0 = x0;
+
+    kappa = e0;
+    lambda = x0 + e0 - 3.*M_PI/2.0;
     swi = sw;
 
     // initialize constants for approximation to armlength
