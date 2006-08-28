@@ -43,7 +43,7 @@ Destructor. See above.
 %enddef
 
 %pythoncode %{
-import Numeric
+import numpy.oldnumeric as Numeric
 
 import math
 import sys
@@ -166,6 +166,14 @@ class ModifiedLISA : public OriginalLISA {
     ModifiedLISA(double arm1 = Lstd,double arm2 = Lstd,double arm3 = Lstd);
 };
 
+%nodefault ApproxLISA;
+
+class ApproxLISA {
+    public:
+      virtual double geteta0();
+      virtual double getxi0();
+      virtual double getsw();
+};
 
 %feature("docstring") CircularRotating "
 CircularRotating(eta0=0,xi0=0,sw=1,t0=0) and
@@ -187,10 +195,9 @@ initdoc(CircularRotating)
 
 initsave(CircularRotating)
 
-class CircularRotating : public LISA {
+class CircularRotating : public LISA, public ApproxLISA {
   public:
     CircularRotating(double eta0=0.0, double xi0=0.0, double sw=0.0, double t0=0.0);
-    CircularRotating(double myL, double eta0, double xi0, double sw, double t0);
 };
 
 
@@ -205,7 +212,7 @@ initdoc(EccentricInclined)
 
 initsave(EccentricInclined)
 
-class EccentricInclined : public LISA {
+class EccentricInclined : public LISA, public ApproxLISA {
  public:
     EccentricInclined(double eta0=0.0, double xi0=0.0, double sw=1.0, double t0=0.0);
 
@@ -587,7 +594,7 @@ def PowerLawNoise(deltat,prebuffer,psd,exponent,interplen=1,seed=0):
 def SampledSignal(array,deltat,buffer = 136.0,norm = 1.0,filter = None,interplen = 1,timeoffset = 0.0,endianness = -1,readbuffer=2**20):
     interp = getInterpolator(interplen)
 
-    if isinstance(array,Numeric.ArrayType):
+    if isinstance(array,Numeric.ndarray):
         samplednoise = SampledSignalSource(array,norm)
     elif isinstance(array,str):
         readbuffer = max(int(buffer/deltat),int(readbuffer))
@@ -994,23 +1001,15 @@ class WaveArray : public WaveObject {
 
 /* -------- TDI objects -------- */
 
-exceptionhandle(TDI::X,ExceptionOutOfBounds,PyExc_IndexError)
-exceptionhandle(TDI::Y,ExceptionOutOfBounds,PyExc_IndexError)
-exceptionhandle(TDI::Z,ExceptionOutOfBounds,PyExc_IndexError)
-
-exceptionhandle(TDI::alpha,ExceptionOutOfBounds,PyExc_IndexError)
-exceptionhandle(TDI::beta,ExceptionOutOfBounds,PyExc_IndexError)
-exceptionhandle(TDI::gamma,ExceptionOutOfBounds,PyExc_IndexError)
-
 exceptionhandle(TDI::alpham,ExceptionOutOfBounds,PyExc_IndexError)
 exceptionhandle(TDI::betam,ExceptionOutOfBounds,PyExc_IndexError)
 exceptionhandle(TDI::gammam,ExceptionOutOfBounds,PyExc_IndexError)
 
+exceptionhandle(TDI::zetam,ExceptionOutOfBounds,PyExc_IndexError)
+
 exceptionhandle(TDI::alpha1,ExceptionOutOfBounds,PyExc_IndexError)
 exceptionhandle(TDI::alpha2,ExceptionOutOfBounds,PyExc_IndexError)
 exceptionhandle(TDI::alpha3,ExceptionOutOfBounds,PyExc_IndexError)
-
-exceptionhandle(TDI::zeta,ExceptionOutOfBounds,PyExc_IndexError)
 
 exceptionhandle(TDI::zeta1,ExceptionOutOfBounds,PyExc_IndexError)
 exceptionhandle(TDI::zeta2,ExceptionOutOfBounds,PyExc_IndexError)
@@ -1029,8 +1028,8 @@ exceptionhandle(TDI::Xmlock2,ExceptionOutOfBounds,PyExc_IndexError)
 exceptionhandle(TDI::Xmlock3,ExceptionOutOfBounds,PyExc_IndexError)
 
 exceptionhandle(TDI::X1,ExceptionOutOfBounds,PyExc_IndexError)
-exceptionhandle(TDI::Y2,ExceptionOutOfBounds,PyExc_IndexError)
-exceptionhandle(TDI::Z3,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::X2,ExceptionOutOfBounds,PyExc_IndexError)
+exceptionhandle(TDI::X3,ExceptionOutOfBounds,PyExc_IndexError)
 
 exceptionhandle(TDI::y,ExceptionOutOfBounds,PyExc_IndexError)
 exceptionhandle(TDI::z,ExceptionOutOfBounds,PyExc_IndexError)
@@ -1049,80 +1048,163 @@ exceptionhandle(TDI::z321,ExceptionOutOfBounds,PyExc_IndexError)
 exceptionhandle(TDI::z132,ExceptionOutOfBounds,PyExc_IndexError)
 exceptionhandle(TDI::z213,ExceptionOutOfBounds,PyExc_IndexError)
 
+%nodefault TDIobject;
+class TDIobject : public Signal {};
+
+%nodefault TDIobjectpnt;
+class TDIobjectpnt  : public TDIobject {};
+
+%nodefault timeobject;
+class timeobject : public Signal {};
+
+extern void fastgetobs(double *numarray,long length,long samples,double stime,Signal **thesignals,int signals,double inittime);
+extern void fastgetobsc(double *numarray,long length,long samples,double stime,Signal **thesignals,int signals,double inittime);
+
+%newobject TDI::alpham();
+%newobject TDI::betam();
+%newobject TDI::gammam();
+
+%newobject TDI::zetam();
+
+%newobject TDI::alpha1();
+%newobject TDI::alpha2();
+%newobject TDI::alpha3();
+
+%newobject TDI::zeta1();
+%newobject TDI::zeta2();
+%newobject TDI::zeta3();
+
+%newobject TDI::P();
+%newobject TDI::E();
+%newobject TDI::U();
+
+%newobject TDI::Xm();
+%newobject TDI::Ym();
+%newobject TDI::Zm();
+
+%newobject TDI::Xmlock1();
+%newobject TDI::Xmlock2();
+%newobject TDI::Xmlock3();
+
+%newobject TDI::X1();
+%newobject TDI::X2();
+%newobject TDI::X3();
+
+%newobject TDI::y123();
+%newobject TDI::y231();
+%newobject TDI::y312();
+
+%newobject TDI::y213();
+%newobject TDI::y321();
+%newobject TDI::y132();
+
+%newobject TDI::z123();
+%newobject TDI::z231();
+%newobject TDI::z312();
+
+%newobject TDI::z213();
+%newobject TDI::z321();
+%newobject TDI::z132();
+
 class TDI {
-public:
+ public:
     TDI() {};
     virtual ~TDI() {};
 
-    // TDI may need to support a seeded reset... in which case
-    // there may be a problem with offsetting the seeds of the single
-    // noises...
-
     virtual void reset() {};
-
-    // ??? should I keep all of these?
-
-    virtual double X(double t);
-    virtual double Y(double t);
-    virtual double Z(double t);
     
-    virtual double alpha(double t);
-    virtual double beta(double t);
-    virtual double gamma(double t);
-
     virtual double alpham(double t);
+    TDIobject *alpham();
     virtual double betam(double t);
+    TDIobject *betam();
     virtual double gammam(double t);
+    TDIobject *gammam();
+
+    virtual double zetam(double t);
+    TDIobject *zetam();
 
     virtual double alpha1(double t);
+    TDIobject *alpha1();
     virtual double alpha2(double t);
+    TDIobject *alpha2();
     virtual double alpha3(double t);
-    
-    virtual double zeta(double t);
+    TDIobject *alpha3();
 
     virtual double zeta1(double t);
+    TDIobject *zeta1();
     virtual double zeta2(double t);
+    TDIobject *zeta2();
     virtual double zeta3(double t);
+    TDIobject *zeta3();
 
+    // P, E, U still have non-signed delays
+    
     virtual double P(double t);
+    TDIobject *P();
     virtual double E(double t);
+    TDIobject *E();
     virtual double U(double t);
+    TDIobject *U();
     
     virtual double Xm(double t);
+    TDIobject *Xm();
     virtual double Ym(double t);
+    TDIobject *Ym();
     virtual double Zm(double t);
+    TDIobject *Zm();
 
     virtual double Xmlock1(double t);
+    TDIobject *Xmlock1();
     virtual double Xmlock2(double t);
+    TDIobject *Xmlock2();
     virtual double Xmlock3(double t);
-
+    TDIobject *Xmlock3();
+    
     virtual double X1(double t);
+    TDIobject *X1();
     virtual double X2(double t);
+    TDIobject *X2();
     virtual double X3(double t);
+    TDIobject *X3();
+
+    virtual double y(int send, int link, int recv, int ret1, int ret2, int ret3, double t);
+    virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, double t);
 
     virtual double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t);
     virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
 
-    virtual double y123(double t);
-    virtual double y231(double t);
-    virtual double y312(double t);
+    double y123(double t);
+    TDIobject *y123();
+    double y231(double t);
+    TDIobject *y231();
+    double y312(double t);
+    TDIobject *y312();
 
-    virtual double y321(double t);
-    virtual double y132(double t);
-    virtual double y213(double t);
+    double y321(double t);
+    TDIobject *y321();
+    double y132(double t);
+    TDIobject *y132();
+    double y213(double t);
+    TDIobject *y213();
     
-    virtual double z123(double t);
-    virtual double z231(double t);
-    virtual double z312(double t);
+    double z123(double t);
+    TDIobject *z123();
+    double z231(double t);
+    TDIobject *z231();
+    double z312(double t);
+    TDIobject *z312();
     
-    virtual double z321(double t);
-    virtual double z132(double t);
-    virtual double z213(double t);
-
-    %extend {
-        double time(double thetime) { return thetime; };
-        double t(double thetime) { return thetime; };
-    }
+    double z321(double t);
+    TDIobject *z321();
+    double z132(double t);
+    TDIobject *z132();
+    double z213(double t);
+    TDIobject *z213();
+    
+    double time(double t);
+    timeobject *time();
+    double t(double t);
+    timeobject *t();
 };
 
 initsave(SampledTDI)
@@ -1347,25 +1429,6 @@ initsave(TDIsignal)
 class TDIsignal : public TDI {
  public:
     TDIsignal(LISA *mylisa, WaveObject *mywave);
+
+    double Phi(int slink,double t);
 };
-
-/* TDI function objects... */
-
-class TDIalpha : public Signal {
- public:
-    TDIalpha(TDI *t);
-};
-
-class TDIbeta : public Signal {
- public:
-    TDIbeta(TDI *t);
-};
-
-class TDIgamma : public Signal {
- public:
-    TDIgamma(TDI *t);
-};
-
-// ??? Helper functions used to be here...
-
-
