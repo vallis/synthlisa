@@ -10,9 +10,13 @@
 // needs arrayobject.h from the Numeric distribution
 
 %{
-#include "Numeric/arrayobject.h"
+#include "numpy/arrayobject.h"
 
-#define ISCONTIGUOUS(m) ((m)->flags & CONTIGUOUS)
+// this was for Numeric
+// #define ISCONTIGUOUS(m) ((m)->flags & CONTIGUOUS)
+
+// for numpy
+#define ISCONTIGUOUS(m) (PyArray_ISCONTIGUOUS(m))
 
 // if the Numeric array is not contiguous, create a contiguous copy;
 // if it is contiguous, use it after increasing its reference count
@@ -25,7 +29,7 @@
   import_array();
 %}
 
-%typemap(python, in) double* NUMPY_ARRAY_DOUBLE {
+%typemap(in) double* NUMPY_ARRAY_DOUBLE {
   PyArrayObject *arr;
   
   /* Check that obj is really a 1D array of bytes */
@@ -60,7 +64,7 @@
 // The following modified from the SWIG documentation
 // Map a Python sequence into any sized C double array
 
-%typemap(python, in) double PYTHON_SEQUENCE_DOUBLE[ANY] (double temp[$1_dim0]) {
+%typemap(in) double PYTHON_SEQUENCE_DOUBLE[ANY] (double temp[$1_dim0]) {
   int i;
 
   // check that we are really getting a sequence (list or tuple)
@@ -99,7 +103,7 @@
 
 // Map a Numeric array into an array of doubles, pass also the number of elements
 
-%typemap(python, in) (double* numarray, long length) {
+%typemap(in) (double* numarray, long length) {
 	PyArrayObject *arr;
 	
 	/* Check that obj is really an array */
@@ -145,7 +149,7 @@
 // Map a Python sequence into an array of doubles;
 // pass also the number of elements
 
-%typemap(python, in) (double *doublearray, int doublenum) {
+%typemap(in) (double *doublearray, int doublenum) {
 	int i;
 	
 	// check that we are really getting a sequence (list or tuple)
@@ -168,17 +172,47 @@
 	// return pointer to the array
 	
 	$1 = temp;
-	$2 = dim;
+	$2 = dim;}
+
+%typemap(freearg) (double *doublearray, int doublenum)  {
+   delete [] $1;
 }
 
-%typemap(python, freearg) (double *doublearray, int doublenum)  {
+%typemap(in) (Signal **thesignals, int signals) {
+  int i;
+
+  // check that we are really getting a sequence (list or tuple)
+
+  if (!PySequence_Check($input)) {
+      PyErr_SetString(PyExc_TypeError,"Expecting a sequence");
+      return NULL;
+  }
+
+  int dim = PySequence_Size($input);
+  Signal **temp = new Signal*[dim];
+  
+  // convert each element
+
+  for (i=0;i<dim;i++) {
+      PyObject *o = PySequence_GetItem($input,i);
+      
+      SWIG_ConvertPtr(o, (void **)&temp[i], $descriptor(Signal *), SWIG_POINTER_EXCEPTION);
+  }
+
+  // return pointer the the array
+
+  $1 = temp;
+  $2 = dim;
+}
+
+%typemap(freearg) (Signal **thesignals, int signals)  {
    delete [] $1;
 }
 
 // The following modified from the SWIG documentation
 // Map a Python sequence of noise objects into an array of pointers
 
-%typemap(python, in) Noise *PYTHON_SEQUENCE_NOISE[ANY] (Noise *temp[$1_dim0]) {
+%typemap(in) Noise *PYTHON_SEQUENCE_NOISE[ANY] (Noise *temp[$1_dim0]) {
   int i;
 
   // check that we are really getting a sequence (list or tuple)
@@ -211,7 +245,7 @@
 // convert a list of Wave objects; could probably use a temp variable
 // (as above) instead of the freearg typemap
 
-%typemap(python, in) (Wave **WaveSeq, int WaveNum) {
+%typemap(in) (Wave **WaveSeq, int WaveNum) {
   int i;
 
   // check that we are really getting a sequence (list or tuple)
@@ -238,13 +272,13 @@
   $2 = dim;
 }
 
-%typemap(python, freearg) (Wave **WaveSeq, int WaveNum)  {
+%typemap(freearg) (Wave **WaveSeq, int WaveNum)  {
    delete [] $1;
 }
 
 // from the SWIG documentation: input a python function
 
-%typemap(python,in) PyObject* PYTHONFUNC {
+%typemap(in) PyObject* PYTHONFUNC {
   if (!PyCallable_Check($input)) {
       PyErr_SetString(PyExc_TypeError, "Need a callable object!");
       return NULL;
