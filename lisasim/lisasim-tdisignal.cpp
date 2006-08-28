@@ -44,6 +44,27 @@ double TDIsignal::psi(Wave *nwave, Vector &lisan, double t) {
 // note that the call to putn is already computing the armlength that we request later
 // we could make putn return the corresponding armlength
 
+double TDIsignal::Phi(int link,double t) {
+    Vector linkn;
+    lisa->putn(linkn,link,t);
+
+    Vector pr;
+    phlisa->putp(pr,getRecv(link),t);
+
+    Wave *nwave = wave->firstwave();
+    if(!nwave) return 0.0;
+
+    double accpsi = 0.0;
+
+    do {
+        double acc = psi(nwave, linkn, t - pr.dotproduct(nwave->k));
+
+        if(acc != 0.0) accpsi += acc;
+    } while( (nwave = wave->nextwave()) );
+
+    return accpsi;
+}
+
 double TDIsignal::y(int send, int slink, int recv, int ret1, int ret2, int ret3, double t) {
     return y(send,slink,recv,ret1,ret2,ret3,0,0,0,0,t);
 }
@@ -85,10 +106,10 @@ double TDIsignal::y(int send, int slink, int recv, int ret1, int ret2, int ret3,
     double accpsi = 0.0;
 
     do {
-	double acc = ( psi(nwave, linkn, retardsignal - psend.dotproduct(nwave->k)) -
-		       psi(nwave, linkn, retardedtime - precv.dotproduct(nwave->k)) );
+        double acc = (   psi(nwave, linkn, retardsignal - psend.dotproduct(nwave->k))
+                       - psi(nwave, linkn, retardedtime - precv.dotproduct(nwave->k)) );
 
-	if(acc != 0.0) accpsi += acc / (1.0 - linkn.dotproduct(nwave->k));
+        if(acc != 0.0) accpsi += acc / (1.0 - linkn.dotproduct(nwave->k));
     } while( (nwave = wave->nextwave()) );
 
     return accpsi;

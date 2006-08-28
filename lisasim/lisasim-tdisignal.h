@@ -37,6 +37,8 @@ class TDIsignal : public TDI {
 
     double y(int send, int link, int recv, int ret1, int ret2, int ret3, double t);
     double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t);
+
+    double Phi(int slink,double t);
 };
 
 #endif /* _LISASIM_TDISIGNAL_H_ */
