@@ -1,5 +1,5 @@
 ====================================
-Synthetic LISA, v. 1.3.1, 2006-06-21
+Synthetic LISA, v. 1.3.2, 2006-08-28
 ====================================
 
 by M. Vallisneri and J. W. Armstrong
@@ -11,45 +11,70 @@ contact: Michele Vallisneri, vallis@vallis.org
 -------------------------------------------------
 In this file:
 
-0. Quickstart
-1. Introduction to Synthetic LISA
-2. License terms
-3. System requirements
-4. Installation of Synthetic LISA
-   4a. Installing Numeric (required)
-   4b. Installing SWIG (required to modify and
-                        recompile Synthetic LISA)
-   4c.Installing pyRXP (required)
-   4d.Installing PyX (optional)
-   4e.Installing matplotlib (optional)
-   4f.Installing Synthetic LISA
-   4g.Setting the Python path
-   4h.Recompiling and Synthetic LISA
-5. System-specific notes
-   5a. Mac OS X
-   5b. Linux
-   5c. Cygwin
-6. Running the examples
-7. Synthetic LISA usage
-8. User involvement
-9. Asking for help 
-10.To do list
+-1.Changes, changes
+ 0. Quickstart
+ 1. Introduction to Synthetic LISA
+ 2. License terms
+ 3. System requirements
+ 4. Installation of Synthetic LISA
+    4a. Installing numpy (required)
+    4b. Installing SWIG (required to modify and
+                         recompile Synthetic LISA)
+    4c.Installing pyRXP (required)
+    4d.Installing PyX (optional)
+    4e.Installing matplotlib (optional)
+    4f.Installing Synthetic LISA
+    4g.Setting the Python path
+    4h.Recompiling and Synthetic LISA
+ 5. System-specific notes
+    5a. Mac OS X
+    5b. Linux
+    5c. Cygwin
+ 6. Running the examples
+ 7. Synthetic LISA usage
+ 8. User involvement
+ 9. Asking for help 
+10. To do list
 -------------------------------------------------
 
+====================
+-1. Changes, changes
+====================
+
+1.3.2 (2006-08-28)
+------------------
+
+- With this release, synthlisa is ported to numpy, the new standard array
+  package for Python. This helps the interoperability of LISA with many
+  modern Python packages. Changes to existing synthlisa scripts should be
+  minimal. At worst, if you were doing "import Numeric", replace it with
+  "import numpy.oldnumeric as Numeric". If you were doing "from Numeric
+  import *", now do "from numpy import *".
+ 
+- The standard getobs and getobsc functions used to collect arrays of TDI
+  observables or noises have become much faster, thanks to their
+  reimplementation in C++. This makes synthlisa 40% faster altogether. [But
+  the new functions will be used only for "stock" observables and noises,
+  and not for pseudoobservables written as lambda functions, which I have
+  been known to do occasionally. This should hardly concern you...]
+  
+- The plugin architecture for MLDC sources has been improved somewhat. Now
+  all XML definitions for the new sources are in the contrib directory.
+
 =============
 0. Quickstart
 =============
 
-- I assume you have Python >= 2.3, GNU gcc, GNU Make, and Gnuplot (if
-  you want to plot; an alternative is PyX, see 4f below). If you use
-  Cygwin, you also need the Cygwin SWIG package.
+- I assume you have Python >= 2.3, GNU gcc, GNU Make, and gnuplot (if you
+  want to plot; an alternative is PyX, see 4d below, or matplotlib, see
+  4e blow). If you use Cygwin, you also need the Cygwin SWIG package.
 
-- Unpack the Synthetic LISA distribution (synthLISA-1.3.1.tar.gz) and
+- Unpack the Synthetic LISA distribution (synthLISA-1.3.2.tar.gz) and
   cd to it.
 
-- Run "./default-install.py". This will install Numeric,
+- Run "./default-install.py". This will install numpy,
   SWIG, and Synthetic LISA locally in the Synthetic LISA
-  distribution directory "synthLISA-1.3.1". If you don't get
+  distribution directory "synthLISA-1.3.2". If you don't get
   any fatal errors, you're set. Otherwise, I'm afraid you'll
   have to read all the installation instructions below.
   [Note: this quickstart procedure is currently untested on Cygwin.]
@@ -63,9 +88,9 @@ In this file:
 - Now you can go to the "examples" directory, run a few of the Python
   (*.py) scripts ("python scriptname.py") and plot their results
   ("gnuplot -persist scriptname.plt").
-  [Note: pending the XML-ization of synthLISA output, the examples
-  directory is currently scarcely populated. But this should change
-  with version 1.3.]
+  [Note: after the XML-ization of synthLISA output, the examples
+  directory has become scarcely populated, as the example scripts
+  are converted. Stay tuned.]
 
 - Read the tutorial in Section 7, the documentation (synthlisa.pdf),
   and the user discussions and feedback on the Synthetic LISA
@@ -119,8 +144,7 @@ version of these known to interact correctly with synthLISA is included
 in the synthLISA distribution. (This does not mean that newer versions
 won't work, just that I haven't tested them.) These packages include
 
-- Numeric (currently v. 24.2), see
-http://sourceforge.net/projects/numpy
+- numpy (currently v. 1.0b1), see http://numpy.scipy.org
 
 - pyRXP (v. 1.07), see http://www.reportlab.org/pyrxp.html
 
@@ -128,7 +152,7 @@ http://sourceforge.net/projects/numpy
 
 - PyX (v. 0.8.1), see http://pyx.sourceforge.net
 
-Of these, Numeric is needed for synthLISA to deal with arrays in
+Of these, numpy is needed for synthLISA to deal with arrays in
 Python; pyRXP is needed for XML input; SWIG is needed if you want to
 modify the Synthetic LISA code, to regenerate Python wrappers; and PyX
 is a stand-alone plotting package used for some of the example scripts.
@@ -144,7 +168,7 @@ If you need the GNU tools, Python, or Gnuplot, please see
 =================================
 
 To install and use Synthetic LISA from the source distribution
-(synthLISA-1.3.1.tar.gz) you need a working installation of Python and
+(synthLISA-1.3.2.tar.gz) you need a working installation of Python and
 of a Python-interoperable C/C++ compiler, preferably gcc. The setup of
 these is not discussed in this document.
 
@@ -153,7 +177,7 @@ will perform a complete installation of Synthetic LISA and all
 attendant packages in the synthLISA unpacking (a.k.a. "distribution")
 directory. The single Python packages (or the single synthlisa package)
 can also be installed by running default-install.py with one or more of
-the arguments "Numeric", "pyRXP", "SWIG", "PyX", and "synthLISA".
+the arguments "numpy", "pyRXP", "SWIG", "PyX", and "synthLISA".
 
 The instructions below pertain to the case where you want to install
 synthLISA and/or one or more packages *globally* in your system (i.e.,
@@ -161,42 +185,37 @@ in the main Python library location, shared by all users, which will
 require that you have administrator privileges), or you want to
 customize your installation in other ways.
 
---------------------------------
-4a.Installing Numeric (required)
---------------------------------
+------------------------------
+4a.Installing numpy (required)
+------------------------------
 
-Numeric might already be installed on your system, as you can check by
+Numpy might already be installed on your system, as you can check by
 doing
 
 > python
-> import Numeric
+> import numpy
 
-No response is a good response. If Numeric is not available, you'll
-get "ImportError: No module named Numeric".
+No response is a good response. If numpy is not available, you'll
+get "ImportError: No module named numpy".
 
-You might also be able to install Numeric system-wide using a standard
+You might also be able to install numpy system-wide using a standard
 distribution tool for your system, such as rpm, apt-get, or Fink. In
 either case, skip the instructions to follow, although you might still
-want to reinstall Numeric if the current version is old or incomplete.
+want to reinstall numpy if the current version is old or incomplete.
 
-Download the most recent platform-independent (Numeric-**.*.tar.gz)
-version of Numeric from numeric.scipy.org, or directly from
-SourceForce.
+Download the most recent platform-independent (numpy-*.tar.gz) version of
+numpy from numpy.scipy.org. Unpack the distribution in a directory of your
+choice (you might have a different version number).
 
-http://sourceforge.net/project/showfiles.php?group_id=1369&package_id=1351
-
-Unpack the distribution in a directory of your choice (you might have
-a different version number).
-
-> tar ztvf Numeric-24.2.tar.gz
+> tar ztvf numpy-1.0b1.tar.gz
 
 At this point, you have two choices: if you have administrator access
-to your workstation, you can install Numeric to the system-wide Python
+to your workstation, you can install numpy to the system-wide Python
 "site-packages" directory; if not, or if you prefer not to modify the
 system-wide directories, you can install locally to your home
 directory, or to another directory.
 
-Numeric is installed system-wide by cd'ing to the unpacked directory
+numpy is installed system-wide by cd'ing to the unpacked directory
 and running
 
 > python setup.py install
@@ -206,19 +225,19 @@ root (use "su"), or you may just need to prefix the "python setup.py
 install" command by "sudo"; the latter is the correct procedure on OS
 X.
 
-Numeric is installed locally by running
+numpy is installed locally by running
 
 > python setup.py install --prefix=[userdir]
 
 where you should replace [userdir] by the directory where you want to
-install: it could be "/home/yourname", or
-"/home/yourname/numeric". The setup process will create directories
-"lib" and "include" within [userdir].
+install: it could be "/home/yourname", or "/home/yourname/numpy". The
+setup process will create directories "lib" and "include" within
+[userdir].
 
 All done, but if you encounter any problems with this process (I hope
-not!)  you should refer to the documentation at
-numeric.scipy.org. More generally, a description of the python
-"setup.py" (distutils) installation process can be found at
+not!) you should refer to the documentation at numpy.scipy.org. More
+generally, a description of the python "setup.py" (distutils)
+installation process can be found at
 
 http://www.python.org/doc/current/inst/inst.html
 
@@ -250,7 +269,7 @@ version number).
 
 > tar ztvf swig-1.3.27.tar.gz
 
-As for Numeric, you have two choices: system-wide installation (files
+As for numpy, you have two choices: system-wide installation (files
 will go to /usr/local), or local installation.
 
 System-wide installation is achieved by cd'ing to the unpacked SWIG
@@ -325,30 +344,33 @@ correctly to access PyX.
 4e.Installing matplotlib
 ------------------------
 
-Use matplotlib to get MATLAB-style plotting in Python. But I warn you, the installation is a bit involved. Get it from http://matplotlib.sourceforge.net
+Use matplotlib to get MATLAB-style plotting in Python. But I warn you,
+the installation is a bit involved. Get it from
+http://matplotlib.sourceforge.net and then keep into consideration all
+of the following:
 
 - matplotlib will happily use numpy, which is now standard with synthLISA;
   the Python path to include numpy needs to be set before running
-  matplotlib's setup.py;
+  matplotlib's setup.py, probably using bin/synthlisa-setdir.[csh|sh];
 
 - it seems that OS X 10.4 already has two of the required libraries for
   matplotlib (freetype and zlib); these are included with the X server, or
   at least with the X development kit. However, it's necessary to tell
-  matplotlib (specifically, setupext.py's basedir for the right platform)
-  where to find them ('/usr/X11R6/lib');
+  matplotlib (by setting setupext.py's basedir for the right platform)
+  where to find them ('/usr/X11R6');
 
 - on the contrary, libpng must be downloaded
-  (http://libpng.sourceforge.net), built, and put in a directory reachable
-  by setupext.py (changing it if necessary);
+  (http://libpng.sourceforge.net), built, and put in a directory
+  reachable by setupext.py (changing it if necessary);
 
-- matplotlib-calling code may need to be run with pythonw if it uses the
-  Tk frontend; the best way to run it is from ipython -pylab;
+- the best way to run matplotlib-calling code is from ipython -pylab;
 
-- on OS X, there are some problems with system fonts, resulting in broken
-  EPS output; the workaround is to put the matplotlib-provided fonts first
-  in the 'font.sans-serif', 'font.serif', 'font.monospace' fields in
-  matplotlibrc (copy it from the matplotlib distribution directory into
-  ~/.matplotlib); at runtime, you can still do something like
+- on OS X, there are some problems with system fonts, resulting in
+  broken EPS output; the workaround is to put the matplotlib-provided
+  fonts first in the 'font.sans-serif', 'font.serif', 'font.monospace'
+  fields in matplotlibrc (copy it from the matplotlib distribution
+  directory into ~/.matplotlib); at runtime, you can still do something
+  like
 
   rcParams['font.sans-serif'] = ['Bitstream Vera Sans']
   rcParams['font.serif'] = ['Bitstream Vera Serif']
@@ -358,8 +380,8 @@ Use matplotlib to get MATLAB-style plotting in Python. But I warn you, the insta
   text.usetex to True in matplotlibrc (or at runtime in rcParams); this
   will be slower (and it will require a working installation of LaTeX
   including dvipng), but probably better-looking; some older versions of
-  libpng require text.dvipnghack to be set to True to avoid jagging in the
-  Tk display (but the postscript is fine anyway).
+  libpng require text.dvipnghack in matplotlibrc to be set to True to
+  avoid jagging in the Tk display (but the postscript is fine, anyway).
 
 ----------------------------
 4f.Installing Synthetic LISA
@@ -367,26 +389,26 @@ Use matplotlib to get MATLAB-style plotting in Python. But I warn you, the insta
 
 If you're reading this file, you have already unpacked the Synthetic
 LISA distribution. Again, you have the choice of installing
-system-wide or locally. In addition, if you have installed Numeric
+system-wide or locally. In addition, if you have installed numpy
 locally, you'll need to tell the Synthetic LISA installer where it can
 be found.
 
 So we have four cases:
 
-- System-wide Synthetic LISA with system-wide Numeric: run
+- System-wide Synthetic LISA with system-wide numpy: run
 
 > python setup.py install
 
-- System-wide Synthetic LISA with local Numeric installed in
+- System-wide Synthetic LISA with local numpy installed in
   [numericdir]: run
 
 > python setup.py install --with-numeric=[numericdir]
 
-- Local Synthetic LISA with system-wide Numeric: run
+- Local Synthetic LISA with system-wide numpy: run
 
 > python setup.py install --prefix=[synthlisadir]
 
-- Local Synthetic LISA with local Numeric installed in [numericdir}: run
+- Local Synthetic LISA with local numpy installed in [numericdir}: run
 
 > python setup.py install --prefix=[synthlisadir] --with-numeric=[numericdir]
 
@@ -410,7 +432,7 @@ Synthetic LISA after modifying it, see section 4e.
 4g.Setting the Python path
 --------------------------
 
-To use Numeric and Synthetic LISA, the Python interpreter needs to
+To use numpy and Synthetic LISA, the Python interpreter needs to
 know where they can be found. If you have performed system-wide
 installs, this will be the case automatically. But if you have
 performed local installs, you will need to change the value of the
@@ -423,7 +445,7 @@ bin/synthlisa-setdir.csh"; if you're running bash, do "source
 bin/synthlisa-setdir.sh".
 
 The PYTHONPATH needs to be set each time you open a new shell session
-and want to work with Numeric or Synthetic LISA. If you want this job
+and want to work with numpy or Synthetic LISA. If you want this job
 to be done automatically, you can call the correct synthlisa-setdir
 script to your .cshrc, .profile, or .login file.
 
@@ -505,7 +527,7 @@ which needs to be upgraded to work with Synthetic LISA.)
 4c. Compilation notes for Windows (cygwin)
 ------------------------------------------
 
-Note: synthLISA 1.3.1 is currently untested under Cygwin. I
+Note: synthLISA 1.3.2 is currently untested under Cygwin. I
 hope to resolve this situation in the future. If you do try
 this out, the following discussion may or may not apply to
 your experience. Let me know!
@@ -583,7 +605,7 @@ following:
 You will see that after some standard library-loading incantation,
 
 > from synthlisa import *
-> from Numeric import *
+> from numpy import *
 
 the script goes into creating a hierarchical structure of objects: for
 instance, to get time series of a TDI noise we first need to create a
@@ -607,7 +629,7 @@ observable X, at times starting from 0, and separated by 0.1 seconds:
 
 > noiseX = getobsc(16384,0.1,originalTDI.X)
 
-Now "noiseX" is a Numeric array of length 16384, which can be written
+Now "noiseX" is a numpy array of length 16384, which can be written
 to disk as an ASCII file,
 
 > writearray('myXnoise.txt',noiseX)
@@ -625,7 +647,7 @@ averaged spectrum of "noiseX":
 
 [we need to tell "spect" the sampling timestep 0.1 (s), and the number
 of periods (here 32) that the signal should be divided into to compute
-the averaged spectrum]. The result is a 2D Numeric array, where each
+the averaged spectrum]. The result is a 2D numpy array, where each
 element is a pair of frequency (in seconds), and noise density (in
 1/Hertz).
 
