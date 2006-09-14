@@ -15,7 +15,7 @@ import math
 
 # overlap controls the use of overlapping or nonoverlapping averaging periods
 
-# detrend controls the subtraction of DC components
+# detrend controls the subtraction of DC and linear components
 
 def spect(series,sampling,patches=1,detrend=0,overlap=1,win='triangle'):
     nyquistf = 0.5 / sampling
@@ -66,6 +66,31 @@ def pdg(series):
 
     return pdgram
 
+# quick-and-dirty least squares fit
+# returns the coefficients of the model a + b x
+# with x = [0,...,N-1]
+# if detrend = 1, also detrends the data
+
+def leastsquares(array,detrend=0):
+    S = len(array)
+    x = Numeric.arange(0,S,dtype='d')
+    
+    Sx = Numeric.sum(x)
+    Sy = Numeric.sum(array)
+
+    Sxx = Numeric.sum(x**2)
+    Sxy = Numeric.sum(x * array)
+
+    delta = S * Sxx - Sx**2
+    
+    a = (Sxx * Sy - Sx * Sxy) / delta
+    b = (S * Sxy - Sx * Sy) / delta
+
+    if detrend:
+        array -= a + b * x
+    
+    return (a,b)
+
 # triangle-windowed periodogram
 # - since series is a reference to successive overlapping slices,
 #   we should not modify its value
@@ -81,20 +106,17 @@ def wpdg(series,detrend=0,win='triangle'):
         window = Numeric.sin(math.pi*wrange)**4.0
     else:
         # if we don't recognize a window, default to triangle
-        
         pdlen = (samples - 1) / 2.0
         window = 1.0 - abs(Numeric.arange(0,samples,dtype='d') - pdlen) / (pdlen)
 
+    wseries = series.copy()
+
+    if detrend == 1:
+        leastsquares(wseries,detrend=1)
+    
+    wseries *= window
+
     weight = samples * Numeric.sum(window ** 2)
-
-    # detrending
-    if detrend == 0:
-        mean = 0.0
-    else:
-        mean = sum(series) / (1.0*samples)
-
-    wseries = window * (series - mean)
-
     wpdgram = pdg(wseries) * (1.0 * samples**2 / weight)
 
     return wpdgram
