@@ -5,7 +5,7 @@
 
 import lisaswig
 import numpy.oldnumeric as Numeric
-import numpy.dft as FFT
+import numpy.fft as FFT
 import math
 
 # estimate spectrum
@@ -460,7 +460,7 @@ def sn(signal,noise,stime,npatches):
 
     return math.sqrt(sn2)
 
-import numpy.dft as FFT
+import numpy.fft as FFT
 
 def real(number):
 	try:
