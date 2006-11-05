@@ -1049,10 +1049,22 @@ exceptionhandle(TDI::z132,ExceptionOutOfBounds,PyExc_IndexError)
 exceptionhandle(TDI::z213,ExceptionOutOfBounds,PyExc_IndexError)
 
 %nodefault TDIobject;
-class TDIobject : public Signal {};
+class TDIobject : public Signal {
+ public:
+    TDIobject(TDI *t);
+    virtual ~TDIobject();
+    
+    virtual double value(double t) = 0;
+};
 
-%nodefault TDIobjectpnt;
-class TDIobjectpnt  : public TDIobject {};
+// %nodefault TDIobjectpnt;
+class TDIobjectpnt  : public TDIobject {
+ public:
+    TDIobjectpnt(TDI *t,double (TDI::*o)(double t));
+    ~TDIobjectpnt();
+
+    double value(double t);
+};
 
 %nodefault timeobject;
 class timeobject : public Signal {};
