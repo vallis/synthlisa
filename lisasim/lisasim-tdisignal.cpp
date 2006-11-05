@@ -88,14 +88,27 @@ double TDIsignal::y(int send, int slink, int recv, int ret1, int ret2, int ret3,
     // therefore the sign in denom is the same (-) for both positive and negative links
     // there's no problem in psi, because n is dotted twice into h
 
+    // note that CacheLISA must only return the position at the very last delayed time
+    // previously the retardation was before the first putp call
+    
+    Vector precv;
+    lisa->putp(phlisa,precv,recv,retardedtime);
+
+    // MV 20061104 previously
+    // double retardsignal = retardedtime - phlisa->armlength(link,retardedtime);
+
+    lisa->retard(phlisa,link);
+    double retardsignal = lisa->retardedtime();
+    
+    Vector psend;
+    lisa->putp(phlisa,psend,send,retardsignal);
+
+    // MV 20061104 previously
+    // lisa->putn(linkn,link,retardedtime);
+
     Vector linkn;
-    lisa->putn(linkn,link,retardedtime);    
-
-    double retardsignal = retardedtime - phlisa->armlength(link,retardedtime);
-
-    Vector psend, precv;
-    phlisa->putp(psend,send,retardsignal);
-    phlisa->putp(precv,recv,retardedtime);
+    linkn.setdifference(precv,psend);
+    linkn.setnormalized();
 
     // loop over waves (if there is more than one)
     // using the WaveObject interface (firstwave, nextwave)
