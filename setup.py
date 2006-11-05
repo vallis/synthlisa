@@ -114,8 +114,9 @@ if lisasim_cppfile not in source_files:
 scripttempdir = 'build/temp.' + get_platform() + '-%s.%s' % sys.version_info[0:2]
 mkpath(scripttempdir)
 
-setdir_sh  = open(scripttempdir + '/synthlisa-setdir.sh','w')
-setdir_csh = open(scripttempdir + '/synthlisa-setdir.csh','w')
+setdir_sh     = open(scripttempdir + '/synthlisa-setdir.sh','w')
+setdir_csh    = open(scripttempdir + '/synthlisa-setdir.csh','w')
+recompile_sh  = open(scripttempdir + '/synthlisa-recompile.sh','w')
 
 pythonpath = ''
 installpath = sys.exec_prefix
@@ -140,8 +141,7 @@ if mpi_prefix:
         
     pythonpath = pythonpath + get_python_lib(prefix=mpi_prefix) + '/mpi'
 
-print >> setdir_sh, """
-if [ -z "${PYTHONPATH}" ]
+print >> setdir_sh, """if [ -z "${PYTHONPATH}" ]
 then
     PYTHONPATH="%s"; export PYTHONPATH
 else
@@ -151,8 +151,7 @@ fi
 SYNTHLISABASE="%s"; export SYNTHLISABASE
 """ % (pythonpath, pythonpath, installpath)
 
-print >> setdir_csh, """
-if !($?PYTHONPATH) then
+print >> setdir_csh, """if !($?PYTHONPATH) then
     setenv PYTHONPATH %s
 else
     setenv PYTHONPATH %s:$PYTHONPATH
@@ -161,6 +160,12 @@ endif
 setenv SYNTHLISABASE %s
 """ % (pythonpath, pythonpath, installpath)
 
+print >> recompile_sh, """#!/bin/sh
+pushd %s
+python setup.py install --prefix=%s $*
+popd""" % (os.getcwd(),installpath)
+
+recompile_sh.close()
 setdir_csh.close()
 setdir_sh.close()
 
@@ -181,7 +186,9 @@ else:
 	numpy_hfiles = get_python_lib() + '/numpy/core/include'
 	
 if pythonpath:
-    setdir_scripts = [scripttempdir + '/synthlisa-setdir.sh',scripttempdir + '/synthlisa-setdir.csh']
+    setdir_scripts = [scripttempdir + '/synthlisa-setdir.sh',
+                      scripttempdir + '/synthlisa-setdir.csh',
+                      scripttempdir + '/synthlisa-recompile.sh']
 else:
     setdir_scripts = []
 
