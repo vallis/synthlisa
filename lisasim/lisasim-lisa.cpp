@@ -17,6 +17,10 @@
     LISA version of putn uses delayed differences of putp; calls
     armlength to get the right delay */
 
+void LISA::putp(LISA *anotherlisa,Vector &p, int craft, double t) {
+    anotherlisa->putp(p,craft,t);
+}
+
 void LISA::putn(Vector &n,int arms,double t) {
 	assertArm(arms);
 

@@ -126,6 +126,7 @@ class LISA {
 	defined for base LISA, which has no geometry, and thus becomes
 	an abstract class. */
     virtual void putp(Vector &p, int craft, double t) = 0;
+    virtual void putp(LISA *anotherlisa,Vector &p, int craft, double t);
 
     /* Simple implementation of spacecraft velocity by first-order
     one-second finite-difference expression */
