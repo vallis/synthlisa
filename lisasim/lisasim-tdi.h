@@ -23,6 +23,7 @@ class TDIobject : public Signal {
     
  public:
     TDIobject(TDI *t) : tdi(t) {};
+    virtual ~TDIobject() {};
         
     virtual double value(double t) = 0;
 };
@@ -33,6 +34,7 @@ class TDIobjectpnt : public TDIobject {
     
  public:
     TDIobjectpnt(TDI *t,double (TDI::*o)(double t)) : TDIobject(t), obs(o) {};
+    ~TDIobjectpnt() {};
     
     double value(double t) { return (tdi->*obs)(t); };
 };
