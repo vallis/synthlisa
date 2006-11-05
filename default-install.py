@@ -34,6 +34,19 @@ def findpackage(packagename,dirname):
     print "Using unpacking dir " + dir[-1]
     return dir[-1]
 
+# see if there's a preferred install directory, otherwise use the local directory
+
+argv_replace = []
+installdir = None
+
+for arg in sys.argv:
+    if arg.startswith('--prefix='):
+        installdir = arg.split('=', 1)[1]
+    else:
+        argv_replace.append(arg)
+
+sys.argv = argv_replace
+
 # if we're given a command-line argument, try to parse it to decide what to
 # install; otherwise install everything that we find
 
@@ -62,6 +75,8 @@ else:
     donumeric = 0
 
 thisdir = os.getcwd()
+if installdir == None:
+    installdir = thisdir
 
 os.chdir('packages')
 
@@ -83,7 +98,7 @@ if dommpi:
 if donumeric and numericdir:
     try:
         os.chdir(numericdir)    
-        assert os.system('python setup.py install --prefix=' + escapespace(thisdir)) == 0
+        assert os.system('python setup.py install --prefix=' + escapespace(installdir)) == 0
         os.chdir(pckgdir)
     except AssertionError:
         print "Error while compiling and installing Numeric"
@@ -92,7 +107,7 @@ if donumeric and numericdir:
 if donumpy and numpydir:
     try:
         os.chdir(numpydir)
-        assert os.system('python setup.py install --prefix=' + escapespace(thisdir)) == 0
+        assert os.system('python setup.py install --prefix=' + escapespace(installdir)) == 0
         os.chdir(pckgdir)
     except AssertionError:
         print "Error while compiling and installing numpy"
@@ -101,7 +116,7 @@ if donumpy and numpydir:
 if doswig and swigdir:
     try:
         os.chdir(swigdir)
-        assert os.system('./configure --prefix=' + escapespace(thisdir)) == 0
+        assert os.system('./configure --prefix=' + escapespace(installdir)) == 0
         assert os.system('make') == 0
         assert os.system('make install') == 0
         os.chdir(pckgdir)
@@ -112,7 +127,7 @@ if doswig and swigdir:
 if dopyx and pyxdir:
     try:
         os.chdir(pyxdir)
-        assert os.system('python setup.py install --prefix=. --root=' + escapespace(thisdir)) == 0
+        assert os.system('python setup.py install --prefix=. --root=' + escapespace(installdir)) == 0
         os.chdir(pckgdir)
     except AssertionError:
         print "Error while compiling and installing PyX"
@@ -121,7 +136,7 @@ if dopyx and pyxdir:
 if dorxp and rxpdir:
     try:
         os.chdir(rxpdir + '/pyRXP')
-        assert os.system('python setup.py install --prefix=' + escapespace(thisdir)) == 0
+        assert os.system('python setup.py install --prefix=' + escapespace(installdir)) == 0
         os.chdir(pckgdir)
     except AssertionError:
         print "Error while compiling and installing pyRXP"
@@ -133,7 +148,7 @@ if dommpi and mmpidir:
         assert os.system('mpicc --version > /dev/null') == 0, "Need to have mpicc in your path!"
         
         os.chdir(mmpidir)
-        assert os.system('python setup.py install --prefix=' + escapespace(thisdir) + ' --with-numeric=' + escapespace(thisdir)) == 0 
+        assert os.system('python setup.py install --prefix=' + escapespace(installdir) + ' --with-numeric=' + escapespace(installdir)) == 0 
         os.chdir(pckgdir)
     except AssertionError:
         print "Error while compiling and installing MMPI"
@@ -144,9 +159,9 @@ os.chdir(thisdir)
 try:
     if dosynthlisa:
         assert os.system(('python setup.py install'+
-                          ' --with-numpy=' + escapespace(thisdir) +
-                          ' --with-swig=' + escapespace(thisdir) +
-                          '/bin/swig --prefix=' + escapespace(thisdir))) == 0
+                          ' --with-numpy=' + escapespace(installdir) +
+                          ' --with-swig=' + escapespace(installdir) +
+                          '/bin/swig --prefix=' + escapespace(installdir))) == 0
 
         print """Now (and before every synthLISA session) you should run the command
 
