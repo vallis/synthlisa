@@ -6,6 +6,8 @@ from distutils.dep_util import newer_group
 from distutils.dir_util import mkpath
 from distutils.util import get_platform
 from distutils.spawn import spawn
+from distutils.command import install_lib
+from distutils.file_util import copy_file
 
 import sys
 import os
@@ -200,6 +202,29 @@ synthlisapackage_dir = {'synthlisa' : 'lisasim'}
 
 contribs = []
 
+# Duncan's recipe to install static c libraries
+
+class qm_install_lib(install_lib.install_lib):
+    def run(self):
+        install_lib.install_lib.run(self)
+
+        if self.distribution.has_c_libraries():
+            build_clib = self.get_finalized_command('build_clib')
+            libs = build_clib.get_library_names()
+
+            clib_dir = build_clib.build_clib
+
+            for lib in libs:
+                clib = 'lib' + lib + '.a'
+            
+                src_file = os.path.join(clib_dir, clib)
+                dest_file = os.path.join(self.install_dir, clib)
+                    
+                copy_file(src_file, dest_file)
+                
+                if sys.platform[:6] == "darwin":
+                    spawn(['ranlib'] + [dest_file])
+
 for entry in glob.glob('contrib/*'):
     if os.path.isdir(entry):
         contrib_packagename = os.path.basename(entry)
@@ -278,6 +303,8 @@ for entry in glob.glob('contrib/*'):
 
 # do the actual setup
 
+library_source_files = filter(lambda s: '_wrap.cpp' not in s,source_files)
+
 setup(name = 'synthLISA',
       version = versiontag,
       description = 'Synthetic LISA Simulator',
@@ -297,6 +324,12 @@ setup(name = 'synthLISA',
                                         'data/lisa-xml.dtd',
                                         'data/lisa-xml.xsl',
                                         'data/lisa-xml.css'])],
+
+      cmdclass = {'install_lib' : qm_install_lib},
+
+      libraries = [('synthlisa',{'sources': library_source_files,
+                                 'depends': header_files,
+                                 'include_dirs': [numpy_hfiles]} )],
 
       ext_modules = [Extension('synthlisa/_lisaswig',
                                source_files,
