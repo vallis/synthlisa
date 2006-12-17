@@ -6,6 +6,8 @@
 
 #include "lisasim-tdi.h"
 
+#include <Python.h>
+
 #include <time.h>
 #include <stdio.h>
 
@@ -580,6 +582,12 @@ static void showtime(long maxi,long maxlength,time_t begtime) {
         fprintf(stderr,"\r%-80s",buffer);
         fflush(stderr);
     }
+    
+    if(PyErr_CheckSignals() != 0) {
+		ExceptionKeyboardInterrupt e;
+
+		throw e;
+    }
 }
 
 void fastgetobsc(double *buffer,long length,long samples,double stime,Signal **thesignals,int signals,double inittime) {
@@ -681,4 +689,60 @@ double SampledTDI::z(int send, int slink, int recv, int ret1, int ret2, int ret3
     lisa->retard(ret4); lisa->retard(ret3); lisa->retard(ret2); lisa->retard(ret1);
 
     return zobj[send][recv]->value(lisa->retardedtime());
+}
+
+double SampledTDIaccurate::y(int send, int slink, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t) {
+    lisa->newretardtime(t);
+
+    double dopplerfactor = 1.0;
+
+    if(ret7 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret7,t));
+        lisa->retard(ret7);
+    }
+
+    if(ret6 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret6,lisa->retardedtime()));
+        lisa->retard(ret6);
+    }
+
+    if(ret5 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret5,lisa->retardedtime()));
+        lisa->retard(ret5);
+    }
+
+    if(ret4 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret4,lisa->retardedtime()));
+        lisa->retard(ret4);
+    }
+
+    if(ret3 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret3,lisa->retardedtime()));
+        lisa->retard(ret3);
+    }
+
+    if(ret2 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret2,lisa->retardedtime()));
+        lisa->retard(ret2);
+    }
+
+    if(ret1 != 0) {
+        dopplerfactor *= (1 - lisa->dotarmlength(ret1,lisa->retardedtime()));
+        lisa->retard(ret1);
+    }
+
+    // lisa->retard(ret7); lisa->retard(ret6); lisa->retard(ret5);
+    // lisa->retard(ret4); lisa->retard(ret3); lisa->retard(ret2); lisa->retard(ret1);
+
+    // return dopplerfactor * yobj[send][recv]->value(t,-lisa->retardation());
+    return yobj[send][recv]->value(t,-lisa->retardation());
+}
+
+double SampledTDIaccurate::z(int send, int slink, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t) {
+    lisa->newretardtime(t);
+
+    lisa->retard(ret8); lisa->retard(ret7); lisa->retard(ret6); lisa->retard(ret5);
+    lisa->retard(ret4); lisa->retard(ret3); lisa->retard(ret2); lisa->retard(ret1);
+
+    return zobj[send][recv]->value(t,-lisa->retardation());
 }
