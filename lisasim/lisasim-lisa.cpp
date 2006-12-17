@@ -476,7 +476,7 @@ void EccentricInclined::settime(int craft, double t) {
 		beta = 0.0; // should never get here, having the assertCraft above
 		break;
     }
-	    
+		    
     cachep[craft][0] =   0.5 * Rgc * ecc * ( cos(2.0*alpha-beta) - 3.0*cos(beta) )
                        + 0.125 * Rgc * sqecc * ( 3.0*cos(3.0*alpha-2.0*beta) - 5.0*( 2.0*cos(alpha)+cos(alpha-2.0*beta) ) )
                        + Rgc * cos(alpha);
