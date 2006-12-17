@@ -506,6 +506,8 @@ def noiseproduct(signal1,signal2,noise,stime,npatches):
 import os
 import os.path
 
+datadir = os.path.join(os.path.dirname(__file__),'data')
+
 def stdLISApositions():
     """Returns four Numeric arrays corresponding to times [in seconds] along
 ten years and to the corresponding positions [the three SSB coordinates
@@ -515,7 +517,7 @@ on 2005-07-23 (from Excel spreadsheet states_baseline2.xls). The times
 are spaced by 1 day (86400 seconds), and they begin from zero instead of
 Ted's Julian date 2457023.5."""
 
-    pos = readarray(os.path.join(os.environ['SYNTHLISABASE'],'share/synthlisa','positions.txt'))
+    pos = readarray(os.path.join(datadir,'positions.txt'))
 
     t = pos[:,0].copy()
 
@@ -536,8 +538,6 @@ Ted's Julian date 2457023.5."""
 
     return t,p1,p2,p3
 
-
-import lisaswig
 
 def stdSampledLISA(interp=1):
     """Returns an interpolated and cached SampledLISA object based on the position
