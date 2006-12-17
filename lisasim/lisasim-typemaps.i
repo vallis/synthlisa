@@ -235,6 +235,9 @@
       PyObject *o = PySequence_GetItem($input,i);
       
       SWIG_ConvertPtr(o, (void **)&temp[i], $descriptor(Noise *), SWIG_POINTER_EXCEPTION);
+
+      // hack! apparently the ConvertPtr above adds a Python ref. But why?
+      Py_DECREF(o);
   }
 
   // return pointer the the array
