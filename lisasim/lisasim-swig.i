@@ -543,6 +543,8 @@ def getInterpolator(interplen=1):
         ret = LinearInterpolator()
     elif interplen > 1:
         ret = LagrangeInterpolator(interplen)
+    elif interplen < -1:
+        ret = DotLagrangeInterpolator(-interplen)
     else:
         raise NotImplementedError, "getInterpolator: undefined interpolator length %s (lisasim-swig.i)." % interplen
 
@@ -1069,6 +1071,8 @@ class TDIobjectpnt  : public TDIobject {
 %nodefault timeobject;
 class timeobject : public Signal {};
 
+exceptionhandle(fastgetobsc,ExceptionKeyboardInterrupt,PyExc_KeyboardInterrupt)
+
 extern void fastgetobs(double *numarray,long length,long samples,double stime,Signal **thesignals,int signals,double inittime);
 extern void fastgetobsc(double *numarray,long length,long samples,double stime,Signal **thesignals,int signals,double inittime);
 
@@ -1227,6 +1231,12 @@ class SampledTDI : public TDI {
  public:
     SampledTDI(LISA *lisa,Noise *yijk[6],Noise *zijk[6]);
     ~SampledTDI();
+};
+
+class SampledTDIaccurate : public SampledTDI {
+ public:
+    SampledTDIaccurate(LISA *lisa,Noise *yijk[6],Noise *zijk[6]);
+    ~SampledTDIaccurate();
 };
 
 /* We're holding on to the constructor args so that the LISA object
