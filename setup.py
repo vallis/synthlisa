@@ -20,6 +20,7 @@ synthlisa_prefix = ''
 numpy_prefix = ''
 swig_bin = 'swig'
 gsl_prefix = ''
+make_clib = False
 
 # At the moment, this setup script does not deal with --home.
 # I should also modify the --help text to discuss these options
@@ -36,6 +37,8 @@ for arg in sys.argv:
         gsl_prefix = arg.split('=', 1)[1]
     elif arg.startswith('--with-swig='):
         swig_bin = arg.split('=', 1)[1]
+    elif arg == '--make-clib':
+        make_clib = True
     else:
         argv_replace.append(arg)
 
@@ -149,18 +152,14 @@ then
 else
     PYTHONPATH="%s:$PYTHONPATH"; export PYTHONPATH
 fi
-
-SYNTHLISABASE="%s"; export SYNTHLISABASE
-""" % (pythonpath, pythonpath, installpath)
+""" % (pythonpath, pythonpath)
 
 print >> setdir_csh, """if !($?PYTHONPATH) then
     setenv PYTHONPATH %s
 else
     setenv PYTHONPATH %s:$PYTHONPATH
 endif
-
-setenv SYNTHLISABASE %s
-""" % (pythonpath, pythonpath, installpath)
+""" % (pythonpath, pythonpath)
 
 print >> recompile_sh, """#!/bin/sh
 pushd %s
@@ -185,8 +184,12 @@ setdir_sh.close()
 if numpy_prefix:
 	numpy_hfiles = get_python_lib(prefix=numpy_prefix) + '/numpy/core/include'
 else:
-	numpy_hfiles = get_python_lib() + '/numpy/core/include'
-	
+    try:
+        import numpy
+        numpy_hfiles = numpy.__path__[0] + '/core/include'
+    except ImportError:
+	    numpy_hfiles = get_python_lib() + '/numpy/core/include'
+
 if pythonpath:
     setdir_scripts = [scripttempdir + '/synthlisa-setdir.sh',
                       scripttempdir + '/synthlisa-setdir.csh',
@@ -301,10 +304,25 @@ for entry in glob.glob('contrib/*'):
             synthlisapackages.append(contrib_packagename)
             synthlisapackage_dir[contrib_packagename] = entry
 
+# if we're asked to make a static .a library, set that up, and remove the old already-built library
+# which causes trouble to OS X's Universal Python...
+
+if make_clib == True:
+    clibrary = [('synthlisa',{'sources': filter(lambda s: '_wrap.cpp' not in s,source_files),
+                              'depends': header_files,
+                              'include_dirs': [numpy_hfiles, get_python_inc()]} )]
+
+    # this hack needed on OS X for universal binaries since ar fails if the .a is already present...
+
+    try:
+        os.remove('build/temp.' + get_platform() + '-%s.%s' % sys.version_info[0:2] + '/libsynthlisa.a')
+    except:
+        pass
+else:
+    clibrary = []
+
 # do the actual setup
-
-library_source_files = filter(lambda s: '_wrap.cpp' not in s,source_files)
-
+                            
 setup(name = 'synthLISA',
       version = versiontag,
       description = 'Synthetic LISA Simulator',
@@ -320,16 +338,15 @@ setup(name = 'synthLISA',
 
       scripts = setdir_scripts,
 
-      data_files = [('share/synthlisa',['data/positions.txt',
-                                        'data/lisa-xml.dtd',
-                                        'data/lisa-xml.xsl',
-                                        'data/lisa-xml.css'])],
+      # TO DO these data files should be installed within the pythonx.x/site-packages/synthlisa directory
+      package_data = {'synthlisa': ['data/positions.txt',
+                                    'data/lisa-xml.dtd',
+                                    'data/lisa-xml.xsl',
+                                    'data/lisa-xml.css'] },
 
       cmdclass = {'install_lib' : qm_install_lib},
 
-      libraries = [('synthlisa',{'sources': library_source_files,
-                                 'depends': header_files,
-                                 'include_dirs': [numpy_hfiles]} )],
+      libraries = clibrary,
 
       ext_modules = [Extension('synthlisa/_lisaswig',
                                source_files,
