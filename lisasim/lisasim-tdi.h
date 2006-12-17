@@ -189,7 +189,7 @@ class TDIquantize : public TDI {
 };
 
 class SampledTDI : public TDI {
- private:
+ protected:
     LISA *lisa;
 
     Signal *yobj[4][4], *zobj[4][4];
@@ -202,6 +202,17 @@ class SampledTDI : public TDI {
 
     double y(int send, int link, int recv, int ret1, int ret2, int ret3, double t);
     double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, double t);
+
+    virtual double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t);
+    virtual double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
+};
+
+class SampledTDIaccurate : public SampledTDI {
+ public:
+    SampledTDIaccurate(LISA *lisa,Noise *yijk[6],Noise *zijk[6]) : SampledTDI(lisa,yijk,zijk) {};
+    ~SampledTDIaccurate() {};
+
+    void reset(unsigned long seed = 0);
 
     double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t);
     double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t);
