@@ -241,6 +241,18 @@ installation process can be found at
 
 http://www.python.org/doc/current/inst/inst.html
 
+If numpy gives you problems related to the BLAS and LAPACK matrix
+libraries, it may be that the versions of these libraries on your system
+are not compatible with the use that numpy makes of them. While numpy
+will use these libraries (for speed) if it finds them, it does not really need them. To compile numpy without the system BLAS and LAPACK, set the environment variables ATLAS, BLAS, and LAPACK to None before the python setup.py install step. In bash,
+
+> export ATLAS=None; export BLAS=None; export LAPACK=None
+
+and in tcsh,
+
+> setenv ATLAS None; setenv BLAS None; setenv LAPACK None
+
+
 --------------------------------------------------------------------
 4b.Installing SWIG (required to modify and recompile Synthetic LISA)
 --------------------------------------------------------------------
@@ -353,24 +365,37 @@ of the following:
   the Python path to include numpy needs to be set before running
   matplotlib's setup.py, probably using bin/synthlisa-setdir.[csh|sh];
 
-- it seems that OS X 10.4 already has two of the required libraries for
-  matplotlib (freetype and zlib); these are included with the X server, or
-  at least with the X development kit. However, it's necessary to tell
-  matplotlib (by setting setupext.py's basedir for the right platform)
-  where to find them ('/usr/X11R6');
+- matplotlib needs freetype, zlib, and libpng. If these libraries are
+  not already installed on the system, they must be downloaded from
 
-- on the contrary, libpng must be downloaded
-  (http://libpng.sourceforge.net), built, and put in a directory
-  reachable by setupext.py (changing it if necessary);
+  http://freetype.sourceforge.net
+  http://www.zlib.net
+  http://libpng.sourceforge.net
 
-- the best way to run matplotlib-calling code is from ipython -pylab;
+  and installed. Further, you need to make sure that matplotlib can
+  reach them by adding the installation basepath to the variable
+  basedir (for the right platform) in matplotlib's setup.py file.
+  For instance, if the packages were installed in /opt/lib
+  on linux, the 'linux' line in the basedir definition must be
+  changed to
+  
+  'linux'  : ['/usr/local', '/usr', '/opt'],
 
-- on OS X, there are some problems with system fonts, resulting in
-  broken EPS output; the workaround is to put the matplotlib-provided
-  fonts first in the 'font.sans-serif', 'font.serif', 'font.monospace'
-  fields in matplotlibrc (copy it from the matplotlib distribution
-  directory into ~/.matplotlib); at runtime, you can still do something
-  like
+- it seems that OS X 10.4 already has freetype and zlib, which are included
+  with the X server, or at least with the X development kit. However, it's
+  necessary to tell matplotlib that they can be found in the base directory
+  '/usr/X11R6'; on the contrary, libpng must be downloaded and installed;
+
+- the best way to run matplotlib-calling code is from ipython -pylab; see
+
+  http://ipython.scipy.org/moin/
+
+- [NOTE: this is fixed in matplotlib 0.87.6] on OS X, there are some
+  problems with system fonts, resulting in broken EPS output; the
+  workaround is to put the matplotlib-provided "Vera" fonts first in the
+  'font.sans-serif', 'font.serif', 'font.monospace' fields in matplotlibrc
+  (copy it from the matplotlib distribution directory into ~/.matplotlib);
+  at runtime, you can still do something like
 
   rcParams['font.sans-serif'] = ['Bitstream Vera Sans']
   rcParams['font.serif'] = ['Bitstream Vera Serif']
