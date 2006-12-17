@@ -614,6 +614,8 @@ Interpolator *getInterpolator(int interplen) {
 		return new LinearInterpolator();
 	else if (interplen > 0)
 		return new LagrangeInterpolator(interplen);
+	else if (interplen < -1)
+	    return getDerivativeInterpolator(-interplen);
 	else {
 		std::cerr << "getInterpolator(...): undefined interpolator length "
 		          << interplen << " [" << __FILE__ << ":" << __LINE__ << "]." << std::endl;
@@ -671,16 +673,20 @@ double InterpolatedSignal::value(double time) {
 // there may be a more efficient way to do this
 
 double InterpolatedSignal::value(double timebase,double timecorr) {
+	if (normalize == 0.0) return 0.0;
+
 	try {
 		double irealb, iintb, ifracb;
 		double irealc, iintc, ifracc;
 		double ifrac;
 
-		irealb = (timebase + prebuffertime) / samplingtime;
+		// irealb = (timebase + prebuffertime) / samplingtime;
+		irealb = timebase / samplingtime;
 		iintb  = floor(irealb);
 		ifracb = irealb - iintb;
 
-		irealc = timecorr / samplingtime;
+		// irealc = timecorr / samplingtime;
+		irealc = (timecorr + prebuffertime) / samplingtime;
 		iintc  = floor(irealc);
 		ifracc = irealc - iintc;
 
