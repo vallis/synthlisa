@@ -2,4 +2,4 @@
 
 # $Id$
 
-python setup.py sdist --with-swig=`pwd`/bin/swig --with-numeric=`pwd`
+python setup.py sdist --with-swig=`pwd`/bin/swig --with-numpy=`pwd`
