@@ -15,5 +15,6 @@ class ExceptionOutOfBounds : SynthLISAException {};
 class ExceptionUndefined : SynthLISAException {};
 class ExceptionWrongArguments : SynthLISAException {};
 class ExceptionFileError : SynthLISAException {};
+class ExceptionKeyboardInterrupt : SynthLISAException {};
 
 #endif /* _LISASIM_EXCEPT_H_ */
