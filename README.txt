@@ -552,18 +552,24 @@ which needs to be upgraded to work with Synthetic LISA.)
 4c. Compilation notes for Windows (cygwin)
 ------------------------------------------
 
-Note: synthLISA 1.3.2 is currently untested under Cygwin. I
-hope to resolve this situation in the future. If you do try
-this out, the following discussion may or may not apply to
-your experience. Let me know!
+The following notes apply to the installation under cygwin of lisatools,
+which includes synthlisa. The patches mentioned below are already included
+in the lisatools distribution.
 
-Synthetic LISA is known to work correctly with Cygwin 1.5.16-1, under
-Windows ME (but I don't see why other flavors of Windows should have
-more problems.) You will need a reasonably complete installation of
-Cygwin, including certain standard utilities (tar, sharutils,
-binutils, autoconf), the GCC compilers, Python, and SWIG (you should
-use the version obtained through the Cygwin setup.exe rather than
-trying to compile your own).
+Cygwin platform: on Windows XP, using Cygwin 1.5.24-2, I installed its
+Python (2.4.3-1), its Subversion (1.4.2-1), openssh (4.5p1-1), SWIG
+(1.3.29-2), its gcc (3.4.4-3, but probably not needed since mingw is
+standard), patchutils (0.2.31-1) and make (3.81-1).
+
+To compile numpy, it is necessary to disable
+numarray, by commenting the line
+
+# config.add_subpackage('numarray')
+
+It is also necessary to patch lisaXML/io-C/ezxml.c (which is also
+replicated inside the LISA Simulator):
+
+#define EZXML_NOMMAP 
 
 I wouldn't hope to get a stellar performance from your processor under
 Windows/Cygwin. But it works...
@@ -576,10 +582,6 @@ http://c2.com/cgi/wiki?BetterCygwinTerminal
 
 Under rxvt, it's even possible to run Cygwin's emacs (but first do "export
 TERM=rxvt").
-
-Good luck, and if you are more of a Windows wizard than I am, perhaps
-you can give me some suggestions, or even compile Synthetic LISA under
-ActiveState Python and some other compiler than GCC...
 
 =======================
 6. Running the examples
