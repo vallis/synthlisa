@@ -14,7 +14,7 @@ import os
 import glob
 import re
 
-versiontag = '1.3.2'
+versiontag = '1.3.4'
 
 synthlisa_prefix = ''
 numpy_prefix = ''
