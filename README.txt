@@ -1,5 +1,5 @@
 ====================================
-Synthetic LISA, v. 1.3.2, 2006-08-28
+Synthetic LISA, v. 1.3.3, 2007-04-09
 ====================================
 
 by M. Vallisneri and J. W. Armstrong
@@ -40,6 +40,28 @@ In this file:
 ====================
 -1. Changes, changes
 ====================
+
+1.3.4 (2007-04-09)
+------------------
+
+- The example scripts mentioned in the Manual reappear with this version,
+  updated for numpy and for some changes to the API: mainly, PowerLawNoise
+  has replaced InterpolateNoise, Noise objects are directly callable as
+  noiseobject(t) and not noiseobject.noise(t), TDI.X, Y, and Z are now
+  Xm, Ym, and Zm (and same for alpha, beta, gamma, zeta). The new directory
+  examples/manual-examples includes also the gnuplot scripts used to
+  produce the figures in Manual.pdf. By contrast, the manual has not
+  been updated with the new APIs.
+
+1.3.3 (2006-12-17)
+------------------
+
+- This is the canonical MLDC Challenge 2 release. It includes some minor
+  bug fixes (the refcount for Noise sequences), some minor functionality
+  (SampledTDIaccurate, CTRL-C handling for getobs and getobsc), some
+  installation functionality (positions.txt is in a site-packages--relative
+  location, numpy is found more reliably, a standalone C library can be
+  built with --make-clib).
 
 1.3.2 (2006-08-28)
 ------------------
