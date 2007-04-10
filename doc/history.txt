@@ -1,70 +1,50 @@
-TO DO:
+2007/04/09  Release 1.3.4, small improvements
 
-- Ideas for the extension of lisaXML to tables of parameters
-	- It should not be too hard to read them in
-	- The same for XSL transformation to make a table of them
-	- Read the columns first, make table headings
-		- Parse parameter name + unit, separate with <br>
-	- But it will be necessary to extend the width of the divs
-	  to the maximum width of the page, or to give them scroll
-	  bars; the first option is probably less bad
+Updated and reinstated example files mentioned in manual.pdf. They are now
+in examples/manual-examples, together with their gnuplot scripts.
 
-- Ideas for the parsing of MLDC source parameters
-	- Make them into class attributes with their standard name
-	- Let them have Units, and have the assignment handle
-	  that intelligently
-		- src.Frequency = 2 (set Unit to DefaultUnit)
-		- src.Frequency = (2, 'Hertz') (set Unit to 'Hertz')
-	- SourceType too... make them check for parameter names
-	  automatically based on this
-	- Much better than parameter lists
-	- The XML parsing for synthlisa could also use this
-	  mechanism, and this is how source parameters should
-	  be returned when sources are read into synthlisa
-	- But this requires inheriting from a SWIG class to make
-	  a Python more intelligent source class? 
-	- Could also do arithmetic of Units (or at least standard
-	  conversions, but there may be a library to do that)
-	- Would it be possible to make all the source generation
-	  and parsing independent from synthlisa (but still in 
-	  Python)?
-		- yes, but pyRXP is troublesome in that respect;
-		  better to use some XML parsing from the standard
-		  library
-	- Any way to backport this into C?
-	- Cool...
+2006/12/17  Release 1.3.3, MLDC Challenge 2 version
 
-- Code management and documentation
-	- Migrate from CVS to SVN
-	- Work on docstrings documentation first... then C++
-	- Start a Trac server
+Removed lisasim/GSL/rng_test.c from archive and distribution (just a test
+program).
 
-- Build system
-	- Add system-wide installation to default-install.py
-	- Check on optimization options for SWIG extensions
-	- Adaptive importing for plugins... (import line for MLDC?)
-	- Check SCons again?
+Fixed Python refcount for Noise sequence in lisasim/lisasim-typemaps.i.
 
-- Code organization
-	- Separate more extensive Python wrappers from lisasim-swig.i
-	- Reformat XML-parsing code
-	- Simplify and remove obsolete functionality
-	- Complete movement toward handling garbage collection on the Python 
-	  side
+Added derivative interpolator to getInterpolator in lisasim/lisasim-signal.cpp and
+lisasim/lisasim-swig.i; tweaked accurate version of InterpolatedSignal calls in
+lisasim/lisasim-signal.cpp.
 
-- Code fixes and checks
-	- More unit tests (phase in with module updates)
-	- Check/remove buffer/timeoffset duality
-	- Check/extend exception throwing everywhere
+Added CTRL-C exception handling to fastgetobsc in lisasim/lisasim-swig.i and
+lisasim/lisasim-tdi.cpp (and also lisasim/lisasim-except.h).
 
-- New functionality
-	- Distribute physical orbits as an XML file
-	- Bundle xsl with xml output (simple!)
-	- scipy.numexpr (in sandbox) for lisarigid?
-	- look for data files relative to the synthlisa distribution
-	  (place them there?), perhaps numpy.distutils has clue
+Added SampledTDIaccurate in lisasim/lisasim-tdi.[cpp|h] and lisasim/lisasim-swig.i.
 
-2006/08/17  Release 1.3.2, numpy version
+Look for positions.txt in site-packages-relative location in lisasim/lisautils.py.
+
+Added C-library building (--make-clib) and better handling of numpy location to
+setup.py.
+
+2006/11/04  Release 1.3.2, numpy version
+
+In setup.py, added build and install of static C library (thanks to Duncan
+Brown); currently the final location is within lib/python2.4/site-packages,
+and it may be nice to bring it up to lib.
+
+In default-install.py, added capability to specify --prefix. In setup.py, added
+synthlisa-recompile.sh script.
+
+For CacheLISA, fixed caching mechanism; added putp caching; moved most of code
+to cpp file (lisasim-retard.cpp). In lisasim-lisa.(cpp|h), added hook (putp(LISA
+*anotherlisa,Vector &p, int craft, double t)) for CacheLISA caching of putp
+while allowing physlisa mechanism. In lisasim-tdisignal.cpp, optimized calls to
+armlength (through retard), putn, and putp. Harmonized with CacheLISA
+optimization. Some LISA-intensive tests report 20% improvement in speed. With
+CacheLISA, armlength and putp are called the minimum number of times necessary.
+
+Added TDIobject destructors (they do nothing) to lisasim-tdi.h, and defs to call
+them in lisasim-swig.i.
+
+Improved detrending in lisautils.py with quick least-squares routine.
 
 Added Phi method in lisasim-tdisignal.(cpp|h), for debugging. Might go away at
 some point.
