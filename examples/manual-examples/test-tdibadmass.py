@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # test of first-generation TDI X noise with the baseline configuration,
 # and with a bad proof-mass noise
@@ -15,8 +15,7 @@
 # import all the libraries that are needed
 
 from synthlisa import *
-from Numeric import *
-
+import numpy
 
 # we create a LISA geometry object corresponding to a stationary LISA
 # with equal armlengths
@@ -36,12 +35,9 @@ originalnoise = TDInoise(originallisa,
 # here pm_1 (unstarred) is a hundred times worse, in power
 
 badnoise = TDInoise(originallisa,
-                    [stime,stime,stime,stime,stime,stime],
-                    [2.5e-46,2.5e-48,2.5e-48,2.5e-48,2.5e-48,2.5e-48],
-                    [stime,stime,stime,stime,stime,stime],
-                    [1.8e-37,1.8e-37,1.8e-37,1.8e-37,1.8e-37,1.8e-37],
-                    [stime,stime,stime,stime,stime,stime],
-                    [1.1e-26,1.1e-26,1.1e-26,1.1e-26,1.1e-26,1.1e-26])
+                    [PowerLawNoise(stime,256.0,2.5e-46,-2.0,1)] + [PowerLawNoise(stime,256.0,2.5e-48,-2.0,1) for i in range(5)],
+                    [PowerLawNoise(stime,256.0,1.8e-37,2.0,1) for i in range(6)],
+                    [PowerLawNoise(stime,256.0,1.1e-26,0.0,1) for i in range(6)])
 
 # get the time series; since they're from different TDInoise objects,
 # there's no point in doing them together
@@ -50,20 +46,20 @@ samples = 2**19  # 2**18 takes 22 s on a 1.25GHz G4
 
 patches = 1024
 
-noisegood = getobs(samples,stime,originalnoise.X)
+noisegood = getobsc(samples,stime,originalnoise.Xm)
 
-[noisebad,noisebad2,noisebad3] = transpose(getobs(samples,stime,[badnoise.X,badnoise.Y,badnoise.Z]))
+[noisebad,noisebad2,noisebad3] = numpy.transpose(getobsc(samples,stime,[badnoise.Xm,badnoise.Ym,badnoise.Zm]))
 
 # compute spectra, and write to disk
 
 myspecgood = spect(noisegood,stime,patches)
 writearray('data/tdibadmass-good.txt',myspecgood[1:])
 
-myspecbad =  spect(noisebad,stime,patches)
+myspecbad  = spect(noisebad,stime,patches)
 writearray('data/tdibadmass-bad.txt', myspecbad[1:])
 
-myspecbad2 =  spect(noisebad2,stime,patches)
-writearray('data/tdibadmass-bad2.txt', myspecbad2[1:])
+myspecbad2 = spect(noisebad2,stime,patches)
+writearray('data/tdibadmass-bad2.txt',myspecbad2[1:])
 
-myspecbad3 =  spect(noisebad3,stime,patches)
-writearray('data/tdibadmass-bad3.txt', myspecbad3[1:])
+myspecbad3 = spect(noisebad3,stime,patches)
+writearray('data/tdibadmass-bad3.txt',myspecbad3[1:])

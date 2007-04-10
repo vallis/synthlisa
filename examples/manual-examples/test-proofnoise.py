@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # test of the standard LISA proof-mass noise
 
@@ -13,8 +13,6 @@
 # import all the libraries that are needed
 
 from synthlisa import *
-from Numeric import *
-
 
 # here we create a proof-mass noise object with
 # - noise-generation sampling time 1.0 s
@@ -23,7 +21,7 @@ from Numeric import *
 # - noise spectral density exponent -2.0
 # - linear interpolation (1)
 
-proofnoise = InterpolateNoise(1.0,256.0,2.5e-48,-2.0,1)
+proofnoise = PowerLawNoise(1.0,256.0,2.5e-48,-2.0,interplen=1)
 
 # get "samples" values of the noise, at times separated by "sstep"
 
@@ -32,7 +30,7 @@ sstep = 0.1
 
 patches = 64
 
-noises = getobs(samples,sstep,proofnoise.noise)
+noises = getobsc(samples,sstep,proofnoise)
 
 # "getobs" is really a short hand for creating an empty Numeric array,
 # and then running through a standard Python cycle to call

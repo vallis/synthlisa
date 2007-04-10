@@ -20,6 +20,6 @@ replot "data/tdibadmass-bad2.txt"  using 1:2 title 'Y, bad proof mass 1' with li
 replot "data/tdibadmass-bad3.txt"  using 1:2 title 'Z, bad proof mass 1' with lines;
 
 set size 0.8,0.8; set ylabel 2,0;
-set terminal postscript eps enhanced color "Times" 18 "Times" 18;
+set terminal postscript eps enhanced color "Times" 18;
 set output "eps/test-tdibadmass.eps";
 replot;

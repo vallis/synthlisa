@@ -24,6 +24,6 @@ replot "data/tdiunequal-U-freq.txt"     using 1:2 title 'U'  with lines;
 # replot "data/tdiunequal-y231-freq.txt"  using 1:2 title 'y_321' with lines;
 
 set size 0.8,0.8; set ylabel 2,0;
-set terminal postscript eps enhanced color "Times" 18 "Times" 18;
+set terminal postscript eps enhanced color "Times" 18;
 set output "eps/test-tdiunequal.eps";
 replot;

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # test of the standard LISA laser frequency noise
 
@@ -12,8 +12,6 @@
 # import all the libraries that are needed
 
 from synthlisa import *
-from Numeric import *
-
 
 # here we create a proof-mass noise object with
 # - noise-generation sampling time 1.0 s
@@ -22,7 +20,7 @@ from Numeric import *
 # - noise spectral density exponent 0.0
 # - linear interpolation (1)
 
-lasernoise = InterpolateNoise(1.0,256.0,1.1e-26,0.0,1)
+lasernoise = PowerLawNoise(1.0,256.0,1.1e-26,0.0,interplen=1)
 
 # get "samples" values of the noise, at times separated by "sstep"
 
@@ -31,7 +29,7 @@ sstep = 0.1
 
 patches = 64
 
-noises = getobs(samples,sstep,lasernoise.noise)
+noises = getobsc(samples,sstep,lasernoise)
 
 # the result is a 1D Numeric array, that we feed to "spect" to get a
 # triangle-windowed, averaged spectrum, using "patches" averaging

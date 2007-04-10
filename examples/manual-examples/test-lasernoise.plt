@@ -19,6 +19,6 @@ plot 1.1e-26 title 'Nominal laser frequency noise';
 replot "data/lasernoise-freq.txt" every 4 using 1:2 title 'Pseudorandom laser frequency noise' with lines;
 
 set size 0.8,0.8; set ylabel 2,0;
-set terminal postscript eps enhanced color "Times" 18 "Times" 18;
+set terminal postscript eps enhanced color "Times" 18;
 set output "eps/test-lasernoise.eps";
 replot;

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # test of first-generation TDI X noise against the theoretical expression
 
@@ -14,14 +14,12 @@
 # import all the libraries that are needed
 
 from synthlisa import *
-from Numeric import *
-
 
 # we create a LISA geometry object corresponding to a stationary LISA
 # with equal armlengths
 
 L = 16.6782
-originallisa = OriginalLISA(L,L,L)
+originallisa = OriginalLISA(L)
 
 # we create a TDInoise object based on the LISA geometry object, and
 # on 18 (6+6+6) pseudorandom noise objects with standard parameters
@@ -43,7 +41,7 @@ stime = 1
 
 patches = 256
 
-noiseX = getobs(samples,stime,originalTDI.X)
+noiseX = getobsc(samples,stime,originalTDI.Xm)
 
 # the result is a 1D Numeric array, that we feed to "spect" to get a
 # triangle-windowed, averaged spectrum, using "patches" averaging
@@ -67,7 +65,7 @@ from math import pi
 fmin = myspecX[1,0]
 fmax = myspecX[-1,0]
 
-f = arange(fmin,fmax,(fmax-fmin)/999,typecode='d')
+f = numpy.arange(fmin,fmax,(fmax-fmin)/999,'d')
 
 # theoretical expression from Estabrook, Tinto, and Armstrong,
 # Phys. Rev. D 62, 042002 (2000); just math follows
@@ -75,8 +73,8 @@ f = arange(fmin,fmax,(fmax-fmin)/999,typecode='d')
 Syproof = 2.5e-48 * f**-2
 Syopt = 1.8e-37 * f**2
 
-theoryX = ( 8*sin(4*pi*f*L)**2 + 32*sin(2*pi*f*L)**2 ) * Syproof + 16*sin(2*pi*f*L)**2 * Syopt
+theoryX = ( 8*numpy.sin(4*pi*f*L)**2 + 32*numpy.sin(2*pi*f*L)**2 ) * Syproof + 16*numpy.sin(2*pi*f*L)**2 * Syopt
 
 # we want to write a 2-column file
 
-writearray('data/tdiequal-X-theory.txt',transpose([f, theoryX]))
+writearray('data/tdiequal-X-theory.txt',numpy.transpose([f, theoryX]))
