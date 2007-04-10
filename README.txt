@@ -408,6 +408,12 @@ of the following:
   libpng require text.dvipnghack in matplotlibrc to be set to True to
   avoid jagging in the Tk display (but the postscript is fine, anyway).
 
+- update: the most reliable way to install matplotlib is from the
+  Python "egg" available from http://matplotlib.sourceforge.net. See
+  http://peak.telecommunity.com/DevCenter/EasyInstall for a discussion 
+  of easy_install and Python eggs. Presumably the dependencies given above
+  are linked statically, but I'm not sure. 
+
 ----------------------------
 4f.Installing Synthetic LISA
 ----------------------------
