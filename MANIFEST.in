@@ -17,6 +17,10 @@ include examples/test-lisapar.py
 include examples/test-tdiequal.py
 include examples/test-tdiunequal.py
 include examples/test-interpolation.py
+include examples/manual-examples/data
+include examples/manual-examples/eps
+include examples/manual-examples/test-*.py
+include examples/manual-examples/test-*.plt  
 include lisasim/*.cpp
 include lisasim/*.h
 include lisasim/*.i
