@@ -178,6 +178,7 @@ Of these, numpy is needed for synthLISA to deal with arrays in
 Python; pyRXP is needed for XML input; SWIG is needed if you want to
 modify the Synthetic LISA code, to regenerate Python wrappers; and PyX
 is a stand-alone plotting package used for some of the example scripts.
+Note however that PyX requires a working TeX installation.
 
 If you need the GNU tools, Python, or Gnuplot, please see
 
