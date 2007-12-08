@@ -323,6 +323,20 @@ double DiffFilter::getvalue(SignalSource &x,SignalSource &y,long pos) {
 }
 
 
+BandIntFilter::BandIntFilter(double deltat,double flow,double fhi) {
+    double r0 = M_PI * flow * deltat;
+    double r1 = M_PI * fhi  * deltat;
+
+    alpha0 =  (1.0 + r1) / (1.0 + r0);
+    alpha1 = -(1.0 - r1) / (1.0 + r0);
+    beta1  =  (1.0 - r0) / (1.0 + r0);
+}
+
+double BandIntFilter::getvalue(SignalSource &x,SignalSource &y,long pos) {
+	return alpha0 * x[pos] + alpha1 * x[pos - 1] + beta1 * y[pos - 1];
+}
+
+
 /* Note that FIR makes a copy of the coefficient array. Normally filters
    are defined so that a[0] = 1 */
 
@@ -684,6 +698,8 @@ double InterpolatedSignal::value(double timebase,double timecorr) {
 		irealb = timebase / samplingtime;
 		iintb  = floor(irealb);
 		ifracb = irealb - iintb;
+
+        // TO DO: should prebuffertime be added here?
 
 		// irealc = timecorr / samplingtime;
 		irealc = (timecorr + prebuffertime) / samplingtime;

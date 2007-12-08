@@ -170,6 +170,17 @@ class DiffFilter : public Filter {
 };
 
 
+class BandIntFilter : public Filter {
+ private:
+    double alpha0, alpha1, beta1;
+    
+ public:
+    BandIntFilter(double deltat,double flow,double fhi);
+
+    double getvalue(SignalSource &x,SignalSource &y,long pos);
+};
+
+
 class FIRFilter : public Filter {
  private:
  	double *a;
