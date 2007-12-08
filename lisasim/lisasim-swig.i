@@ -433,6 +433,11 @@ class DiffFilter : public Filter {
     DiffFilter();
 };
 
+class BandIntFilter : public Filter {
+ public:
+    BandIntFilter(double deltat,double flow,double fhi);
+};
+
 class FIRFilter: public Filter {
  public:
     FIRFilter(double *doublearray,int doublenum);
