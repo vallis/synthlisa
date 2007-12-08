@@ -9,15 +9,15 @@ from lisaxml import *
 from lisarigid import *
 from version import *
 
-try:
-   from lisawp import *
-except ImportError:
-    pass
+# try:
+#    from lisawp import *
+# except ImportError:
+#     pass
     
-try:
-   from lisawp_emri import *
-except ImportError:
-    pass
+# try:
+#    from lisawp_emri import *
+# except ImportError:
+#     pass
 
 try:
     from lisapar import *
