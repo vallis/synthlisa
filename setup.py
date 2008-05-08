@@ -321,8 +321,12 @@ if make_clib == True:
 else:
     clibrary = []
 
+# find all synthlisa include files for installation under lib/pythonx.x/site-packages/synthlisa
+
+installincludes = [re.sub('lisasim/','',hfile) for hfile in header_files]
+
 # do the actual setup
-                            
+
 setup(name = 'synthLISA',
       version = versiontag,
       description = 'Synthetic LISA Simulator',
@@ -342,7 +346,7 @@ setup(name = 'synthLISA',
       package_data = {'synthlisa': ['data/positions.txt',
                                     'data/lisa-xml.dtd',
                                     'data/lisa-xml.xsl',
-                                    'data/lisa-xml.css'] },
+                                    'data/lisa-xml.css'] + installincludes},
 
       cmdclass = {'install_lib' : qm_install_lib},
 
