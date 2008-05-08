@@ -198,6 +198,7 @@ initsave(CircularRotating)
 class CircularRotating : public LISA, public ApproxLISA {
   public:
     CircularRotating(double eta0=0.0, double xi0=0.0, double sw=0.0, double t0=0.0);
+    CircularRotating(double myL,double e0,double x0,double sw,double t0);
 };
 
 
