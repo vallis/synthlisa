@@ -20,7 +20,7 @@ synthlisa_prefix = ''
 numpy_prefix = ''
 swig_bin = 'swig'
 gsl_prefix = ''
-make_clib = False
+make_clib = True
 
 # At the moment, this setup script does not deal with --home.
 # I should also modify the --help text to discuss these options
@@ -37,8 +37,9 @@ for arg in sys.argv:
         gsl_prefix = arg.split('=', 1)[1]
     elif arg.startswith('--with-swig='):
         swig_bin = arg.split('=', 1)[1]
-    elif arg == '--make-clib':
-        make_clib = True
+    elif arg.startswith == '--make-clib':
+        if ('=' in arg) and (arg.split('=', 1)[1] in ('False','false','0')):
+            make_clib = False
     else:
         argv_replace.append(arg)
 
