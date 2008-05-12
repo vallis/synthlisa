@@ -20,7 +20,7 @@ synthlisa_prefix = ''
 numpy_prefix = ''
 swig_bin = 'swig'
 gsl_prefix = ''
-make_clib = True
+make_clib = False
 
 # At the moment, this setup script does not deal with --home.
 # I should also modify the --help text to discuss these options
@@ -38,8 +38,7 @@ for arg in sys.argv:
     elif arg.startswith('--with-swig='):
         swig_bin = arg.split('=', 1)[1]
     elif arg.startswith == '--make-clib':
-        if ('=' in arg) and (arg.split('=', 1)[1] in ('False','false','0')):
-            make_clib = False
+        make_clib = True
     else:
         argv_replace.append(arg)
 
@@ -211,7 +210,7 @@ contribs = []
 class qm_install_lib(install_lib.install_lib):
     def run(self):
         install_lib.install_lib.run(self)
-
+        
         if self.distribution.has_c_libraries():
             build_clib = self.get_finalized_command('build_clib')
             libs = build_clib.get_library_names()
@@ -266,7 +265,7 @@ for entry in glob.glob('contrib/*'):
 
             contrib_basefile = re.sub('\.i$','',contrib_swigfile)
             contrib_basename = os.path.basename(contrib_basefile)
-    
+            
             # assume SWIG file has the same name of the module
             if iscpp == 1:
                 contrib_wrapfile = contrib_basefile + '_wrap.cpp'
@@ -274,7 +273,7 @@ for entry in glob.glob('contrib/*'):
                 contrib_wrapfile = contrib_basefile + '_wrap.c'
                 
             contrib_pyfile = contrib_basefile + '.py'
-    
+            
             runswig(contrib_swigfile,contrib_wrapfile,contrib_pyfile,
                     contrib_header_files + [contrib_swigfile],iscpp)
     

@@ -1,4 +1,4 @@
-2007/04/09--05/08  Release 1.3.4a-f, small improvements
+2007/04/09--05/08  Release 1.3.4a-g, small improvements
 
 Updated and reinstated example files mentioned in manual.pdf. They are now
 in examples/manual-examples, together with their gnuplot scripts.
@@ -12,8 +12,7 @@ Changed bin/sdist-here.sh not to include pesky xattr files on OS X.
 
 Added python access to CircularRotating variable-L constructor
 
---make-clib is now the default behavior for setup.py; to disable it use
---make-clib=False
+Added and then reverted this change: --make-clib is now the default behavior for setup.py; to disable it use --make-clib=False. Distutils has problems with clibs (does not accept extra cflags, will link them by default to the Python extension) that make such a change unwise now.
 
 ========================================================================
 
