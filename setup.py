@@ -37,7 +37,7 @@ for arg in sys.argv:
         gsl_prefix = arg.split('=', 1)[1]
     elif arg.startswith('--with-swig='):
         swig_bin = arg.split('=', 1)[1]
-    elif arg.startswith == '--make-clib':
+    elif arg.startswith('--make-clib'):
         make_clib = True
     else:
         argv_replace.append(arg)
