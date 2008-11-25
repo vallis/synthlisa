@@ -98,11 +98,11 @@ unsigned long WhiteNoiseSource::getglobalseed() {
 
 void WhiteNoiseSource::seedrandgen(unsigned long seed) {
     if (seed == 0) {
-		gsl_rng_set(randgen,globalseed);
+		gsl_rng_set(randgen,getglobalseed());
 		
 		// should replace this simple seed enumeration
 		// with something a bit more sophisticated
-		globalseed++;
+		globalseed += 1;
     } else {
 		gsl_rng_set(randgen,seed);
     }
