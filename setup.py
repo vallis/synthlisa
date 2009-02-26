@@ -14,6 +14,14 @@ import os
 import glob
 import re
 
+def my_get_python_lib(prefixdir=None):
+    if prefixdir and sys.platform == 'darwin':
+        # this hack needed because of a bug in OS X Leopard's stock Python 2.5.1
+        return get_python_lib(standard_lib=True,prefix=prefixdir) + '/site-packages'
+    else:
+        return get_python_lib(prefix=prefixdir)
+
+
 versiontag = '1.3.4'
 
 synthlisa_prefix = ''
