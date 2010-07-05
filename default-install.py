@@ -70,9 +70,29 @@ if len(sys.argv) > 1:
         elif arg == 'mmpi' or arg == 'mpi' or arg == 'MMPI' or arg == 'MPI':
             dommpi = 1
 else:
-    # don't do MMPI by default
     donumpy,doswig,dorxp,dopyx,dosynthlisa,dommpi = 1,1,1,1,1,0
     donumeric = 0
+    
+    try:
+        import numpy
+        donumpy = 0
+    except:
+        donumpy = 1
+    
+    if os.system('which swig') == 0:
+        doswig = 0
+    else:
+        doswig = 1
+    
+    try:
+        import pyRXP
+        dorxp = 0
+    except:
+        dorxp = 1
+    
+    dosynthlisa = 1
+    
+    dopyx, dommpi, donumeric = 0,0,0
 
 thisdir = os.getcwd()
 if installdir == None:

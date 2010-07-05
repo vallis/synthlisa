@@ -1,6 +1,3 @@
-
-Added hack in setup.py to handle Leopard stock 2.5.1 Python handling of get_python_lib
-
 2007/04/09--05/08  Release 1.3.4a-g, small improvements
 
 Updated and reinstated example files mentioned in manual.pdf. They are now
@@ -16,6 +13,10 @@ Changed bin/sdist-here.sh not to include pesky xattr files on OS X.
 Added python access to CircularRotating variable-L constructor
 
 Added and then reverted this change: --make-clib is now the default behavior for setup.py; to disable it use --make-clib=False. Distutils has problems with clibs (does not accept extra cflags, will link them by default to the Python extension) that make such a change unwise now.
+
+Added hack in setup.py to handle Leopard stock 2.5.1 Python handling of get_python_lib
+
+Fixed bug in TDInoise constructor (with lists of user-specified noise objects), which was assigning the same laser noises twice.
 
 ========================================================================
 

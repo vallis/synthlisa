@@ -105,7 +105,7 @@ TDInoise::TDInoise(LISA *mylisa, Noise *proofnoise[6],Noise *shotnoise[6],Noise 
 
     for(int craft = 1; craft <= 3; craft++) {
         c[craft] = lasernoise[2*(craft-1)];
-        cs[craft] = lasernoise[2*(craft-1)];
+        cs[craft] = lasernoise[2*(craft-1)+1];
     }
 
     allocated = 0;
