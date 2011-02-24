@@ -722,7 +722,9 @@ following parameters:
   hc = amp * 2*cos(inc) *       sin(2*pi*f*t + phi0);
 
 - the wave is incoming from sky position (elat,elon), with
-  polarization pol."
+  polarization pol.
+ 
+This Wave object is deprecated in favor of GalacticBinary."
 
 initdoc(SimpleBinary)
 
@@ -731,6 +733,34 @@ initsave(SimpleBinary)
 class SimpleBinary : public Wave {
  public:
     SimpleBinary(double freq, double phi0, double inc, double amp, double elat, double elon, double pol);
+};
+
+
+%feature("docstring") GalacticBinary "
+GalacticBinary(f,fdot,elat,elon,amp,inc,pol,phi0) returns a Wave object that
+models the waveform emitted by a linearly chirping monochromatic binary
+with the following parameters (compatible with MLDC conventions):
+
+- the wave has frequency f [Hz] (so the binary has orbital frequency
+  f/2), frequency derivative fdot [Hz/s], both measured at time 0,
+  and initial phase phi0;
+
+- the hp and hc polarizations have a relative phase shift pi/2 and
+  have an amplitude amp distributed consistently with a binary
+  inclination angle inc:
+  hp = amp * (1 + cos(inc)^2) * cos(2*pi*f*(t + 0.5*fdot*t**2) + phi0),
+  hc = amp * -2*cos(inc) *      sin(2*pi*f*(t + 0.5*fdot*t**2) + phi0);
+
+- the wave is incoming from sky position (elat,elon), with
+  polarization pol."
+
+initdoc(GalacticBinary)
+
+initsave(GalacticBinary)
+
+class GalacticBinary : public Wave {
+ public:
+    GalacticBinary(double freq, double freqdot, double elat, double elon, double amp, double inc, double pol, double phi0);
 };
 
 
