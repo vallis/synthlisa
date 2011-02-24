@@ -91,6 +91,26 @@ class SimpleBinary : public Wave {
 };
 
 
+// --- GalacticBinary ---
+
+class GalacticBinary : public Wave {
+ private:
+	// frequency, initial phase
+
+	double f, fdot, phi0;
+
+	// inclination, polarization amplitudes
+
+	double i, a, ap, ac;
+
+ public:
+	GalacticBinary(double freq, double freqdot, double b, double l, double amp, double inc, double p, double initphi);
+
+	double hp(double t);
+	double hc(double t);
+};
+
+
 // --- SimpleMonochromatic ---
 
 class SimpleMonochromatic : public Wave {

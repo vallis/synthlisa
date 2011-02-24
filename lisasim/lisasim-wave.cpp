@@ -153,8 +153,34 @@ double SimpleBinary::hc(double t) {
     const double twopi = 2.0*M_PI;
     
     return ac * sin(twopi*f*t + phi0);
-}            
+}
 
+// compatible with MLDC GalacticBinary; note different convention for amplitudes (or equivalently inclination)
+
+GalacticBinary::GalacticBinary(double freq, double freqdot, double b, double l, double amp, double inc, double p, double initphi) : Wave(b,l,p) {
+    f = freq;
+    fdot = freqdot;
+
+    phi0 = initphi;
+
+    i = inc;
+    a = amp;
+    
+    ap = a * (1.0 + cos(i)*cos(i));
+    ac = -a * (2.0 * cos(i));
+}
+
+double GalacticBinary::hp(double t) {
+    const double twopi = 2.0*M_PI;
+
+    return ap * cos(twopi*(f*t + 0.5*fdot*t*t) + phi0);
+}
+
+double GalacticBinary::hc(double t) {
+    const double twopi = 2.0*M_PI;
+    
+    return ac * sin(twopi*(f*t + 0.5*fdot*t*t) + phi0);
+}
 
 // --- SimpleMonochromatic wave class --------------------------------------------------
 
