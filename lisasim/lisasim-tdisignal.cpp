@@ -58,8 +58,6 @@ double TDIsignal::Phi(int link,double t) {
 
     do {
         double acc = psi(nwave, linkn, t - pr.dotproduct(nwave->k));
-
-        if(acc != 0.0) accpsi += acc;
     } while( (nwave = wave->nextwave()) );
 
     return accpsi;
@@ -121,8 +119,10 @@ double TDIsignal::y(int send, int slink, int recv, int ret1, int ret2, int ret3,
     do {
         double acc = (   psi(nwave, linkn, retardsignal - psend.dotproduct(nwave->k))
                        - psi(nwave, linkn, retardedtime - precv.dotproduct(nwave->k)) );
-
-        if(acc != 0.0) accpsi += acc / (1.0 - linkn.dotproduct(nwave->k));
+        double nkprod = linkn.dotproduct(nwave->k);
+        
+        // possible loss of precision here if 1 - nkprod is very small but not exactly zero
+        if(nkprod != 1.0) accpsi += acc / (1.0 - nkprod);
     } while( (nwave = wave->nextwave()) );
 
     return accpsi;
