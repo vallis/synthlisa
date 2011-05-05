@@ -57,7 +57,7 @@ double TDIsignal::Phi(int link,double t) {
     double accpsi = 0.0;
 
     do {
-        double acc = psi(nwave, linkn, t - pr.dotproduct(nwave->k));
+        accpsi += psi(nwave, linkn, t - pr.dotproduct(nwave->k));
     } while( (nwave = wave->nextwave()) );
 
     return accpsi;
