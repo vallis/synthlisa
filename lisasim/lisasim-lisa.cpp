@@ -367,6 +367,8 @@ void CircularRotating::settime(double t) {
     
     center[0] = R * cos(Omega*(t+toffset)+eta0);
     center[1] = R * sin(Omega*(t+toffset)+eta0);
+    
+    rotationtime = t;
 }
 
 // Return the position of "craft" at time t in vector p
@@ -404,7 +406,7 @@ double CircularRotating::armlengthaccurate(int arm, double t) {
 	assertArm(arm);
 	
     if(arm > 0) {
-		return delmodamp * sin(Omega*(t+toffset) - delmodph[arm]);
+		return  delmodamp * sin(Omega*(t+toffset) - delmodph[arm]);
     } else {
 		return -delmodamp * sin(Omega*(t+toffset) - delmodph[-arm]);
     }
@@ -416,23 +418,112 @@ double CircularRotating::genarmlength(int arm, double t) {
     return LISA::armlength(arm,t);
 }
 
-// --- EccentricInclined LISA class -----------------------------------------------------
 
-EccentricInclined::EccentricInclined(double e0,double x0,double sw,double t0) {
-    L = Lstd;
-    toffset = t0;
-
-    // initialize guessL to the initial guess for the length of arms
-
+HaloAnalytic::HaloAnalytic(double myL,double t0) : L(myL), toffset(t0) {
+    R = 0.99 * Rgc;
+    
     guessL[1] = L; guessL[2] = L; guessL[3] = L;
 
+    scriptl = L / sqrt(3.0);
+
+    initn[1][0] = 0.0; initn[1][1] = sin(-M_PI/6.0); initn[1][2] = -cos(M_PI/6.0);
+    initn[2][0] = 0.0; initn[2][1] = sin(-M_PI/6.0); initn[2][2] =  cos(M_PI/6.0);
+    initn[3][0] = 0.0; initn[3][1] = 1.0;            initn[3][2] = 0.0;
+    
+    initp[1][0] = 0.0; initp[1][1] = scriptl * sin(2.0*M_PI/3.0); initp[1][2] = scriptl * cos(2.0*M_PI/3.0);
+    initp[2][0] = 0.0; initp[2][1] = scriptl * sin(4.0*M_PI/3.0); initp[2][2] = scriptl * cos(4.0*M_PI/3.0);
+    initp[3][0] = 0.0; initp[3][1] = scriptl * sin(0.0)         ; initp[3][2] = scriptl * cos(0.0);
+    
+    delmodph[1] = 2.0*M_PI/3.0;
+    delmodph[2] = 4.0*M_PI/3.0;
+    delmodph[3] = 0.0;        
+
+    delconstamp = L*L * OmegaR / M_PI;
+    delmodamp   = R * L * OmegaO;
+    
+    settime(0);
+}
+
+void HaloAnalytic::settime(double t) {
+    rotation.seteuler(OmegaR*(t+toffset)-0.5*M_PI,OmegaO*(t+toffset)-0.5*M_PI,M_PI);
+    
+    center[0] = R * cos(OmegaO*(t+toffset));
+    center[1] = R * sin(OmegaO*(t+toffset));
+    
+    rotationtime = t;
+}
+
+void HaloAnalytic::putp(Vector &p,int craft,double t) {
+    if (t != rotationtime) settime(t);
+
+    p.setproduct(rotation, initp[craft]);
+    
+    // forget the z axis for the LISA center
+    
+    p[0] += center[0];
+    p[1] += center[1];
+}
+
+double HaloAnalytic::armlength(int arm, double t) {
+	assertArm(arm);
+
+    if(arm > 0) {
+		return L - delconstamp + delmodamp * cos(OmegaR*(t+toffset) + delmodph[arm]);
+    } else {
+		return L + delconstamp - delmodamp * cos(OmegaR*(t+toffset) - delmodph[-arm]);
+    }
+}
+
+double HaloAnalytic::armlengthbaseline(int arm, double t) {
+    return L;
+}
+
+double HaloAnalytic::armlengthaccurate(int arm, double t) {
+	assertArm(arm);
+
+    if(arm > 0) {
+		return -delconstamp + delmodamp * cos(OmegaR*(t+toffset) + delmodph[arm]);
+    } else {
+		return  delconstamp - delmodamp * cos(OmegaR*(t+toffset) - delmodph[-arm]);
+    }
+}
+
+double HaloAnalytic::genarmlength(int arm, double t) {
+    return LISA::armlength(arm,t);
+}
+
+// --- EccentricInclined LISA class -----------------------------------------------------
+
+EccentricInclined::EccentricInclined(double e0,double x0,double sw,double t0)
+    : L(Lstd), toffset(t0) {
+
+	initialize(e0,x0,sw);
+}
+
+EccentricInclined::EccentricInclined(double myL,double e0,double x0,double sw,double t0)
+    : L(myL), toffset(t0) {
+
+	initialize(e0,x0,sw);
+}
+
+void EccentricInclined::initialize(double e0,double x0,double sw) {
+	if(L == Lstd) {
+		ecc = eccstd; // (for exact backward compatibility)
+	} else {
+		ecc = L / (2.0 * Rgc * sqrt(3.0));		
+	}
+	
+    // initialize guessL to the initial guess for the length of arms
+	
+    guessL[1] = L; guessL[2] = L; guessL[3] = L;
+	
     eta0 = e0;
     xi0 = x0;
-
+	
     kappa = e0;
     lambda = x0 + e0 - 3.*M_PI/2.0;
     swi = sw;
-
+	
     // initialize constants for approximation to armlength
 
     pdelmod = (swi > 0.0 ? 1.0 : -1.0)*(Omega * Rgc * L) - (15.0/32.0) * (ecc*L);

@@ -202,12 +202,21 @@ class CircularRotating : public LISA, public ApproxLISA {
 };
 
 
+class HaloAnalytic : public LISA {
+  public:
+    HaloAnalytic(double myL,double t0=0.0);
+    
+    double genarmlength(int arm,double t);
+};
+
+
 %feature("docstring") EccentricInclined "
 EccentricInclined(eta0=0,xi0=0,sw=1,t0=0) returns a realistic LISA
 geometry modeled up to second order in the eccentricity, following
 Cornish and Rubbo, PRD 67, 022001 (2003), but with the approximate
 parametrization of CircularRotating (eta0 and xi0 true anomaly of
-baricenter and array phase at t0=0; sw<0 swaps spacecraft)." 
+baricenter and array phase at t0=0; sw<0 swaps spacecraft); myL is
+the common armlength; if not given, it is set to Lstd." 
 
 initdoc(EccentricInclined)
 
@@ -216,7 +225,8 @@ initsave(EccentricInclined)
 class EccentricInclined : public LISA, public ApproxLISA {
  public:
     EccentricInclined(double eta0=0.0, double xi0=0.0, double sw=1.0, double t0=0.0);
-
+    EccentricInclined(double myL,double e0,double x0,double sw,double t0);
+    
     double genarmlength(int arm,double t);
 };
 

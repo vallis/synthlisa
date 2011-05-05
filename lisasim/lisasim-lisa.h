@@ -45,7 +45,7 @@ static const double Lstd = 16.6782;
 /** Eccentricity of the LISA spacecraft orbits (used by
     EccentricInclined). LISA simulator has L/(2.0*sqrt(3.0)*Rgc);
     with L = 5.0e9, e = 0.00964838. */
-static const double ecc = 0.00964838;
+static const double eccstd = 0.00964838;
 
 /// Base LISA geometry class.
 
@@ -236,23 +236,22 @@ class CircularRotating : public LISA, public ApproxLISA {
     double xi0;
     double sw;
 
+    Vector initn[4];
+    Vector initp[4];
+
+    Vector center;
+    Tensor rotation;
+    double rotationtime;
+
     // Trick: we use 1-3 indexing for LISA positions and vectors, so we need to allocate 4 of everything
 
     double delmodamp;
     double delmodph[4];
-
-    Vector initn[4];
-    Vector initp[4];
     
-    double rotationtime;
-    Vector center;
-    Tensor rotation;
-
-    void settime(double t);
-
     void initialize(double e0, double x0, double sw);
-
- public:
+    void settime(double t);
+    
+ public:   
     CircularRotating(double eta0 = 0.0,double xi0 = 0.0,double sw = 1.0,double t0 = 0.0);
     CircularRotating(double myL,double e0,double x0,double sw,double t0);
 
@@ -277,14 +276,52 @@ class CircularRotating : public LISA, public ApproxLISA {
 };
 
 
-/** Orbiting LISA with eccentric orbits. In the future it would be
-    nice to have the eccentricity as a parameter */
+/** Lagrange-point halo orbits. */
+
+const double OmegaO = Omega;
+const double OmegaR = 2.0*Omega;
+
+class HaloAnalytic: public LISA {
+ private:
+    double scriptl;
+    double R;
+    double L;
+
+    double toffset;
+
+    Vector initn[4];
+    Vector initp[4];
+
+    Vector center;
+    Tensor rotation;
+    double rotationtime;
+
+    double delmodamp, delconstamp;
+    double delmodph[4];
+
+    void settime(double t);
+
+ public:   
+    HaloAnalytic(double myL,double t0 = 0.0);
+    
+    void putp(Vector &p,int craft,double t);
+    
+    double armlength(int arm, double t);
+
+    double armlengthbaseline(int arm, double t);
+    double armlengthaccurate(int arm, double t);
+
+    double genarmlength(int arm, double t);
+};
+
+
+/** Orbiting LISA with eccentric orbits. */
 
 class EccentricInclined : public LISA, public ApproxLISA {
  private:
     // LISA armlength 
 
-    double L;
+    double L, ecc;
 
     // initial azimuthal position of the guiding center
     // and initial orientation of the spacecraft
@@ -311,10 +348,12 @@ class EccentricInclined : public LISA, public ApproxLISA {
     double cachetime[4];
     
     void settime(int craft,double t);
+
+    void initialize(double e0, double x0, double sw);
     
  public:
     EccentricInclined(double eta0 = 0.0,double xi0 = 0.0,double sw = 1.0,double t0 = 0.0);
-    // ??? do I want an enhanced version that can set myL, as CircularRotating?
+    EccentricInclined(double myL,double eta0,double xi0,double sw,double t0);
 
     void putp(Vector &p,int craft,double t);
 
