@@ -639,9 +639,18 @@ SampledLISA::SampledLISA(double *sc1,long length1,double *sc2,long length2,doubl
         sampledp[2][i] = new SampledSignal(buffer[2][i],length2/3,deltat,prebuffer,1.0,0,interplen);
         sampledp[3][i] = new SampledSignal(buffer[3][i],length3/3,deltat,prebuffer,1.0,0,interplen);
     }
-    
+        
     for(int c=1;c<4;c++) {
-        guessL[c] = Lstd;
+        int crafta = getRecv(c), craftb = getSend(c);
+
+        Vector pa, pb, n;
+        
+        for(int i=0;i<3;i++) {
+            pa[i] = buffer[crafta][i][0]; pb[i] = buffer[craftb][i][0]; 
+        }
+
+        n.setdifference(pa,pb);
+        guessL[c] = sqrt(n.dotproduct());
     }
 }
 

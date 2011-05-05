@@ -1,3 +1,7 @@
+2010/05/05 Release 1.4.2
+
+Accept generic orbit files (see makeSampledLISA in lisautils.py).
+
 2010/04/27 Release 1.4.1
 
 New Lagrange-point halo-orbit analytic model (HaloAnalytic).

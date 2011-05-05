@@ -25,10 +25,7 @@ include lisasim/*.i
 include lisasim/*.py
 include lisasim/GSL/*.c
 include lisasim/GSL/*.h
-include lisasim/data/positions.txt
-include lisasim/data/lisa-xml.dtd
-include lisasim/data/lisa-xml.xsl
-include lisasim/data/lisa-xml.css
+include lisasim/data/*
 include packages/numpy-1.0.tar.gz
 include packages/swig-1.3.31.tar.gz
 include packages/pyRXP-1.11.tar.gz

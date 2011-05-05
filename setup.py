@@ -22,7 +22,7 @@ def my_get_python_lib(prefixdir=None):
         return get_python_lib(prefix=prefixdir)
 
 
-versiontag = '1.4.1'
+versiontag = '1.4.2'
 
 synthlisa_prefix = ''
 numpy_prefix = ''
@@ -351,7 +351,7 @@ setup(name = 'synthLISA',
       scripts = setdir_scripts,
 
       # TO DO these data files should be installed within the pythonx.x/site-packages/synthlisa directory
-      package_data = {'synthlisa': ['data/positions.txt',
+      package_data = {'synthlisa': ['data/positions.txt','data/NGO_1M_10deg_synthlisa.txt','NGO_1M_closest_synthlisa.txt',
                                     'data/lisa-xml.dtd',
                                     'data/lisa-xml.xsl',
                                     'data/lisa-xml.css'] + installincludes},

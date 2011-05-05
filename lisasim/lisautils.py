@@ -4,6 +4,7 @@
 # $Revision$
 
 import lisaswig
+import numpy
 import numpy.oldnumeric as Numeric
 import numpy.fft as FFT
 import math
@@ -508,46 +509,62 @@ import os.path
 
 datadir = os.path.join(os.path.dirname(__file__),'data')
 
-def stdLISApositions():
-    """Returns four Numeric arrays corresponding to times [in seconds] along
-ten years and to the corresponding positions [the three SSB coordinates
-in Earth Mean Equator and J2000 Equinox, also given in seconds] of the
-three LISA spacecraft according to simulations run by JPL's Ted Sweetser
-on 2005-07-23 (from Excel spreadsheet states_baseline2.xls). The times
-are spaced by 1 day (86400 seconds), and they begin from zero instead of
-Ted's Julian date 2457023.5."""
-
-    pos = readarray(os.path.join(datadir,'positions.txt'))
-
+def getLISApositions(filename):
+    """Get LISA positions in seconds from an ASCII file, and returns four
+    numpy arrays, corresponding to times [in seconds] and SSB coordinates
+    of the LISA spacecraft [also in seconds]. 
+    
+    The file should be formatted as follows: column 1 gives the Julian date
+    in seconds; columns 2-4, 5-7, 8-10 give the three SSB coordinates for each
+    spacecraft, given as kms in an Earth Mean Equator, J2000 Equinox frame.
+    It's assumed that timestamps are equally spaced."""
+    
+    try:
+        pos = numpy.genfromtxt(filename)
+    except IOError:
+        pos = numpy.genfromtxt(os.path.join(datadir,filename))
+    
     t = pos[:,0].copy()
-
-    p1 = pos[:,1:4].copy()
-    p2 = pos[:,4:7].copy()
-    p3 = pos[:,7:10].copy()
-
-    secondsperday = 86400
-
+    p1, p2, p3 = pos[:,1:4].copy(), pos[:,4:7].copy(), pos[:,7:10].copy()
+    
     t -= t[0]
+    secondsperday = 86400
     t *= secondsperday
-
+    
     speedoflight = 299792.458
-
-    p1 /= speedoflight
-    p2 /= speedoflight
-    p3 /= speedoflight
-
+    p1 /= speedoflight; p2 /= speedoflight; p3 /= speedoflight
+    
     return t,p1,p2,p3
 
 
-def stdSampledLISA(interp=1):
+def stdLISApositions():
+    """Returns four numpy arrays corresponding to times [in seconds] along
+    ten years and to the corresponding positions [the three SSB coordinates
+    in Earth Mean Equator and J2000 Equinox, also given in seconds] of the
+    three LISA spacecraft according to simulations run by JPL's Ted Sweetser
+    on 2005-07-23 (from Excel spreadsheet states_baseline2.xls). The times
+    are spaced by 1 day (86400 seconds), and they begin from zero instead of
+    Ted's Julian date 2457023.5."""
+    
+    return getLISApositions(os.path.join(datadir,'positions.txt'))
+    
+
+def makeSampledLISA(filename,interp=2):
     """Returns an interpolated and cached SampledLISA object based on the position
-    arrays returned by stdLISApositions(); the argument interp sets the semilength
-    of the interpolation window, and prebuffering is set to interp times 1
-    day (the spacing of the stdLISApositions() data."""
-
-    [t,p1,p2,p3] = stdLISApositions()
+    arrays returned by getLISApositions(); the argument interp sets the semilength
+    of the interpolation window, and prebuffering is set to interp times the spacing
+    of the stdLISApositions() data."""
     
-    slisa = lisaswig.SampledLISA(p1,p2,p3,86400,86400*interp,interp)
-
-    return lisaswig.CacheLengthLISA(slisa,86400*interp,86400,interp)
+    [t,p1,p2,p3] = getLISApositions(filename)
     
+    dt = t[1] - t[0]
+    slisa = lisaswig.SampledLISA(p1,p2,p3,dt,dt*interp,interp)
+    
+    return lisaswig.CacheLengthLISA(slisa,len(t),dt,interp)
+
+
+def stdSampledLISA(interp=1):
+    """Calls makeSampledLISA with the standard file given by stdLISApositions()."""
+    
+    return makeSampledLISA(os.path.join(datadir,'positions.txt'),interp)
+
