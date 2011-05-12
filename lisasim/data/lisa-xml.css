@@ -1,0 +1,139 @@
+body {
+    font-family: Helvetica, sans-serif;
+    font-size: 11px;
+}
+
+p {
+    text-align: left;
+}
+
+h1 {
+    font-size: 13px;
+    margin: 0px;
+    text-align: center;
+}
+
+h2 {
+    font-size: 13px;
+    margin: 3px 0px 3px 0px;
+    text-align: center;
+}
+
+h3 {
+    font-size: 12px;
+    margin: 3px 0px 3px 0px;
+}
+
+h4 {
+    font-size: 11px;
+    margin: 3px 0px 3px 0px;
+}
+
+h5 {
+    font-size: 11px;
+    font-weight: normal;
+    font-style: italic;
+    margin: 3px 0px 3px 0px;
+}
+
+div {
+    padding: 5px;
+    margin: 10px 0px 10px 0px;
+}
+
+div.FileInfo {
+    width: 580px;
+    border: 1px dotted #000;
+    text-align: center;
+}
+
+div.LISAData {
+    width: 580px;
+    border: 1px dotted #000;
+}
+
+div.NoiseData {
+    width: 580px;
+    border: 1px dotted #000;
+}
+
+div.SourceData {
+    width: 580px;
+    border: 1px dotted #000;
+}
+
+div.TDIData {
+    width: 580px;
+    border: 1px dotted #000;
+}
+
+div.FileData {
+    width: 560px;
+    background: #dff;
+    border: 1px solid #000;
+    margin: auto;
+}
+
+div.LISA {
+    width: 560px;
+    background: #fdf;
+    border: 1px solid #000;
+    margin: 5px auto 5px auto;
+}
+
+div.Noise {
+    width: 560px;
+    background: #ddf;
+    border: 1px solid #000;
+    margin: 5px auto 5px auto;
+}
+
+
+div.Wave {
+    width: 560px;
+    background: #ffd;
+    border: 1px solid #000;
+    margin: 5px auto 5px auto;
+}
+
+div.Observable {
+    width: 560px;
+    background: #fdd;
+    border: 1px solid #000;
+    margin: 5px auto 5px auto;
+}
+
+div.TimeSeries {
+    width: 530px;
+    background: #dfd;
+    border: 1px solid #999;
+    margin: auto;
+}
+
+div.Comment p {
+    font-family: monospace;
+}
+
+table {
+    width: 540px;
+    border: 1px dotted #444;
+    border-collapse: collapse;
+    margin: 5px auto 5px auto;
+}
+
+div.TimeSeries table {
+    width: 530px;
+}
+
+td {
+    width: 180px;
+    vertical-align: top;
+    padding: 2px;
+    border: 1px dotted #444;
+    margin: 0px;
+    font-size: 11px;
+}
+
+div.TimeSeries table td {
+    width: 176px;
+}

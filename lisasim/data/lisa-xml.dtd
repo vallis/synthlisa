@@ -1,0 +1,47 @@
+<!ELEMENT XSIL		(XSIL|Comment|Url|Param|Time|Table|Array|Stream|Element|XBFDif)*>
+<!ATTLIST XSIL		Name CDATA "" Type CDATA "" >
+
+<!ELEMENT Comment	(#PCDATA)>
+
+<!ELEMENT Param		(#PCDATA|XBFDvalue-of)*>
+<!ATTLIST Param		Name CDATA "" Type CDATA "" Unit CDATA "" StringLength CDATA "" >
+
+<!-- Add Time from XSIL dtd -->
+
+<!ELEMENT Time      (#PCDATA)>
+<!ATTLIST Time      Name CDATA "" Type CDATA "" >
+
+<!ELEMENT Url		(#PCDATA)>
+<!ATTLIST Url		Name CDATA "" Type CDATA "" href CDATA "" >
+
+<!ELEMENT Array		(Dim* , Stream? , Element?)>
+<!ATTLIST Array		Name CDATA "" Type CDATA "" Unit CDATA "" StringLength CDATA "" >
+<!ELEMENT Dim	 	(#PCDATA|XBFDvalue-of)*>
+<!ATTLIST Dim		Name CDATA "" Order CDATA "" >
+<!ELEMENT Element	(#PCDATA)>
+<!ATTLIST Element	Name CDATA "" >
+
+<!ELEMENT Table		(Column* , Dim* , Stream?)>
+<!ATTLIST Table		Name CDATA "" Type CDATA "">
+<!ELEMENT Column	EMPTY>
+<!ATTLIST Column	Name CDATA "" Type CDATA "" Unit CDATA "" >
+
+<!ELEMENT Stream	(#PCDATA)>
+<!ATTLIST Stream 	Name CDATA "" Type CDATA "" >
+<!ATTLIST Stream 	Content CDATA "" Encoding CDATA "" Source CDATA "" Delimiter CDATA "" Checksum CDATA "" >
+<!ATTLIST Stream 	Actuate CDATA "" Access CDATA "" >
+<!ATTLIST Stream	Timeout CDATA "" Presentation CDATA "" >
+<!ATTLIST Stream	Immediate CDATA "" >
+<!ATTLIST Stream	MIMEType CDATA "" >
+<!ATTLIST Stream	XBFDstreamnumber CDATA "" >
+
+
+<!ELEMENT StreamMirror (Stream)+>
+
+<!ELEMENT XBFDvalue-of	EMPTY>
+<!ATTLIST XBFDvalue-of	select CDATA "" >
+
+
+
+<!ELEMENT XBFDif	(XSIL|Comment|Url|Param|Table|Array|Stream|Element|XBFDif)*>
+<!ATTLIST XBFDif	test CDATA "" >
