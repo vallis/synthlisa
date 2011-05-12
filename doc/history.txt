@@ -1,3 +1,7 @@
+2010/05/12 Release 1.4.3
+
+New revised orbit files from Oliver Jennrich (NGO_1M_10deg_rev_synthlisa.txt and NGO_1M_closest_rev_synthlisa.txt)
+
 2010/05/05 Release 1.4.2
 
 Accept generic orbit files (see makeSampledLISA in lisautils.py).
