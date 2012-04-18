@@ -39,6 +39,10 @@ _Synthetic LISA_ can be found in [`doc/synthlisa.pdf`](https://github.com/vallis
 
 The briefest summary is that _Synthetic LISA_ implements (at the C++ level) a number of objects that describe the LISA orbits, noises, and TDI observables, as well as gravitational-wave sources. The user writes Python scripts to create and connect these objects, and to generate synthetic data form them. The Python API is documented reasonably well in the docstrings found in [`lisasim/lisasim-swig.i`](https://github.com/vallis/synthlisa/blob/master/lisasim/lisasim-swig.i), which are accessible with Python's `help`. The example scripts in [`examples`](https://github.com/vallis/synthlisa/tree/master/examples) (and especially [`examples/manual-examples`](https://github.com/vallis/synthlisa/tree/master/examples/manual-examples)) are a good place to start.
 
+## Credit ##
+
+If you use _Synthetic LISA_ in your work, please cite M. Vallisneri, "Synthetic LISA: Simulating Time Delay Interferometry in a Model LISA," Phys. Rev. D 71, 022001 (2005), which you can find in [PRD](http://dx.doi.org/10.1103/PhysRevD.71.022001) and as [gr-qc/0407102](http://www.arxiv.org/abs/gr-qc/0407102).
+
 ## License ##
 
 _Synthetic LISA_ is licensed under the Caltech [public domain license](https://github.com/vallis/synthlisa/blob/master/doc/license.pdf).
