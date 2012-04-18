@@ -22,7 +22,7 @@ def my_get_python_lib(prefixdir=None):
         return get_python_lib(prefix=prefixdir)
 
 
-versiontag = '1.4.3'
+versiontag = '2.0.0'
 
 synthlisa_prefix = ''
 numpy_prefix = ''
