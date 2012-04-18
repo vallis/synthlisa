@@ -48,4 +48,4 @@ If you use _Synthetic LISA_ in your work, please cite M. Vallisneri, "Synthetic 
 
 ## License ##
 
-_Synthetic LISA_ is licensed under the Caltech [public domain license](https://github.com/vallis/synthlisa/blob/master/doc/license.pdf).
+_Synthetic LISA_ is licensed under the Caltech [public domain license](https://github.com/vallis/synthlisa/blob/master/doc/license.txt).

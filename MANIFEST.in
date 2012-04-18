@@ -2,8 +2,7 @@ include MANIFEST.in
 include README.md
 include setup.py
 include doc/history.txt
-include doc/license.doc
-include doc/license.pdf
+include doc/license.txt
 include doc/manual.pdf
 include doc/synthlisa.pdf
 include examples/data
