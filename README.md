@@ -34,11 +34,11 @@ where `$INSTALLDIR` could be `$HOME`, `/usr/local`, `$VIRTUAL_ENV` (if you use [
 ## Usage ##
 
 A general description of the formulation, implementation, and usage of
-_Synthetic LISA_ can be found in `doc/synthlisa.pdf` and
-`doc/manual.pdf` included with the package. Those documents however are somewhat outdated. See also `doc/history.txt` for a list of changes.
+_Synthetic LISA_ can be found in [`doc/synthlisa.pdf`](https://github.com/vallis/synthlisa/blob/master/doc/synthlisa.pdf) and
+[`doc/manual.pdf`](https://github.com/vallis/synthlisa/blob/master/doc/manual.pdf) included with the package. Those documents however are somewhat outdated. See also [`doc/history.txt`](https://github.com/vallis/synthlisa/blob/master/doc/history.txt) for a list of changes.
 
-The briefest summary is that _Synthetic LISA_ implements (at the C++ level) a number of objects that describe the LISA orbits, noises, and TDI observables, as well as gravitational-wave sources. The user writes Python scripts to create and connect these objects, and to generate synthetic data form them. The Python API is documented reasonably well in the docstrings found in `lisasim/lisasim-swig.i`, which are accessible with Python's `help`. The example scripts in `examples` (and especially `examples/manual-examples`) are a good place to start.
+The briefest summary is that _Synthetic LISA_ implements (at the C++ level) a number of objects that describe the LISA orbits, noises, and TDI observables, as well as gravitational-wave sources. The user writes Python scripts to create and connect these objects, and to generate synthetic data form them. The Python API is documented reasonably well in the docstrings found in [`lisasim/lisasim-swig.i`](https://github.com/vallis/synthlisa/blob/master/lisasim/lisasim-swig.i), which are accessible with Python's `help`. The example scripts in [`examples`](https://github.com/vallis/synthlisa/tree/master/examples) (and especially [`examples/manual-examples`](https://github.com/vallis/synthlisa/tree/master/examples/manual-examples)) are a good place to start.
 
 ## License ##
 
-_Synthetic LISA_ is licensed under the Caltech public domain license (doc/license.pdf and doc/license.doc).
+_Synthetic LISA_ is licensed under the Caltech [public domain license](https://github.com/vallis/synthlisa/blob/master/doc/license.pdf).
