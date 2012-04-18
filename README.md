@@ -1,6 +1,8 @@
 # Synthetic LISA #
 
-This is Michele Vallisneri's _Synthetic LISA_, now on GitHub.
+This is Michele Vallisneri's _Synthetic LISA_, now on GitHub with a cleaned-up version 2.
+
+I thought I would celebrate the 2011 demise of the U.S. LISA project and the 2012 non-selection of the European eLISA by sharing this code as widely as possibly with posterity. 
 
 ## What is this? ##
 
@@ -8,7 +10,8 @@ _Synthetic LISA_, developed by Michele Vallisneri and John Armstrong at the Jet 
 
 * generates synthetic time series of the LISA fundamental noises, as filtered through all the TDI observables;
 * provides a streamlined module to compute the TDI responses to gravitational waves, according to a full model of TDI, including the motion of the LISA array, and the temporal and directional dependence of the armlengths;
-* is a central component of [lisatools](http://lisatools.googlecode.com), the software pipeline used to generate the [Mock LISA Data Challenge](http://astrogravs.nasa.gov/docs/mldc) datasets.
+* was a central component of [lisatools](http://lisatools.googlecode.com), the software pipeline used to generate the [Mock LISA Data Challenge](http://astrogravs.nasa.gov/docs/mldc) datasets;
+* can be used for a variety of LISA-like mission designs.
 
 See the homepage at [www.vallis.org](http://www.vallis.org/syntheticlisa).
 
