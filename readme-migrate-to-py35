@@ -1,0 +1,33 @@
+First of all, from __future__ import print_function needs to be the first line of code in your script (aside from some exceptions mentioned below). Second of all, as other answers have said, you have to use print as a function now. That's the whole point of from __future__ import print_function; to bring the print function from Python 3 into Python 2.6+.
+
+from __future__ import print_function
+
+import sys, os, time
+
+for x in range(0,10):
+    print(x, sep=' ', end='')  # No need for sep here, but okay :)
+    time.sleep(1)
+__future__ statements need to be near the top of the file because they change fundamental things about the language, and so the compiler needs to know about them from the beginning. From the documentation:
+
+
+
+Old: print "The answer is", 2*2
+New: print("The answer is", 2*2)
+
+Old: print x,           # Trailing comma suppresses newline
+New: print(x, end=" ")  # Appends a space instead of a newline
+
+Old: print              # Prints a newline
+New: print()            # You must call the function!
+
+Old: print >>sys.stderr, "fatal error"
+New: print("fatal error", file=sys.stderr)
+
+Old: print (x, y)       # prints repr((x, y))
+New: print((x, y))      # Not the same as print(x, y)!
+You can also customize the separator between items, e.g.:
+
+print("There are <", 2**32, "> possibilities!", sep="")
+which produces:
+
+There are <4294967296> possibilities!
