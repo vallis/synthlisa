@@ -61,8 +61,8 @@ lisasim_pyfiles  = glob.glob('lisasim/*.py')
 
 # remove lisasim/lisasim-swig_wrap.h from headers
 
-lisasim_hppfiles = filter(lambda s: s != 'lisasim/lisasim-swig_wrap.h',
-                          lisasim_hppfiles)
+lisasim_hppfiles = list(filter(lambda s: s != 'lisasim/lisasim-swig_wrap.h',
+                          lisasim_hppfiles))
 
 source_files = lisasim_cppfiles + gsl_cfiles
 header_files = lisasim_hppfiles + gsl_hfiles
@@ -88,8 +88,8 @@ for file in source_files + header_files + lisasim_pyfiles:
     handle.close()
 
 version_py = open('lisasim/version.py','w')
-print >> version_py, "version_full = \"\"\"%s\"\"\"\n" % idcatalog
-print >> version_py, "version_short = \"%s\"\n" % versiontag
+print("version_full = \"\"\"{}\"\"\"\n".format(idcatalog), file=version_py)
+print("version_short = \"{}\"\n".format(versiontag), file=version_py)
 version_py.close()
 
 # Swig away!
@@ -112,7 +112,7 @@ def runswig(source,cppfile,pyfile,deps,cpp=1):
             else:
                 spawn([swig_bin,'-w402','-python','-o',cppfile,source])
         except:
-            print 'Sorry, I am unable to swig the modified ' + lisasim_isource
+            print('Sorry, I am unable to swig the modified ' + lisasim_isource)
             sys.exit(1)
 
 runswig(lisasim_isource,lisasim_cppfile,lisasim_pyfile,
@@ -154,25 +154,25 @@ if mpi_prefix:
         
     pythonpath = pythonpath + get_python_lib(prefix=mpi_prefix) + '/mpi'
 
-print >> setdir_sh, """if [ -z "${PYTHONPATH}" ]
+print("""if [ -z "${{PYTHONPATH}}" ]
 then
-    PYTHONPATH="%s"; export PYTHONPATH
+    PYTHONPATH="{}"; export PYTHONPATH
 else
-    PYTHONPATH="%s:$PYTHONPATH"; export PYTHONPATH
+    PYTHONPATH="{}:$PYTHONPATH"; export PYTHONPATH
 fi
-""" % (pythonpath, pythonpath)
+""".format(pythonpath, pythonpath), setdir_sh)
 
-print >> setdir_csh, """if !($?PYTHONPATH) then
-    setenv PYTHONPATH %s
+print("""if !($?PYTHONPATH) then
+    setenv PYTHONPATH {}
 else
-    setenv PYTHONPATH %s:$PYTHONPATH
+    setenv PYTHONPATH {}:$PYTHONPATH
 endif
-""" % (pythonpath, pythonpath)
+""".format(pythonpath, pythonpath), setdir_csh)
 
-print >> recompile_sh, """#!/bin/sh
-pushd %s
-python setup.py install --prefix=%s $*
-popd""" % (os.getcwd(),installpath)
+print("""#!/bin/sh
+pushd {}
+python setup.py install --prefix={} $*
+popd""".format(os.getcwd(),installpath), recompile_sh)
 
 recompile_sh.close()
 setdir_csh.close()
@@ -268,7 +268,7 @@ for entry in glob.glob('contrib/*'):
                     gsl_required = 1
 
             if gsl_required == 1 and gsl_prefix == '':
-                print "No GSL, skipping " + contrib_swigfile
+                print("No GSL, skipping " + contrib_swigfile)
                 break
 
             contrib_basefile = re.sub('\.i$','',contrib_swigfile)
