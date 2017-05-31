@@ -281,7 +281,7 @@ def dotime(i,snum,inittime,lasttime):
         minleft = timeleft / 60
         secleft = timeleft - minleft*60
 
-        print "\r...%d/%d (%d%%) done [%d (multi)samples/s], est. %dm%ds left..." % (i,snum,percdone,vel,minleft,secleft),
+        print("\r...{}/{} ({}%) done [{} (multi)samples/s], est. {}m{}s left...".format(i,snum,percdone,vel,minleft,secleft), end=" ")
         sys.stdout.flush()
 
         return currenttime
@@ -295,7 +295,7 @@ def getobscount(snum,stime,observables,zerotime=0.0):
     inittime = int(fullinittime)
     lasttime = 0
     
-    print "Processing...",
+    print("Processing...", end=" ")
     sys.stdout.flush()
 
     try:
@@ -314,8 +314,8 @@ def getobscount(snum,stime,observables,zerotime=0.0):
                 if i % 1024 == 0:
                     lasttime = dotime(i,snum,inittime,lasttime)
     except IndexError:
-        print "lisautils::getobsc: I have trouble accessing time ", zerotime+i*stime,
-        print "; you may try to reset your objects and repeat..."
+        print("lisautils::getobsc: I have trouble accessing time ", zerotime+i*stime, end=" ")
+        print("; you may try to reset your objects and repeat...")
 
         raise
 
@@ -330,9 +330,9 @@ def getobscount(snum,stime,observables,zerotime=0.0):
 
     if currenttime > 0:
         vel = snum/currenttime
-        print "\r...completed in %d s [%d (multi)samples/s].                           " % (int(currenttime),int(vel))  
+        print("\r...completed in {} s [{} (multi)samples/s].                           ".format(int(currenttime),int(vel)))
     else:
-        print "\r...completed.                                                         "
+        print("\r...completed.                                                         ")
 
     return array
 

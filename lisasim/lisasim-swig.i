@@ -562,7 +562,7 @@ def getInterpolator(interplen=1):
     elif interplen < -1:
         ret = DotLagrangeInterpolator(-interplen)
     else:
-        raise NotImplementedError, "getInterpolator: undefined interpolator length %s (lisasim-swig.i)." % interplen
+        raise NotImplementedError("getInterpolator: undefined interpolator length %s (lisasim-swig.i).".format(interplen))
 
     return ret
 
@@ -570,7 +570,7 @@ def getDerivativeInterpolator(interplen=2):
     if interplen > 1:
         return DotLagrangeInterpolator(interplen)
     else: 
-        raise NotImplementedError, "getDerivativeInterpolator: undefined interpolator length %s (lisasim-swig.i)." % interplen
+        raise NotImplementedError("getDerivativeInterpolator: undefined interpolator length %s (lisasim-swig.i).".format(interplen))
 %}
 
 %pythoncode %{
@@ -590,7 +590,7 @@ def PowerLawNoise(deltat,prebuffer,psd,exponent,interplen=1,seed=0):
         filter = IIRFilter([1,2,1],[0,0.9999*2,-0.9999])
         normalize = math.sqrt(psd) * math.sqrt(nyquistf) * (math.pi * deltat)**2
     else:
-        raise NotImplementedError, "PowerLawNoise: undefined PowerLaw exponent %s (lisasim-swig.i)." % exponent
+        raise NotImplementedError("PowerLawNoise: undefined PowerLaw exponent %s (lisasim-swig.i).".format(exponent))
 
     if seed == 0:
         seed = getcseed()
@@ -629,7 +629,7 @@ def SampledSignal(array,deltat,buffer = 136.0,norm = 1.0,filter = None,interplen
         
         samplednoise = FileSignalSource(array,readbuffer,int(buffer/deltat),endianness,norm)
     else:
-        raise NotImplementedError, "SampledSignal: need Numeric array or filename as first argument (lisasim-swig.i)."
+        raise NotImplementedError("SampledSignal: need Numeric array or filename as first argument (lisasim-swig.i).")
 
     if not filter:
         filteredsamples = 0
