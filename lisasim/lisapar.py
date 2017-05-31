@@ -91,24 +91,24 @@ class LISApar:
             (lisa, srcfunc, parameters, obs) = tetrad
         except:
             if myrank == 0:
-                print "LISApar.getobsp(...): third parameter must be a 4-tuple containing a",
-                print "LISA instance, a Wave factory, an array of parameters for the factory,",
-                print "and a set of TDI observables given as class methods (such as synthlisa.TDI.X)."
+                print("LISApar.getobsp(...): third parameter must be a 4-tuple containing a", end=" ")
+                print("LISA instance, a Wave factory, an array of parameters for the factory,", end=" ")
+                print("and a set of TDI observables given as class methods (such as synthlisa.TDI.X).")
             raise IndexError
         
         if type(parameters) not in (list,tuple,numpy.ndarray):
             if myrank == 0:
-                print "LISApar.getobsp(...): needs a list of parameters to feed to the factory!"
+                print("LISApar.getobsp(...): needs a list of parameters to feed to the factory!")
             raise IndexError
                 
         if size == 1:
             if myrank == 0:
-                print "LISApar.getobsp(...): must be run with more than one cpu!"
+                print("LISApar.getobsp(...): must be run with more than one cpu!")
             raise NotImplementedError
     
         if size > len(parameters):
             if myrank == 0:
-                print "LISApar.getobsp(...): needs to run with more sources than cpus!"
+                print("LISApar.getobsp(...): needs to run with more sources than cpus!")
             raise IndexError
     
         # root may get zero processors
@@ -120,12 +120,12 @@ class LISApar:
             blocksize = blocksize + blockadd
 
         if myrank == 0 and debug > 2:
-            print "Standard block: ", blocksize,
-            print "; root block: ", len(parameters) - blocksize * (size-1)
+            print("Standard block: {}".format(blocksize), end=" ")
+            print("; root block: {}".format(len(parameters) - blocksize * (size-1)))
     
         if myrank == 0:
             if debug > 3:
-                print "Preparing for parallel execution..."
+                print("Preparing for parallel execution...")
     
             for cpu in range(1,size):
                 blockstart, blockend = (cpu-1)*blocksize, cpu*blocksize
@@ -144,7 +144,7 @@ class LISApar:
             mypars = pickle.loads(serial_pars)
     
         if debug > 2:
-            print "CPU ", myrank, " received ", len(mypars), " source parameters ", mypars
+            print("CPU {} received {} source parameters {}".format(myrank, len(mypars), mypars))
         
         try:
             if type(mypars[0]) in (list,tuple,numpy.ndarray):
@@ -156,18 +156,18 @@ class LISApar:
                 raise TypeError
         except:
             if myrank == 0:
-                print "LISApar.getobsp(...): srcfunc must return a synthlisa.Wave when applied",
-                print "to each element of the parameter list"
+                print("LISApar.getobsp(...): srcfunc must return a synthlisa.Wave when applied", end=" ")
+                print("to each element of the parameter list")
             raise TypeError
     
         if debug > 3:
-            print "CPU ", myrank, " created sources ", sources
+            print("CPU {} created sources {}".format(myrank, sources)) 
     
         wavearray = synthlisa.WaveArray(sources)
     
         if not isinstance(lisa,synthlisa.LISA):
             if myrank == 0:
-                print "LISApar.getobsp(...): lisa must be an instance of synthlisa.LISA."
+                print("LISApar.getobsp(...): lisa must be an instance of synthlisa.LISA.")
             raise TypeError
     
         tdisignal = synthlisa.TDIsignal(lisa,wavearray)
@@ -196,7 +196,7 @@ class LISApar:
             currenttime = time.time() - inittime
     
             vel = snum/currenttime
-            print "Completed in %d s [%d (multi)samples/s]." % (int(currenttime),int(vel))
+            print("Completed in {} s [{} (multi)samples/s].".format(int(currenttime),int(vel)))
     
         if myrank == 0:
             if multobs == 1:
