@@ -5,7 +5,8 @@
 
 import lisaswig
 import numpy
-import numpy.oldnumeric as Numeric
+#import numpy.oldnumeric as Numeric
+import numpy as Numeric
 import numpy.fft as FFT
 import math
 

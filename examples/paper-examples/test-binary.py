@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 from synthlisa import *
-from numpy.oldnumeric import transpose
+###from numpy.oldnumeric import transpose
+from numpy import transpose
 
 import math
 
@@ -85,9 +86,9 @@ noiseT = (alphan + betan + gamman) / math.sqrt(3.0)
 # compute the optimal signal to noise (for short time series, this is somewhat
 # sensitive to the fluctuations in the noise, which is used to compute S_n)
 
-print "S/N = ", math.sqrt(sn(signalA,noiseA,stime,patches)**2 + 
+print("S/N = ", math.sqrt(sn(signalA,noiseA,stime,patches)**2 + 
                           sn(signalE,noiseE,stime,patches)**2 + 
-                          sn(signalT,noiseT,stime,patches)**2), "over T = ", stime * samples, " s."
+                          sn(signalT,noiseT,stime,patches)**2), "over T = ", stime * samples, " s.")
 
 # output signal+noise time series and spectra to disk
 
@@ -116,6 +117,6 @@ try:
     import os
     
     os.system('./plotxml.py ' + 'data/binary.xml' + ' ' + 'eps/binary.pdf')
-    print "Spectra plotted in eps/binary.pdf"
+    print("Spectra plotted in eps/binary.pdf")
 except:
-    print "Could not output PyX graphics"
+    print("Could not output PyX graphics")

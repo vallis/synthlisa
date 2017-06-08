@@ -12,9 +12,10 @@ import string
 import re
 import math
 
-import numpy.oldnumeric as Numeric
+###import numpy.oldnumeric as Numeric
+import numpy as Numeric
 
-import pyRXP
+import pyRXPU
 # require xmlutils from pyRXP examples
 import xmlutils
 

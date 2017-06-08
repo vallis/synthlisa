@@ -43,7 +43,8 @@ Destructor. See above.
 %enddef
 
 %pythoncode %{
-import numpy.oldnumeric as Numeric
+###import numpy.oldnumeric as Numeric
+import numpy as np
 
 import math
 import sys
@@ -612,7 +613,8 @@ def PowerLawNoise(deltat,prebuffer,psd,exponent,interplen=1,seed=0):
 def SampledSignal(array,deltat,buffer = 136.0,norm = 1.0,filter = None,interplen = 1,timeoffset = 0.0,endianness = -1,readbuffer=2**20):
     interp = getInterpolator(interplen)
 
-    if isinstance(array,Numeric.ndarray):
+###    if isinstance(array,Numeric.ndarray):
+    if isinstance(array,np.ndarray):
         samplednoise = SampledSignalSource(array,norm)
     elif isinstance(array,str):
         readbuffer = max(int(buffer/deltat),int(readbuffer))
