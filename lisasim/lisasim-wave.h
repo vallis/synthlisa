@@ -50,22 +50,22 @@ class Wave : public WaveObject {
     Vector k;
 
     // polarization tensors
-    
+
     Tensor pp, pc;
 
     Wave(double b, double l, double p);
 
     Wave *firstwave() { return this; }
     Wave *nextwave()  { return 0; }
- 
+
     virtual int inscope(double t) { return 1; }
 
     virtual double hp(double t) = 0;
-    virtual double hc(double t) = 0;  
+    virtual double hc(double t) = 0;
 
     void putk(Vector &k);
     void putwave(Tensor &h, double t);
-    
+
     static void putep(Tensor &h,double b,double l,double p);
     static void putec(Tensor &h,double b,double l,double p);
 };
@@ -97,14 +97,14 @@ class GalacticBinary : public Wave {
  private:
 	// frequency, initial phase
 
-	double f, fdot, phi0;
+	double f, fdot, fddot, eps, phi0;
 
 	// inclination, polarization amplitudes
 
 	double i, a, ap, ac;
 
  public:
-	GalacticBinary(double freq, double freqdot, double b, double l, double amp, double inc, double p, double initphi);
+	GalacticBinary(double freq, double freqdot, double b, double l, double amp, double inc, double p, double initphi, double fddot = 0.0, double epsilon = 0.0);
 
 	double hp(double t);
 	double hc(double t);
@@ -218,9 +218,9 @@ class PyWave : public Wave {
 
     double hp(double t) {
 		PyObject *arglist, *result;
-	
+
 		double dres = 0.0;
-	   
+
 		arglist = Py_BuildValue("(d)",t);             // Build argument list
 		result = PyEval_CallObject(hpfunc,arglist);  // Call Python
 		Py_DECREF(arglist);                           // Trash arglist
@@ -231,9 +231,9 @@ class PyWave : public Wave {
 
     double hc(double t) {
 		PyObject *arglist, *result;
-	
+
 		double dres = 0.0;
-	   
+
 		arglist = Py_BuildValue("(d)",t);             // Build argument list
 		result = PyEval_CallObject(hcfunc,arglist);  // Call Python
 		Py_DECREF(arglist);                           // Trash arglist

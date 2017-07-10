@@ -61,20 +61,20 @@ cseeds = []
 def setglobalseed(seed = 0):
     globalseed = seed
     random.seed(globalseed)
-   
+
 def getglobalseed():
     if globalseed == 0:
         setglobalseed(int(time.time()))
 
     return globalseed
-    
+
 def getcseed():
     if globalseed == 0:
         setglobalseed(int(time.time()))
 
     while True:
         ret = random.randint(0,2**32)
-    
+
         if not ret in cseeds:
             cseeds.append(ret)
             return ret
@@ -103,12 +103,12 @@ in units of the speed of light."
 %feature("docstring") LISA::armlength "
 LISA.armlength(l,t) the armlength [s] of LISA link l (1,2,3,-1,-2,-3)
 for laser pulse reception at time t [s]."
-    
+
 %feature("docstring") LISA::dotarmlength "
 LISA.armlength(l,t) the instantaneous rate of change of the armlength
 of LISA link l (1,2,3,-1,-2,-3) for laser pulse reception a time t [s],
 given in units of the speed of light."
-    
+
 %feature("docstring") LISA::reset "
 LISA.reset() resets any underlying pseudo-random or ring-buffer
 elements used by the LISA object."
@@ -120,10 +120,10 @@ class LISA {
     virtual void putp(Vector &outvector, int craft, double t);
     virtual void putn(Vector &outvector, int arm, double t);
     virtual void putv(Vector &outvector, int craft, double t);
-    
+
     virtual double armlength(int arm, double t);
     virtual double dotarmlength(int arm, double t);
-    
+
     virtual void reset();
 };
 
@@ -205,7 +205,7 @@ class CircularRotating : public LISA, public ApproxLISA {
 class HaloAnalytic : public LISA {
   public:
     HaloAnalytic(double myL,double t0=0.0);
-    
+
     double genarmlength(int arm,double t);
 };
 
@@ -216,7 +216,7 @@ geometry modeled up to second order in the eccentricity, following
 Cornish and Rubbo, PRD 67, 022001 (2003), but with the approximate
 parametrization of CircularRotating (eta0 and xi0 true anomaly of
 baricenter and array phase at t0=0; sw<0 swaps spacecraft); myL is
-the common armlength; if not given, it is set to Lstd." 
+the common armlength; if not given, it is set to Lstd."
 
 initdoc(EccentricInclined)
 
@@ -226,7 +226,7 @@ class EccentricInclined : public LISA, public ApproxLISA {
  public:
     EccentricInclined(double eta0=0.0, double xi0=0.0, double sw=1.0, double t0=0.0);
     EccentricInclined(double myL,double e0,double x0,double sw,double t0);
-    
+
     double genarmlength(int arm,double t);
 };
 
@@ -322,7 +322,7 @@ it is offset so that (for instance)
 p1x(t) = p1[(t - prebuffer)/deltat,0],
 p1y(t) = p1[(t - prebuffer)/deltat,1],
 p1z(t) = p1[(t - prebuffer)/deltat,2].
-  
+
 Last, interp (> 1) sets the semiwidth of the data window used in
 Lagrange interpolation of the positions.
 
@@ -404,7 +404,7 @@ increased by one after each creation or initialization. This is a class
 
 class WhiteNoiseSource : public SignalSource {
  public:
-    WhiteNoiseSource(long len,unsigned long seed = 0,double norm = 1.0);    
+    WhiteNoiseSource(long len,unsigned long seed = 0,double norm = 1.0);
 
     static void setglobalseed(unsigned long seed = 0);
     static unsigned long getglobalseed();
@@ -476,7 +476,7 @@ class Signal {
 
     virtual double value(double time);
     virtual double value(double timebase,double timecorr);
-    
+
     %extend {
         double __call__(double time) {
             return self->value(time);
@@ -545,7 +545,7 @@ class InterpolatedSignal : public Signal {
     InterpolatedSignal(SignalSource *src,Interpolator *interp,
                        double deltat,double prebuffer = 0.0,double norm = 1.0);
     ~InterpolatedSignal();
-    
+
     void setinterp(Interpolator *inte);
 };
 
@@ -569,7 +569,7 @@ def getInterpolator(interplen=1):
 def getDerivativeInterpolator(interplen=2):
     if interplen > 1:
         return DotLagrangeInterpolator(interplen)
-    else: 
+    else:
         raise NotImplementedError, "getDerivativeInterpolator: undefined interpolator length %s (lisasim-swig.i)." % interplen
 %}
 
@@ -626,7 +626,7 @@ def SampledSignal(array,deltat,buffer = 136.0,norm = 1.0,filter = None,interplen
             endianness = 0
         elif endianness == 'l' or endianness == 'LittleEndian':
             endianness = 1
-        
+
         samplednoise = FileSignalSource(array,readbuffer,int(buffer/deltat),endianness,norm)
     else:
         raise NotImplementedError, "SampledSignal: need Numeric array or filename as first argument (lisasim-swig.i)."
@@ -711,7 +711,7 @@ class Wave : public WaveObject {
 
     virtual double hp(double t);
     virtual double hc(double t);
-    
+
     static void putep(Tensor &outtensor,double b,double l,double p);
     static void putec(Tensor &outtensor,double b,double l,double p);
 };
@@ -733,7 +733,7 @@ following parameters:
 
 - the wave is incoming from sky position (elat,elon), with
   polarization pol.
- 
+
 This Wave object is deprecated in favor of GalacticBinary."
 
 initdoc(SimpleBinary)
@@ -770,7 +770,7 @@ initsave(GalacticBinary)
 
 class GalacticBinary : public Wave {
  public:
-    GalacticBinary(double freq, double freqdot, double elat, double elon, double amp, double inc, double pol, double phi0);
+    GalacticBinary(double freq, double freqdot, double elat, double elon, double amp, double inc, double pol, double phi0, double freqddot = 0.0, double epsilon = 0.0);
 };
 
 
@@ -805,7 +805,7 @@ that implements a Gaussian wavepulse with the following parameters:
 
 - the pulse has e-folding time efold [seconds];
 
-- the pulse has amplitude amp, distributed as {ap,ac} = 
+- the pulse has amplitude amp, distributed as {ap,ac} =
   amp*{sin(gamma),cos(gamma)} between the two polarizations
   (the same convention as SimpleMonochromatic)
 
@@ -835,7 +835,7 @@ that implements a Sine-Gaussian wavepulse with the following parameters:
 - the pulse is modulated by a sinusoid of frequency f, centered at time
   t0, with relative phase phi0 between the two polarizations;
 
-- the pulse has amplitude amp, distributed as {ap,ac} = 
+- the pulse has amplitude amp, distributed as {ap,ac} =
   amp*{sin(gamma),cos(gamma)} between the two polarizations
   (the same convention as SimpleMonochromatic)
 
@@ -916,7 +916,7 @@ class NoiseWave : public Wave {
 
     // allocates its own Noise objects
     NoiseWave(double sampletime, double prebuffer, double density, double exponent, int swindow, double elat, double elon, double p);
-        
+
     // from sampled buffers (using filters and interpolation...)
     NoiseWave(double *hpa, double *hca, long samples, double sampletime, double prebuffer, double norm, Filter *filter, int swindow, double b, double l, double p);
 
@@ -980,7 +980,7 @@ another displacement by one or so."""
 
 %pythoncode %{
 def InterpolateMemory(hparray,hcarray,len,deltat,prebuffer,elat,elon,pol):
-    """For backward compatibility, equivalent to 
+    """For backward compatibility, equivalent to
 NoiseWave(hparray,hcarray,len,deltat,prebuffer,1.0,0,1,elat,elon,pol)."""
 
     return NoiseWave(hparray,hcarray,len,deltat,prebuffer,1.0,0,1,elat,elon,pol)
@@ -1101,7 +1101,7 @@ class TDIobject : public Signal {
  public:
     TDIobject(TDI *t);
     virtual ~TDIobject();
-    
+
     virtual double value(double t) = 0;
 };
 
@@ -1174,7 +1174,7 @@ class TDI {
     virtual ~TDI() {};
 
     virtual void reset() {};
-    
+
     virtual double alpham(double t);
     TDIobject *alpham();
     virtual double betam(double t);
@@ -1200,14 +1200,14 @@ class TDI {
     TDIobject *zeta3();
 
     // P, E, U still have non-signed delays
-    
+
     virtual double P(double t);
     TDIobject *P();
     virtual double E(double t);
     TDIobject *E();
     virtual double U(double t);
     TDIobject *U();
-    
+
     virtual double Xm(double t);
     TDIobject *Xm();
     virtual double Ym(double t);
@@ -1221,7 +1221,7 @@ class TDI {
     TDIobject *Xmlock2();
     virtual double Xmlock3(double t);
     TDIobject *Xmlock3();
-    
+
     virtual double X1(double t);
     TDIobject *X1();
     virtual double X2(double t);
@@ -1248,21 +1248,21 @@ class TDI {
     TDIobject *y132();
     double y213(double t);
     TDIobject *y213();
-    
+
     double z123(double t);
     TDIobject *z123();
     double z231(double t);
     TDIobject *z231();
     double z312(double t);
     TDIobject *z312();
-    
+
     double z321(double t);
     TDIobject *z321();
     double z132(double t);
     TDIobject *z132();
     double z213(double t);
     TDIobject *z213();
-    
+
     double time(double t);
     timeobject *time();
     double t(double t);
@@ -1314,7 +1314,7 @@ defined in the base TDI class are available from TDInoise.
   [pn_1,pn_1*,pn_2,pn_2*,pn_3,pn_3*]
   [y^sh_{12},y^sh_{21},y^sh_{23},y^sh_{32},y^sh_{31},y^sh_{13}]
   [C_1,C_1*,C_2,C_2*,C_3,C_3*]
-  
+
 - In the second form of the constructor, the noise object are created
   internally as pseudorandom noise objects (equivalent to PowerLawNoise)
   with sampling times PMdt, SHdt, and LSdt, and with approximate
@@ -1325,7 +1325,7 @@ defined in the base TDI class are available from TDInoise.
   LSpsd           Hz^-1
 
 Note: resetting the TDInoise object will reset all the component noise
-objects. 
+objects.
 
 TODO: might want to allow different interpolation widths for the
 self-built pseudorandom noise objects."
@@ -1355,27 +1355,27 @@ initsave(TDInoise)
         # we need quadruple retardations for the V's appearing in the z's
         # (octuple for 2nd-gen TDI); we add two sampling times to allow linear
         # interpolation for large sampling times
-    
+
         pbtproof = 8.0 * lighttime(lisa) + 2.0*stproof
-    
+
         return PowerLawNoise(stproof,pbtproof,sdproof,-2.0,interp,seed)
 
     def stdproofnoisepink(lisa,stproof,sdproof,sf0proof,interp=1,seed=0):
         # we need quadruple retardations for the V's appearing in the z's
         # (octuple for 2nd-gen TDI); we add two sampling times to allow linear
         # interpolation for large sampling times
-    
+
         pbtproof = 8.0 * lighttime(lisa) + 2.0*stproof
-    
+
         return PowerLawNoise(stproof,pbtproof,sdproof * sf0proof**2,-4.0,interp,seed)
 
     def stdopticalnoise(lisa,stshot,sdshot,interp=1,seed=0):
         # we need only triple retardations for the shot's appearing in the y's
         # (septuple for 2nd-gen TDI); we add two sampling times to allow linear
         # interpolation for large sampling times
-    
+
         pbtshot = 7.0 * lighttime(lisa) + 2.0*stshot
-    
+
         return PowerLawNoise(stshot,pbtshot,sdshot,2.0,interp,seed)
 
     def stdlasernoise(lisa,stlaser,sdlaser,interp=1,seed=0):
@@ -1387,46 +1387,46 @@ initsave(TDInoise)
 %feature("pythonprepend") TDInoise::TDInoise %{
         self.lisa = args[0]
         args = args[1:]
-        
+
         # if no parameters are passed, used default value
         # if only one parameter is passed, use it as stime
-        
+
         if len(args) == 0:
             args = (1.0, 2.5e-48, 1.0, 1.8e-37, 1.0, 1.1e-26)
         elif len(args) == 1:
             args = (args[0], 2.5e-48, args[0], 1.8e-37, args[0], 1.1e-26)
-        
+
         # proof-mass: use deltat-psd model if we find a number, or assume
         # six Noise objects otherwise
-        
+
         if type(args[0]) in (int,float):
             self.pm = [stdproofnoise(self.lisa,args[0],args[1]) for i in range(6)]
             args = args[2:]
         else:
             self.pm = args[0]
             args = args[1:]
-        
+
         # shot noise: same story
-        
+
         if type(args[0]) in (int,float):
             self.pd = [stdopticalnoise(self.lisa,args[0],args[1]) for i in range(6)]
             args = args[2:]
         else:
             self.pd = args[0]
             args = args[1:]
-        
+
         # laser noise may not be passed: if so, set it to zero
-        
+
         if len(args) > 0:
             if type(args[0]) in (int,float):
                 self.c = [stdlasernoise(self.lisa,args[0],args[1]) for i in range(6)]
                 args = args[2:]
             else:
                 self.c = args[0]
-                args = args[1:]    
+                args = args[1:]
         else:
             self.c = [NoSignal() for i in range(6)]
-        
+
         args = (self.lisa,self.pm,self.pd,self.c)
 %}
 
@@ -1443,9 +1443,9 @@ class TDInoise : public TDI {
     void setphlisa(LISA *mylisa);
 
     void lock(int master);
-    
+
     void reset(unsigned long seed = 0);
-};        
+};
 
 /* We're holding on to the constructor args so that the LISA/Noise
    objects won't get destroyed if they fall out of scope: we may still

@@ -57,17 +57,17 @@ Wave::Wave(double b, double l, double p) {
     stdpc[0][1] = 1.0; stdpc[1][0] =  1.0;
 
     Tensor A, At;
-    
+
     A.seteuler(beta,lambda,pol);
     At.settranspose(A);
 
     Tensor tmp;
-    
+
     tmp.setproduct(stdpp,At);
     pp.setproduct(A,tmp);
-    
+
     tmp.setproduct(stdpc,At);
-    pc.setproduct(A,tmp);    
+    pc.setproduct(A,tmp);
 }
 
 void Wave::putk(Vector &kout) {
@@ -81,11 +81,11 @@ void Wave::putk(Vector &kout) {
 void Wave::putwave(Tensor &h, double t) {
   double hp_temp = hp(t);
   double hc_temp = hc(t);
-  
+
   for(int i=0;i<3;i++) {
     for(int j=0;j<3;j++) {
       h[i][j] = hp_temp * pp[i][j] + hc_temp * pc[i][j];
-    }        
+    }
   }
 }
 
@@ -99,14 +99,14 @@ void Wave::putep(Tensor &h,double b,double l,double p) {
     Tensor stdpp(0.0);
 
     stdpp[0][0] = 1.0; stdpp[1][1] = -1.0;
-    
+
     Tensor A, At;
-    
+
     A.seteuler(b,l,p);
     At.settranspose(A);
-    
+
     Tensor tmp;
-    
+
     tmp.setproduct(stdpp,At);
     h.setproduct(A,tmp);
 }
@@ -117,14 +117,14 @@ void Wave::putec(Tensor &h,double b,double l,double p) {
     stdpc[0][1] = 1.0; stdpc[1][0] =  1.0;
 
     Tensor A, At;
-    
+
     A.seteuler(b,l,p);
     At.settranspose(A);
-    
+
     Tensor tmp;
-        
+
     tmp.setproduct(stdpc,At);
-    h.setproduct(A,tmp);   
+    h.setproduct(A,tmp);
 }
 
 
@@ -138,7 +138,7 @@ SimpleBinary::SimpleBinary(double freq, double initphi, double inc, double amp, 
 
     i = inc;
     a = amp;
-    
+
     ap = a * (1.0 + cos(i)*cos(i));
     ac = a * (2.0 * cos(i));
 }
@@ -151,21 +151,27 @@ double SimpleBinary::hp(double t) {
 
 double SimpleBinary::hc(double t) {
     const double twopi = 2.0*M_PI;
-    
+
     return ac * sin(twopi*f*t + phi0);
 }
 
 // compatible with MLDC GalacticBinary; note different convention for amplitudes (or equivalently inclination)
 
-GalacticBinary::GalacticBinary(double freq, double freqdot, double b, double l, double amp, double inc, double p, double initphi) : Wave(b,l,p) {
+GalacticBinary::GalacticBinary(double freq, double freqdot, double b, double l, double amp, double inc, double p, double initphi, double freqddot, double epsilon) : Wave(b,l,p) {
     f = freq;
     fdot = freqdot;
+    fddot = freqddot;
+
+    eps = epsilon;
+    for(int j=0;j<3;j++) {
+        k[j] *= (1 + eps);
+    }
 
     phi0 = initphi;
 
     i = inc;
     a = amp;
-    
+
     ap = a * (1.0 + cos(i)*cos(i));
     ac = -a * (2.0 * cos(i));
 }
@@ -173,13 +179,13 @@ GalacticBinary::GalacticBinary(double freq, double freqdot, double b, double l, 
 double GalacticBinary::hp(double t) {
     const double twopi = 2.0*M_PI;
 
-    return ap * cos(twopi*(f*t + 0.5*fdot*t*t) + phi0);
+    return ap * cos(twopi*(f*t + 0.5*fdot*t*t + fddot*t*t*t/6.0) + phi0);
 }
 
 double GalacticBinary::hc(double t) {
     const double twopi = 2.0*M_PI;
-    
-    return ac * sin(twopi*(f*t + 0.5*fdot*t*t) + phi0);
+
+    return ac * sin(twopi*(f*t + 0.5*fdot*t*t + fddot*t*t*t/6.0) + phi0);
 }
 
 // --- SimpleMonochromatic wave class --------------------------------------------------
@@ -191,7 +197,7 @@ SimpleMonochromatic::SimpleMonochromatic(double freq, double phi, double gamma, 
 
     ph = phi;
     gm = gamma;
-    
+
     ap = amp*sin(gm);
     ac = amp*cos(gm);
 }
@@ -204,7 +210,7 @@ double SimpleMonochromatic::hp(double t) {
 
 double SimpleMonochromatic::hc(double t) {
     const double twopi = 2.0*M_PI;
-    
+
     return ac * sin(twopi*f*t);
 }
 
@@ -243,7 +249,7 @@ double SineGaussian::hp(double t) {
 
 double SineGaussian::hc(double t) {
     const double twopi = 2.0*M_PI;
-    
+
     double ex = (t - t0) / dc;
 
     return ac * exp(-ex*ex) * sin(twopi*f*(t-t0));
