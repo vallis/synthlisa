@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 # $Id$
 # $Date$
 # $Author$
@@ -292,7 +294,7 @@ class writeXML:
 
     def iprint(self,s):
         if self.opened != 0:
-            print >> self.f, self.indent + s
+            print(self.indent + s, file=self.f)
 
     def doattrs(self,attrs):
         string = ''
@@ -479,7 +481,7 @@ class lisaXML(writeXML):
         try:
             defaultarglist = argumentList[objecttype]
         except KeyError:
-            raise KeyError, 'lisaXML.ObjectData: unknown object type %s' % objecttype
+            raise KeyError('lisaXML.ObjectData: unknown object type %s' % objecttype)
 
         # the synthlisa constructor parameters are contained (as a list)
         # in object.xmlargs (preferred) or object.initargs
@@ -509,7 +511,7 @@ class lisaXML(writeXML):
                 
                     objectpars[param[0]] = (param[2],param[1])
                 else:
-                    raise AttributeError, 'lisaXML.ProcessObjectData(): missing internal parameter %s in object %s' % (param[0],object)
+                    raise AttributeError('lisaXML.ProcessObjectData(): missing internal parameter %s in object %s' % (param[0],object))
 
         # translate the object to an XML type
 
@@ -535,7 +537,7 @@ class lisaXML(writeXML):
                     if param[2] != None:
                         thisparam = (param[2],param[1])
                     else:
-                        raise AttributeError, 'readXML.ProcessObjectData(): missing external parameter(s) %s for object %s' % (param[0],object)
+                        raise AttributeError('readXML.ProcessObjectData(): missing external parameter(s) %s for object %s' % (param[0],object))
             else:
                 thisparam = objectpars[param[0]]
 
@@ -581,7 +583,7 @@ class lisaXML(writeXML):
                     if param[2] != None:
                         thisparam = (param[2],param[1])
                     else:
-                        raise AttributeError, 'readXML.doSampledWaveTimeSeries(): missing external parameter(s) %s for object %s' % (param[0],object)
+                        raise AttributeError('readXML.doSampledWaveTimeSeries(): missing external parameter(s) %s for object %s' % (param[0],object))
             else:
                 thisparam = myobjectpars[param[0]]
 
@@ -725,22 +727,19 @@ class lisaXML(writeXML):
             if data.dtype.char != 'd':
                 raise TypeError
         except:
-            print "lisaXML::TDIData: data must be a proper numpy array of doubles"
-            raise TypeError
+            raise TypeError("lisaXML::TDIData: data must be a proper numpy array of doubles")
         
         if TimeSeries.dim == 1:
             TimeSeries.records = 1
         elif TimeSeries.dim == 2:        
             TimeSeries.records = numpy.shape(data)[1]
         else:
-            print "lisaXML::TDIData: behavior undetermined for arrays of this dimension"
-            raise NotImplementedError
+            raise NotImplementedError("lisaXML::TDIData: behavior undetermined for arrays of this dimension")
 
         TimeSeries.length = length
 
         if length > TimeSeries.alength:
-            print "lisaXML::TDIData: data shorter than requested output length"
-            raise IndexError
+            raise IndexError("lisaXML::TDIData: data shorter than requested output length")
 
         TimeSeries.cadence = cadence
 
@@ -771,8 +770,7 @@ class lisaXML(writeXML):
             elif sys.byteorder == 'little':
                 encoding = 'Binary,LittleEndian'
             else:
-                print 'lisaXML::writedata: cannot determine binary encoding'
-                raise NotImplementedError
+                raise NotImplementedError('lisaXML::writedata: cannot determine binary encoding')
 
             # defaulting to remote storage
             # determine binary filename (base filename + ordinal + '.bin')
@@ -804,8 +802,7 @@ class lisaXML(writeXML):
 
             self.closetag('Stream')
         else:
-            print 'lisaXML::writedata: encoding not implemented'
-            raise NotImplementedError
+            raise NotImplementedError('lisaXML::writedata: encoding not implemented')
             
         self.closetag('Array')
 
@@ -894,22 +891,19 @@ class lisaXML(writeXML):
             if data.dtype.char != 'd':
                 raise TypeError
         except:
-            print "lisaXML::TDISpectra: data must be a proper numpy array of doubles"
-            raise TypeError
+            raise TypeError("lisaXML::TDISpectra: data must be a proper numpy array of doubles")
         
         if FrequencySeries.dim == 1:
             FrequencySeries.records = 1
         elif FrequencySeries.dim == 2:        
             FrequencySeries.records = numpy.shape(data)[1]
         else:
-            print "lisaXML::TDISpectra: behavior undetermined for arrays of this dimension"
-            raise NotImplementedError
+            raise NotImplementedError("lisaXML::TDISpectra: behavior undetermined for arrays of this dimension")
 
         FrequencySeries.length = length
 
         if length > FrequencySeries.alength:
-            print "lisaXML::TDISpectra: data shorter than requested output length"
-            raise IndexError
+            raise IndexError("lisaXML::TDISpectra: data shorter than requested output length")
 
         FrequencySeries.minf = offset * deltaf
         FrequencySeries.maxf = (offset + length - 1) * deltaf
@@ -960,8 +954,7 @@ class lisaXML(writeXML):
         the lisaXML object."""
         
         if self.opened == 0:
-            print "lisaXML::close(): File is closed already"
-            raise IOError
+            raise IOError("lisaXML::close(): File is closed already")
         
         self.content('<?xml version="1.0"?>')
         self.content('<!DOCTYPE XSIL SYSTEM "http://www.vallis.org/lisa-xml.dtd">')
@@ -1048,15 +1041,14 @@ class readXML:
         try:
             tree = p(lines)
         except pyRXP.error:
-            print "XML validation error! (Or perhaps I couldn't access the DTD)."
-            print "I'll try to use the file anyway by removing the DTD..."
+            print("XML validation error! (Or perhaps I couldn't access the DTD).")
+            print("I'll try to use the file anyway by removing the DTD...")
 
             lines = re.sub('<!DOCTYPE XSIL SYSTEM ".*">','',lines)
             tree = p(lines)
 
         if tree[0] != 'XSIL':
-            print 'Not a LISA XSIL file!'
-            raise TypeError
+            raise TypeError('Not a LISA XSIL file!')
 
         self.directory = os.path.dirname(filename)
 
@@ -1282,12 +1274,12 @@ class readXML:
             if not lisa:
                 raise AttributeError
         except:
-            raise AttributeError, 'readXML.getTDInoise(): problems reading LISA geometry'
+            raise AttributeError('readXML.getTDInoise(): problems reading LISA geometry')
 
         try:
             noises = self.getLISANoise()
         except:
-            raise AttributeError, 'readXML.getTDInoise(): problems reading LISA noises'
+            raise AttributeError('readXML.getTDInoise(): problems reading LISA noises')
 
         noisedict = {}
 
@@ -1320,7 +1312,7 @@ class readXML:
                 try:
                     encoding = node2.Encoding
                 except:
-                    raise AttributeError, 'readXML.processArray(): encoding/type not specified in stream'
+                    raise AttributeError('readXML.processArray(): encoding/type not specified in stream')
 
                 if node2.Type == 'Remote':
                     vars = map(lambda s: string.lstrip(string.rstrip(s)),string.split(node.Name,','))
@@ -1349,13 +1341,13 @@ class readXML:
         if node.Type in ('PlaneWave','SampledPlaneWave'):
             for test in standardSourceParameterSet:
                 if test(objectparams) != True:
-                    raise KeyError, 'readXML.processObject(): need standard parameter(s) %s in source %s' % (test(objectparams),objectname)
+                    raise KeyError('readXML.processObject(): need standard parameter(s) %s in source %s' % (test(objectparams),objectname))
 
         if node.Type == 'PlaneWave':
             try:
                 objecttype = objectparams['SourceType'][0]
             except:
-                raise KeyError, 'readXML.processObject(): need SourceType for PlaneWave source %s' % objectname
+                raise KeyError('readXML.processObject(): need SourceType for PlaneWave source %s' % objectname)
         else:
             objecttype = node.Type
 
@@ -1376,13 +1368,13 @@ class readXML:
                     break             
     
         if not objecttype in minimumParameterSet:
-            raise NotImplementedError, 'readXML.processObject(): unknown object type %s for object %s' % (objecttype,objectname)
+            raise NotImplementedError('readXML.processObject(): unknown object type %s for object %s' % (objecttype,objectname))
 
         # check that minimum parameter set is included
 
         for test in minimumParameterSet[objecttype]:
             if test(objectparams) != True:
-                raise KeyError, 'readXML.processObject(): need parameter(s) %s for object %s of type %s' % (test(objectparams),objectname,objecttype)
+                raise KeyError('readXML.processObject(): need parameter(s) %s for object %s of type %s' % (test(objectparams),objectname,objecttype))
 
         # add the default units if not included and if defined
     
@@ -1401,7 +1393,7 @@ class readXML:
         # now convert to a synthlisa object; see if we have it defined
         
         if not objecttype in XMLToObject:
-            raise NotImplementedError, 'readXML.processObject(): unknown object %s of type %s' % (objectname,objecttype)
+            raise NotImplementedError('readXML.processObject(): unknown object %s of type %s' % (objectname,objecttype))
 
         synthlisatype = XMLToObject[objecttype][0]
             
@@ -1421,7 +1413,7 @@ class readXML:
                     if param[2]:
                         thisparam = (param[2],param[1])
                     else:
-                        raise AttributeError, 'readXML.processObject(): need parameter(s) %s in object %s of type %s' % (param[0],objectname,objecttype)
+                        raise AttributeError('readXML.processObject(): need parameter(s) %s in object %s of type %s' % (param[0],objectname,objecttype))
             else:
                 thisparam = objectparams[param[0]]
 
@@ -1471,7 +1463,7 @@ def handleFiles(args):
                         readbuffer = numpy.fromstring(binaryfile.read(readlength),'double')
                         binaryfile.close()
                     except:
-                        raise IOError, 'handleFiles(): problems reading file %s' % args[i].filename
+                        raise IOError('handleFiles(): problems reading file %s' % args[i].filename)
 
                 if (('BigEndian' in args[i].encoding and sys.byteorder == 'little') or
                     ('LittleEndian' in args[i].encoding and sys.byteorder == 'big')):

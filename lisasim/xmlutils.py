@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 # this is part of pyRXP, version 1.0.7
 # see the pyRXP distribution directory for licensing, etc.
 
@@ -96,7 +98,7 @@ class TagWrapper:
                         return t
             # not found, barf
             msg = '"%s" not found in attributes of tag <%s> or its children' % (attr, self.tagName)
-            raise AttributeError, msg
+            raise AttributeError(msg)
 
     def keys(self):
         "return list of valid keys"
@@ -113,7 +115,7 @@ class TagWrapper:
         try:
             child = self._children[idx]
         except IndexError:
-            raise IndexError, '%s no index %s' % (self.__repr__(), `idx`)
+            raise IndexError('%s no index %s' % (self.__repr__(), idx))
         if type(child) is StringType: return child
         else: return TagWrapper(child)
 

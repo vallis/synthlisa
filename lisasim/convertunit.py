@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 # $Id$
 # $Date$
 # $Author$
@@ -53,7 +55,7 @@ def convertUnit(param,unitin,unitout,paramname=''):
                 elif param == 'RedAcceleration':
                     return ('-4.0','1')
 
-    raise NotImplementedError, "convertUnit(): cannot convert %s from %s to %s (parameter %s)" % (param,unitin,unitout,paramname)
+    raise NotImplementedError("convertUnit(): cannot convert %s from %s to %s (parameter %s)" % (param,unitin,unitout,paramname))
 
 # conversion rules (a tuple consisting of a list of required parameters with their
 # units, and a function returning the transformed parameter with its unit
@@ -114,7 +116,7 @@ def ex2ipr(e,x,s):
     sw = float(s)
 
     if sw > 0:
-        raise NotImplementedError, "convertParameters(): LISA eta/xi configuration with sw > 0 not compatible with PseudoLISA"
+        raise NotImplementedError("convertParameters(): LISA eta/xi configuration with sw > 0 not compatible with PseudoLISA")
 
     initpos = eta
     initrot = xi + initpos - 1.5*math.pi
@@ -158,7 +160,7 @@ def interp2length(interptype,interpwindow):
     elif interptype == 'Lagrange': 
         return (interpwindow,'1')
     else:
-        raise NotImplementedError, "convertParameters(): unknown interpolator type %s" % interptype
+        raise NotImplementedError("convertParameters(): unknown interpolator type %s" % interptype)
 
 conversionRules['InterpolatorLength'] = ( [('Interpolator','String'),('InterpolatorWindow','1')],
                                           lambda x,y: interp2length(x,y) )
@@ -176,7 +178,7 @@ def length2interp(l):
     elif interplen > 1.0:
         return ( ('Lagrange','String'), (str(int(interplen)),'1') )
     else:
-        raise NotImplementedError, "convertParameters(): unknown interpolator length %s" % interplen
+        raise NotImplementedError("convertParameters(): unknown interpolator length %s" % interplen)
 
 conversionRules['Interpolator'] = ( [('InterpolatorLength','1')],
                                     lambda x: length2interp(x)[0] )
@@ -196,7 +198,7 @@ def convertParameters(param,sourceparams):
             try:
                 args.append(convertUnit(sourceparams[arg[0]][0],sourceparams[arg[0]][1],arg[1])[0])
             except KeyError:
-                raise AttributeError, "convertParameters(): need %s to return %s" % (arg[0],param[0])
+                raise AttributeError("convertParameters(): need %s to return %s" % (arg[0],param[0]))
     except KeyError:
         raise AttributeError
     
