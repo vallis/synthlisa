@@ -5,7 +5,7 @@ from __future__ import print_function
 # $Author$
 # $Revision$
 
-import lisaswig
+# import lisaswig
 import numpy
 import numpy
 import numpy.fft as FFT

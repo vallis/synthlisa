@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function, absolute_import
 
 # $Id$
 # $Date$
@@ -18,7 +18,7 @@ import numpy
 
 import pyRXPU as pyRXP
 # require xmlutils from pyRXP examples
-import xmlutils
+from . import xmlutils
 
 # begin definitions encoding synthLISA syntax
 
@@ -153,24 +153,25 @@ ObjectToXML = {
     'SampledWave': 'SampledPlaneWave'
 }
 
+# TO DO! reinstate objects here
 XMLToObject = {
     # Synthetic LISA objects
 
-    'OriginalLISA': ('OriginalLISA',synthlisa.OriginalLISA),
-    'CircularRotating': ('CircularRotating',synthlisa.CircularRotating),
-    'EccentricInclined': ('EccentricInclined',synthlisa.EccentricInclined),
+    # 'OriginalLISA': ('OriginalLISA',synthlisa.OriginalLISA),
+    # 'CircularRotating': ('CircularRotating',synthlisa.CircularRotating),
+    # 'EccentricInclined': ('EccentricInclined',synthlisa.EccentricInclined),
     
-    'SimpleBinary': ('SimpleBinary',synthlisa.SimpleBinary),
+    # 'SimpleBinary': ('SimpleBinary',synthlisa.SimpleBinary),
 
     # standard lisaXML objects
 
-    'PseudoLISA': ('EccentricInclined',synthlisa.EccentricInclined),    
+    # 'PseudoLISA': ('EccentricInclined',synthlisa.EccentricInclined),    
 
-    'PseudoRandomNoise': ('PowerLawNoise',synthlisa.PowerLawNoise),
+    # 'PseudoRandomNoise': ('PowerLawNoise',synthlisa.PowerLawNoise),
 
-    'GalacticBinary': ('SimpleBinary',synthlisa.SimpleBinary),
+    # 'GalacticBinary': ('SimpleBinary',synthlisa.SimpleBinary),
     
-    'SampledPlaneWave': ('SampledWave',synthlisa.SampledWave)
+    # 'SampledPlaneWave': ('SampledWave',synthlisa.SampledWave)
 }
 
 # begin definitions encoding XML syntax
@@ -261,7 +262,7 @@ defaultUnits = {
     'Armlength': 'Second'
 }
 
-from convertunit import convertParameters, convertUnit
+from .convertunit import convertParameters, convertUnit
 
 class writeXML:
     def __init__(self,filename):

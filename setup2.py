@@ -12,6 +12,10 @@ from Cython.Build import cythonize
 
 import numpy
 
+lisasources = ['lisasim/lisasim-lisa.cpp',
+               'lisasim/lisasim-signal.cpp',
+               'lisasim/lisasim-tens.cpp']
+
 setup(name = 'synthlisa',
       version = '2.1.0', # remember to change it in __init__.py.in
       description = 'Synthetic LISA Simulator',
@@ -25,12 +29,13 @@ setup(name = 'synthlisa',
 
       py_modules = [],
 
-      ext_modules = cythonize(Extension('synthlisa.synthlisa',['lisasim/synthlisa.pyx'],
+      ext_modules = cythonize(Extension('synthlisa.synthlisa',
+                                        ['lisasim/synthlisa.pyx'] + lisasources,
                                         language = "c++",
                                         include_dirs = [numpy.get_include()],
-                                        # libraries = [],
-                                        # library_dirs = [],
-                                        # extra_link_args = linkArgs,
+                                        libraries = ['gsl', 'gslcblas'],
+                                        # library_dirs = ['/usr/local'],
+                                        # extra_link_args = [],
                                         extra_compile_args = ["-Wno-unused-function"]
                                         ))
       )

@@ -1,7 +1,14 @@
-from lisaswig import *
-from lisautils import *
-from lisaxml import *
-from version import *
+from __future__ import absolute_import
+
+# Cython interface
+from .synthlisa import *
+
+# disabled SWIG interface
+# from lisaswig import *
+
+from .lisautils import *
+from .lisaxml import *
+from .version import *
 
 # try:
 #    from lisawp import *
@@ -14,7 +21,7 @@ from version import *
 #     pass
 
 try:
-    from lisapar import *
+    from .lisapar import *
 except ImportError:
     # swallow the ImportError if mpi is not installed
     pass

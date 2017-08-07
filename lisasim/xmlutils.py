@@ -5,9 +5,8 @@ from __future__ import print_function
 
 "Some XML helper classes."
 import os, string, sys
-from types import StringType, ListType, TupleType
 import pyRXPU as pyRXP
-assert pyRXP.version>='0.5', 'get the latest pyRXP!'
+# assert pyRXP.version>='0.5', 'get the latest pyRXP!'
     
 
 IGNOREWHITESPACE = 1
@@ -15,7 +14,7 @@ IGNOREWHITESPACE = 1
 def ignoreWhitespace(list):
     newlist = []
     for elem in list:
-        if type(elem) is StringType:
+        if type(elem) is str:
             short = string.strip(elem)
             if short == '':
                 pass
@@ -88,7 +87,7 @@ class TagWrapper:
         else:
             #first child tag whose name matches?
             for child in self._children:
-                if type(child) is StringType:
+                if type(child) is str:
                     pass
                 else:
                     tagName, attrs, children, spare = child
@@ -104,7 +103,7 @@ class TagWrapper:
         "return list of valid keys"
         result = self._attrs.keys()
         for child in self._children:
-            if type(child) is StringType: pass
+            if type(child) is str: pass
             else: result.append(child[0])
         return result
 
@@ -116,13 +115,13 @@ class TagWrapper:
             child = self._children[idx]
         except IndexError:
             raise IndexError('%s no index %s' % (self.__repr__(), idx))
-        if type(child) is StringType: return child
+        if type(child) is str: return child
         else: return TagWrapper(child)
 
     def _namedChildren(self,name):
         R = []
         for c in self:
-            if type(c) is StringType:
+            if type(c) is str:
                 if name is None: R.append(c)
             elif name == c.tagName: R.append(c)
         return R
