@@ -17,7 +17,7 @@
 # import all the libraries that are needed
 
 from synthlisa import *
-from Numeric import *
+from numpy import *
 
 
 # we use the most realistic LISA geometry model, with eccentric and inclined

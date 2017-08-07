@@ -12,9 +12,9 @@ import string
 import re
 import math
 
-import numpy.oldnumeric as Numeric
+import numpy
 
-import pyRXP
+import pyRXPU as pyRXP
 # require xmlutils from pyRXP examples
 import xmlutils
 
@@ -111,8 +111,8 @@ outputList['SimpleBinary'] = ( ('EclipticLatitude','Radian',None),
     
 # let's not support normalization, right now...
 
-argumentList['SampledWave'] = ( ('hp','Numeric',None),
-                                ('hc','Numeric',None),
+argumentList['SampledWave'] = ( ('hp','numpy',None),
+                                ('hc','numpy',None),
                                 ('Length','1',None),
                                 ('Cadence','Second',None),
                                 ('Prebuffer','Second',None),
@@ -134,8 +134,8 @@ outputList['SampledWave'] = ( ('EclipticLatitude','Radian',None),
 outputList['TimeSeries'] = ( ('TimeOffset','Second',None),
                              ('Cadence','Second',None),
                              ('Length','1',None),
-                             ('hc','Numeric',None),
-                             ('hp','Numeric',None) )
+                             ('hc','numpy',None),
+                             ('hp','numpy',None) )
 
 # give translations between synthlisa and XML, and backwards
 
@@ -394,7 +394,7 @@ class binaryData:
         self.length = length
 
     def dumpdata(self,filename):
-        buffer = Numeric.zeros([self.length,self.records],'d')
+        buffer = numpy.zeros([self.length,self.records],'d')
 
         for i in range(self.records):
             buffer[:,i] = self.thedata[i][0:self.length]
@@ -693,7 +693,7 @@ class lisaXML(writeXML):
 
     def TDIData(self,data,length,cadence,description,offset=0,encoding='Binary',comments=''):
         """Add a TimeSeries object to a lisaXML file object. Here
-        'data' is the Numeric array containing the time series
+        'data' is the numpy array containing the time series
         (simultaneous entries on the same row); 'length' is the desired
         length to be written in the array; 'cadence' is its nominal
         cadence in seconds; 'description' should be a comma-separated
@@ -719,19 +719,19 @@ class lisaXML(writeXML):
         
         try:
             TimeSeries.data = data
-            TimeSeries.dim = len(Numeric.shape(data))
-            TimeSeries.alength = Numeric.shape(data)[0]
+            TimeSeries.dim = len(numpy.shape(data))
+            TimeSeries.alength = numpy.shape(data)[0]
             
             if data.dtype.char != 'd':
                 raise TypeError
         except:
-            print "lisaXML::TDIData: data must be a proper Numeric array of doubles"
+            print "lisaXML::TDIData: data must be a proper numpy array of doubles"
             raise TypeError
         
         if TimeSeries.dim == 1:
             TimeSeries.records = 1
         elif TimeSeries.dim == 2:        
-            TimeSeries.records = Numeric.shape(data)[1]
+            TimeSeries.records = numpy.shape(data)[1]
         else:
             print "lisaXML::TDIData: behavior undetermined for arrays of this dimension"
             raise NotImplementedError
@@ -841,7 +841,7 @@ class lisaXML(writeXML):
 
     def TDISpectraSelfDescribed(self,data,description,encoding='Binary',comments=''):
         """Add a FrequencySeries object to a lisaXML file object.
-        Here 'data' is the Numeric array containing the time
+        Here 'data' is the numpy array containing the time
         series (simultaneous entries on the same row); 'description'
         is a comma-separated string listing the TDI observables
         represented in the time series; 'encoding' can be 'Binary'
@@ -862,7 +862,7 @@ class lisaXML(writeXML):
 
     def TDISpectra(self,data,length,deltaf,description,offset=0,encoding='Binary',comments=''):
         """Add a FrequencySeries object to a lisaXML file object.
-        Here 'data' is the Numeric array containing the time series
+        Here 'data' is the numpy array containing the time series
         (simultaneous entries on the same row); 'length' is the desired
         length of the array to be written; 'deltaf' is the difference
         between successive records [in Hz]; comma-separated string
@@ -888,19 +888,19 @@ class lisaXML(writeXML):
         
         try:
             FrequencySeries.data = data
-            FrequencySeries.dim = len(Numeric.shape(data))
-            FrequencySeries.alength = Numeric.shape(data)[0]
+            FrequencySeries.dim = len(numpy.shape(data))
+            FrequencySeries.alength = numpy.shape(data)[0]
             
             if data.dtype.char != 'd':
                 raise TypeError
         except:
-            print "lisaXML::TDISpectra: data must be a proper Numeric array of doubles"
+            print "lisaXML::TDISpectra: data must be a proper numpy array of doubles"
             raise TypeError
         
         if FrequencySeries.dim == 1:
             FrequencySeries.records = 1
         elif FrequencySeries.dim == 2:        
-            FrequencySeries.records = Numeric.shape(data)[1]
+            FrequencySeries.records = numpy.shape(data)[1]
         else:
             print "lisaXML::TDISpectra: behavior undetermined for arrays of this dimension"
             raise NotImplementedError
@@ -1116,7 +1116,7 @@ class readXML:
                                 else: 
                                     binaryfile = open(timeseries['Filename'],'r')
                                                             
-                                readbuffer = Numeric.fromstring(binaryfile.read(readlength),'double')
+                                readbuffer = numpy.fromstring(binaryfile.read(readlength),'double')
                                 binaryfile.close()
                 
                                 if (('BigEndian' in timeseries['Encoding'] and sys.byteorder == 'little') or
@@ -1126,8 +1126,8 @@ class readXML:
                                 if timeseries['Records'] == 1:
                                     timeseries['Data'] = readbuffer
                                 else:
-                                    timeseries['Data'] = Numeric.reshape(readbuffer,
-                                                                         [timeseries['Length'],timeseries['Records']])
+                                    timeseries['Data'] = numpy.reshape(readbuffer,
+                                                                       [timeseries['Length'],timeseries['Records']])
                             else:
                                 # remote data, not binary
                                 raise NotImplementedError
@@ -1144,10 +1144,10 @@ class readXML:
                                 datavalues = map(float,datastring.split())
     
                                 if timeseries['Records'] == 1:
-                                    timeseries['Data'] = Numeric.array(datavalues,'d')
+                                    timeseries['Data'] = numpy.array(datavalues,'d')
                                 else:
-                                    timeseries['Data'] = Numeric.reshape(Numeric.array(datavalues,'d'),
-                                                                         [timeseries['Length'],timeseries['Records']])
+                                    timeseries['Data'] = numpy.reshape(numpy.array(datavalues,'d'),
+                                                                       [timeseries['Length'],timeseries['Records']])
     
                                 # should try different delimiters
                             else:
@@ -1328,7 +1328,7 @@ class readXML:
                     for v in range(len(vars)):
                         objectparams[vars[v]] = (fileData(self.directory + '/' + str(node2),str(node2),
                                                           int(objectparams['Length'][0]),int(objectparams['Records'][0]),encoding,v),
-                                                 'Numeric')
+                                                 'numpy')
 
                 # should handle local data here...
 
@@ -1429,7 +1429,7 @@ class readXML:
 
             thisparam = convertUnit(thisparam[0],thisparam[1],param[1],param[0])
 
-            if param[1] == 'String' or param[1] == 'Numeric':
+            if param[1] == 'String' or param[1] == 'numpy':
                 evalparam = thisparam[0]
             else:
                 try:
@@ -1463,12 +1463,12 @@ def handleFiles(args):
 
                 try:
                     binaryfile = open(args[i].filename,'r')
-                    readbuffer = Numeric.fromstring(binaryfile.read(readlength),'double')
+                    readbuffer = numpy.fromstring(binaryfile.read(readlength),'double')
                     binaryfile.close()
                 except:
                     try:
                         binaryfile = open(args[i].basename,'r')
-                        readbuffer = Numeric.fromstring(binaryfile.read(readlength),'double')
+                        readbuffer = numpy.fromstring(binaryfile.read(readlength),'double')
                         binaryfile.close()
                     except:
                         raise IOError, 'handleFiles(): problems reading file %s' % args[i].filename
@@ -1480,7 +1480,7 @@ def handleFiles(args):
                 if args[i].records == 1:
                     files[args[i].filename] = [readbuffer]
                 else:
-                    readbuffer = Numeric.reshape(readbuffer,[args[i].length,args[i].records])
+                    readbuffer = numpy.reshape(readbuffer,[args[i].length,args[i].records])
                 
                     files[args[i].filename] = [readbuffer[:,j].copy() for j in range(0,args[i].records)]
 
@@ -1498,7 +1498,7 @@ def MakeObject(s):
     ret.name = s[2]
     
     for param in s[3]:
-        if s[3][param][1] != 'Numeric':
+        if s[3][param][1] != 'numpy':
             ret.__setattr__(param,(s[3][param]))
     
     return ret

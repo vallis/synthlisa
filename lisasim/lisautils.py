@@ -5,7 +5,7 @@
 
 import lisaswig
 import numpy
-import numpy.oldnumeric as Numeric
+import numpy
 import numpy.fft as FFT
 import math
 
@@ -31,9 +31,9 @@ def spect(series,sampling,patches=1,detrend=0,overlap=1,win='triangle'):
         else:
             period = opwpdg(series,patches,detrend,win)
 
-    pdlen = Numeric.shape(period)[0]-1
+    pdlen = numpy.shape(period)[0]-1
 
-    freqs = Numeric.arange(0,pdlen+1,dtype='d') * (nyquistf / pdlen)
+    freqs = numpy.arange(0,pdlen+1,dtype='d') * (nyquistf / pdlen)
 
     deltaf = nyquistf / pdlen
    
@@ -41,7 +41,7 @@ def spect(series,sampling,patches=1,detrend=0,overlap=1,win='triangle'):
     period[1:pdlen] = period[1:pdlen] / deltaf
     period[pdlen] = 2 * period[pdlen] / deltaf
 
-    spectrum = Numeric.zeros((pdlen+1,2),dtype='d')
+    spectrum = numpy.zeros((pdlen+1,2),dtype='d')
 
     spectrum[:,0] = freqs[:]
     spectrum[:,1] = period[:]
@@ -51,13 +51,13 @@ def spect(series,sampling,patches=1,detrend=0,overlap=1,win='triangle'):
 # simple periodogram
 
 def pdg(series):
-    samples = Numeric.shape(series)[0]
+    samples = numpy.shape(series)[0]
 
     pdlen = samples/2
 
     fourier = abs(FFT.fft(series))
 
-    pdgram = Numeric.zeros(pdlen+1,dtype='d')
+    pdgram = numpy.zeros(pdlen+1,dtype='d')
 
     pdgram[0] = fourier[0]**2
     pdgram[1:pdlen] = fourier[1:pdlen]**2 + fourier[-1:pdlen:-1]**2
@@ -74,13 +74,13 @@ def pdg(series):
 
 def leastsquares(array,detrend=0):
     S = len(array)
-    x = Numeric.arange(0,S,dtype='d')
+    x = numpy.arange(0,S,dtype='d')
     
-    Sx = Numeric.sum(x)
-    Sy = Numeric.sum(array)
+    Sx = numpy.sum(x)
+    Sy = numpy.sum(array)
 
-    Sxx = Numeric.sum(x**2)
-    Sxy = Numeric.sum(x * array)
+    Sxx = numpy.sum(x**2)
+    Sxy = numpy.sum(x * array)
 
     delta = S * Sxx - Sx**2
     
@@ -97,18 +97,18 @@ def leastsquares(array,detrend=0):
 #   we should not modify its value
 
 def wpdg(series,detrend=0,win='triangle'):
-    samples = Numeric.shape(series)[0]
+    samples = numpy.shape(series)[0]
 
-    wrange = Numeric.arange(0,samples,dtype='d') / (samples - 1.0);
+    wrange = numpy.arange(0,samples,dtype='d') / (samples - 1.0);
 
     if win == 'blackman':
-        window = 0.42 - 0.5 * Numeric.cos(2*math.pi*wrange) + 0.08 * Numeric.cos(4*math.pi*wrange)
+        window = 0.42 - 0.5 * numpy.cos(2*math.pi*wrange) + 0.08 * numpy.cos(4*math.pi*wrange)
     elif win == 'sin4':
-        window = Numeric.sin(math.pi*wrange)**4.0
+        window = numpy.sin(math.pi*wrange)**4.0
     else:
         # if we don't recognize a window, default to triangle
         pdlen = (samples - 1) / 2.0
-        window = 1.0 - abs(Numeric.arange(0,samples,dtype='d') - pdlen) / (pdlen)
+        window = 1.0 - abs(numpy.arange(0,samples,dtype='d') - pdlen) / (pdlen)
 
     wseries = series.copy()
 
@@ -117,7 +117,7 @@ def wpdg(series,detrend=0,win='triangle'):
     
     wseries *= window
 
-    weight = samples * Numeric.sum(window ** 2)
+    weight = samples * numpy.sum(window ** 2)
     wpdgram = pdg(wseries) * (1.0 * samples**2 / weight)
 
     return wpdgram
@@ -125,13 +125,13 @@ def wpdg(series,detrend=0,win='triangle'):
 # overlapping-averaged, triangle-windowed periodogram
 
 def opwpdg(series,patches,detrend=0,win='triangle'):
-    samples = Numeric.shape(series)[0]
+    samples = numpy.shape(series)[0]
     serlen = samples - (samples % (4*patches))
 
     patlen = serlen/patches
     pdlen = patlen/2
 
-    opwpdgram = Numeric.zeros(pdlen+1,dtype='d')
+    opwpdgram = numpy.zeros(pdlen+1,dtype='d')
 
     for cnt in xrange(0,2*patches-1):
         opwpdgram[:] += wpdg(series[cnt*pdlen:(cnt+2)*pdlen],detrend,win)
@@ -143,13 +143,13 @@ def opwpdg(series,patches,detrend=0,win='triangle'):
 # nonoverlapping-averaged, triangle-windowed periodogram
 
 def nopwpdg(series,patches,detrend=0,win='triangle'):
-    samples = Numeric.shape(series)[0]
+    samples = numpy.shape(series)[0]
     serlen = samples - (samples % (4*patches))
 
     patlen = serlen/patches
     pdlen = patlen/2
 
-    opwpdgram = Numeric.zeros(pdlen+1,dtype='d')
+    opwpdgram = numpy.zeros(pdlen+1,dtype='d')
 
     for cnt in xrange(0,patches):
         opwpdgram[:] += wpdg(series[cnt*patlen:(cnt+1)*patlen],detrend,win)
@@ -159,7 +159,7 @@ def nopwpdg(series,patches,detrend=0,win='triangle'):
     return opwpdgram
 
 def whitentime(series,patches=1):
-    samples = Numeric.shape(series)[0]
+    samples = numpy.shape(series)[0]
 
     patlen = samples / patches
     
@@ -172,13 +172,13 @@ def whitentime(series,patches=1):
             integ = integ+next
 
 def darkenspectrum(spectrum,stime):
-    samples = Numeric.shape(spectrum)[0]
+    samples = numpy.shape(spectrum)[0]
 
     for cnt in xrange(1,samples):
-        spectrum[cnt,1] = spectrum[cnt,1] * (2*Numeric.sin(math.pi*spectrum[cnt,0]*stime))**2.0
+        spectrum[cnt,1] = spectrum[cnt,1] * (2*numpy.sin(math.pi*spectrum[cnt,0]*stime))**2.0
 
 def darkentime(series,patches=1):
-    samples = Numeric.shape(series)[0]
+    samples = numpy.shape(series)[0]
 
     patlen = samples / patches
     
@@ -187,17 +187,17 @@ def darkentime(series,patches=1):
             series[j*patlen+i] = series[j*patlen+i+1] - series[j*patlen+i]
 
 def whitenspectrum(spectrum,stime):
-    samples = Numeric.shape(spectrum)[0]
+    samples = numpy.shape(spectrum)[0]
 
     for cnt in xrange(1,samples):
-        spectrum[cnt,1] = spectrum[cnt,1] / (2*Numeric.sin(math.pi*spectrum[cnt,0]*stime))**2.0
+        spectrum[cnt,1] = spectrum[cnt,1] / (2*numpy.sin(math.pi*spectrum[cnt,0]*stime))**2.0
 
 # make it so that "time" is an observable
 
 def time(t):
     return t
 
-# return a 1 or 2 dimensional Numeric array, according to whether
+# return a 1 or 2 dimensional numpy array, according to whether
 # "observables" is a function or a list of functions
 
 import operator
@@ -223,11 +223,11 @@ def getobsc(snum,stime,observables,zerotime=0.0,forcepython=0):
     return getobs(snum,stime,observables,zerotime,display=1,forcepython=forcepython)
 
 def getobs(snum,stime,observables,zerotime=0.0,display=0,forcepython=0):
-    if len(Numeric.shape(observables)) == 0:
+    if len(numpy.shape(observables)) == 0:
         obsobj = checkobs([observables])
                 
         if obsobj and (not forcepython):
-            array = Numeric.zeros(snum,dtype='d')
+            array = numpy.zeros(snum,dtype='d')
 
             if display:
                 lisaswig.fastgetobsc(array,snum,stime,obsobj,zerotime)
@@ -237,16 +237,16 @@ def getobs(snum,stime,observables,zerotime=0.0,display=0,forcepython=0):
             if display:
                 return getobscount(snum,stime,observables,zerotime)
             else:
-                array = Numeric.zeros(snum,dtype='d')
+                array = numpy.zeros(snum,dtype='d')
             
-                for i in Numeric.arange(0,snum):
+                for i in numpy.arange(0,snum):
                     array[i] = observables(zerotime+i*stime)
     else:
         obsobj = checkobs(observables)
 
         if obsobj and (not forcepython):
-            obslen = Numeric.shape(observables)[0]
-            array = Numeric.zeros((snum,obslen),dtype='d')
+            obslen = numpy.shape(observables)[0]
+            array = numpy.zeros((snum,obslen),dtype='d')
 
             if display:
                 lisaswig.fastgetobsc(array,snum,stime,obsobj,zerotime)
@@ -256,10 +256,10 @@ def getobs(snum,stime,observables,zerotime=0.0,display=0,forcepython=0):
             if display:
                 return getobscount(snum,stime,observables,zerotime)
             else:
-                obslen = Numeric.shape(observables)[0]
-                array = Numeric.zeros((snum,obslen),dtype='d')
+                obslen = numpy.shape(observables)[0]
+                array = numpy.zeros((snum,obslen),dtype='d')
             
-                for i in Numeric.arange(0,snum):
+                for i in numpy.arange(0,snum):
                     for j in xrange(0,obslen):
                         array[i,j] = observables[j](zerotime+i*stime)
     return array
@@ -299,16 +299,16 @@ def getobscount(snum,stime,observables,zerotime=0.0):
     sys.stdout.flush()
 
     try:
-        if len(Numeric.shape(observables)) == 0:
-            array = Numeric.zeros(snum,dtype='d')
-            for i in Numeric.arange(0,snum):
+        if len(numpy.shape(observables)) == 0:
+            array = numpy.zeros(snum,dtype='d')
+            for i in numpy.arange(0,snum):
                 array[i] = observables(zerotime+i*stime)
                 if i % 1024 == 0:
                     lasttime = dotime(i,snum,inittime,lasttime)
         else:
-            obslen = Numeric.shape(observables)[0]
-            array = Numeric.zeros((snum,obslen),dtype='d')
-            for i in Numeric.arange(0,snum):
+            obslen = numpy.shape(observables)[0]
+            array = numpy.zeros((snum,obslen),dtype='d')
+            for i in numpy.arange(0,snum):
                 for j in xrange(0,obslen):
                     array[i,j] = observables[j](zerotime+i*stime)
                 if i % 1024 == 0:
@@ -337,15 +337,15 @@ def getobscount(snum,stime,observables,zerotime=0.0):
     return array
 
 # this version is less efficient, probably because of the conversion
-# between the result of map (a sequence) and the numeric array
+# between the result of map (a sequence) and the numpy array
 
 def getobs2(snum,stime,observables):
-    if len(Numeric.shape(observables)) == 0:
-        return Numeric.asarray(map(observables,Numeric.arange(0,snum*stime,stime)),dtype='d')
+    if len(numpy.shape(observables)) == 0:
+        return numpy.asarray(map(observables,numpy.arange(0,snum*stime,stime)),dtype='d')
     else:
         def mapfun(x):
             return map(lambda y: y(x),observables)
-        return Numeric.asarray(map(mapfun,Numeric.arange(0,snum*stime,stime)),dtype='d')
+        return numpy.asarray(map(mapfun,numpy.arange(0,snum*stime,stime)),dtype='d')
 
 def writeobs(filename,snum,stime,observables):
     writearray(filename,getobs(snum,stime,observables))
@@ -356,7 +356,7 @@ def writeobs(filename,snum,stime,observables):
 def writearray(filename,a):
     file = open(filename, 'w')
     if len(a.shape) == 1:
-        a = a[:, Numeric.newaxis]
+        a = a[:, numpy.newaxis]
     for line in a:
         for element in line:
             file.write('%le ' % element)
@@ -375,12 +375,12 @@ def readarray(filename):
     bshape = (len(lines),len(lines[0]))
 
     if bshape[1] == 1:
-        buffer = Numeric.zeros(bshape[0],'d')
+        buffer = numpy.zeros(bshape[0],'d')
 
         for index in xrange(0,bshape[0]):
             buffer[index] = float(lines[index][0])
     else:
-        buffer = Numeric.zeros(bshape,'d')
+        buffer = numpy.zeros(bshape,'d')
 
         for index in xrange(0,buffer.shape[0]):
             buffer[index,:] = map(float,lines[index])
@@ -403,7 +403,7 @@ def writebinary(filename,a,append=0):
 
 def readbinary(filename,length):
     file = open(filename,'r')
-    buffer = Numeric.fromstring(file.read(length*8),'double')
+    buffer = numpy.fromstring(file.read(length*8),'double')
     file.close()
     # then reshape the buffer if needed
     return buffer
@@ -443,7 +443,7 @@ def sn(signal,noise,stime,npatches):
     # interpolate the noise to be defined on the same frequencies
     # of the signal's spectrum
 
-    ispec = Numeric.zeros(Numeric.shape(sspec),dtype='d')
+    ispec = numpy.zeros(numpy.shape(sspec),dtype='d')
     ispec[:,0] = sspec[:,0]
 
     # ispec[:,1] = arrayfns.interp(nspec[:,1],nspec[:,0],ispec[:,0])
@@ -455,7 +455,7 @@ def sn(signal,noise,stime,npatches):
     # so we need only to sum up the array containing the ratio,
     # and multiply by two
 
-    sratio = Numeric.zeros(Numeric.shape(sspec)[0],dtype='d')
+    sratio = numpy.zeros(numpy.shape(sspec)[0],dtype='d')
     sratio[1:] = sspec[1:,1] / ispec[1:,1]
     sn2 = 2.0 * sum(sratio[1:])
 
@@ -494,9 +494,9 @@ def noiseproduct(signal1,signal2,noise,stime,npatches):
     deltaf = 1.0 / (stime * siglen)
 
     fourlen = siglen/2 + 1
-    ispec = Numeric.zeros([fourlen,2],dtype='d')
+    ispec = numpy.zeros([fourlen,2],dtype='d')
 
-    ispec[:,0] = deltaf * Numeric.arange(0,fourlen)
+    ispec[:,0] = deltaf * numpy.arange(0,fourlen)
     # ispec[:,1] = arrayfns.interp(nspec[:,1],nspec[:,0],ispec[:,0])
     ispec[:,1] = linearinterpolate(nspec[:,1],nspec[:,0],ispec[:,0])
    

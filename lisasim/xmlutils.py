@@ -4,7 +4,7 @@
 "Some XML helper classes."
 import os, string, sys
 from types import StringType, ListType, TupleType
-import pyRXP
+import pyRXPU as pyRXP
 assert pyRXP.version>='0.5', 'get the latest pyRXP!'
     
 

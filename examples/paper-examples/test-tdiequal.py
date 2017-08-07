@@ -20,7 +20,7 @@
 # import all the libraries that are needed
 
 from synthlisa import *
-from numpy.oldnumeric import transpose
+from numpy import transpose
 
 # we create a LISA geometry object corresponding to a stationary LISA
 # with equal armlengths

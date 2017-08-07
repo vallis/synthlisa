@@ -43,7 +43,7 @@ Destructor. See above.
 %enddef
 
 %pythoncode %{
-import numpy.oldnumeric as Numeric
+import numpy
 
 import math
 import sys
@@ -312,7 +312,7 @@ class CacheLISA : public LISA {
 %feature("docstring") SampledLISA "
 SampledLISA(p1,p2,p3,deltat,prebuffer,interp)
 returns a LISA object that takes the positions of its spacecraft from
-the 2-dimensional Numeric arrays p1, p2, p3; each of these consists of
+the 2-dimensional numpy arrays p1, p2, p3; each of these consists of
 three columns that give the SSB coordinates of corresponding LISA
 spacecraft.
 
@@ -612,7 +612,7 @@ def PowerLawNoise(deltat,prebuffer,psd,exponent,interplen=1,seed=0):
 def SampledSignal(array,deltat,buffer = 136.0,norm = 1.0,filter = None,interplen = 1,timeoffset = 0.0,endianness = -1,readbuffer=2**20):
     interp = getInterpolator(interplen)
 
-    if isinstance(array,Numeric.ndarray):
+    if isinstance(array,numpy.ndarray):
         samplednoise = SampledSignalSource(array,norm)
     elif isinstance(array,str):
         readbuffer = max(int(buffer/deltat),int(readbuffer))
@@ -629,7 +629,7 @@ def SampledSignal(array,deltat,buffer = 136.0,norm = 1.0,filter = None,interplen
 
         samplednoise = FileSignalSource(array,readbuffer,int(buffer/deltat),endianness,norm)
     else:
-        raise NotImplementedError, "SampledSignal: need Numeric array or filename as first argument (lisasim-swig.i)."
+        raise NotImplementedError, "SampledSignal: need numpy array or filename as first argument (lisasim-swig.i)."
 
     if not filter:
         filteredsamples = 0
@@ -940,7 +940,7 @@ def SampledWave(hparray,hcarray,len,deltat,prebuffer,norm,filter,interp,elat,elo
     """Returns a Wave object that represent a sampled plane GW incoming from
 sky position (elat,elon) with polarization pol, where:
 
-- hparray and hcarray are 1-D Numeric arrays of length len containing
+- hparray and hcarray are 1-D numpy arrays of length len containing
   time series for the hp and hc polarizations;
 
 - deltat [s] is the time spacing of the time series;

@@ -9,7 +9,7 @@
 # - calling getobs to get an array of X values at equispaced times
 # - getting the spectrum of the time series
 # - writing the spectrum to disk
-# - using some Python/Numeric magic to create a theoretical X spectrum
+# - using some Python/numpy magic to create a theoretical X spectrum
 
 # import all the libraries that are needed
 
@@ -43,7 +43,7 @@ patches = 256
 
 noiseX = getobsc(samples,stime,originalTDI.Xm)
 
-# the result is a 1D Numeric array, that we feed to "spect" to get a
+# the result is a 1D numpy array, that we feed to "spect" to get a
 # triangle-windowed, averaged spectrum, using "patches" averaging
 # periods
 

@@ -1,3 +1,9 @@
+2016/07/10 Release 2.0.1
+
+Replaced numpy for Numeric and oldnumeric throughout, including XML file definition.
+
+========================================================================
+
 2012/04/18 Release 2.0.0
 
 Slimmed-down distribution on GitHub.

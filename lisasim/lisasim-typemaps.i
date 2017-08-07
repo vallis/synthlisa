@@ -7,18 +7,15 @@
 %include typemaps.i
 
 // The following from Scott Ransom's numpy.i (ransom@cfa.harvard.edu)
-// needs arrayobject.h from the Numeric distribution
+// needs arrayobject.h from the numpy distribution
 
 %{
 #include "numpy/arrayobject.h"
 
-// this was for Numeric
-// #define ISCONTIGUOUS(m) ((m)->flags & CONTIGUOUS)
-
 // for numpy
 #define ISCONTIGUOUS(m) (PyArray_ISCONTIGUOUS(m))
 
-// if the Numeric array is not contiguous, create a contiguous copy;
+// if the numpy array is not contiguous, create a contiguous copy;
 // if it is contiguous, use it after increasing its reference count
 
 #define PyArray_CONTIGUOUS(m) (ISCONTIGUOUS(m) ? Py_INCREF(m), m : \
@@ -101,7 +98,7 @@
   $1 = &temp[0];
 } 
 
-// Map a Numeric array into an array of doubles, pass also the number of elements
+// Map a numpy array into an array of doubles, pass also the number of elements
 
 %typemap(in) (double* numarray, long length) {
 	PyArrayObject *arr;

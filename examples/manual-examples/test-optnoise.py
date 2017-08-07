@@ -31,13 +31,13 @@ patches = 128
 
 noises = getobsc(samples,sstep,optnoise)
 
-# the result is a 1D Numeric array, that we feed to "spect" to get a
+# the result is a 1D numpy array, that we feed to "spect" to get a
 # triangle-windowed, averaged spectrum, using "patches" averaging
 # periods
 
 myspec = spect(noises,sstep,patches)
 
-# the result is a 2D Numeric array (for instance, myspec[0,0] = 0 Hz,
+# the result is a 2D numpy array (for instance, myspec[0,0] = 0 Hz,
 # and myspec[0,1] is the spectral density at DC; myspec[1,0] is the
 # frequency of the first bin, and myspec[1,1] is the spectral density
 # at that frequency

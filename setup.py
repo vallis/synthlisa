@@ -180,7 +180,7 @@ setdir_sh.close()
 
 # Ready to setup, build, install!
 
-# this used to get the location of the Numeric C headers
+# this used to get the location of the numpy C headers
 
 # if numpy_prefix:
 #     numpy_hfiles = get_python_inc(prefix=numpy_prefix)

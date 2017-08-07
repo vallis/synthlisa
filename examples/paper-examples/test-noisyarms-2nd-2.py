@@ -4,7 +4,7 @@
 # armlengths: second-generation TDI, additional error budgets
 
 from synthlisa import *
-from Numeric import *
+from numpy import *
 
 
 # create the stationary LISA and standard TDI noise objects
