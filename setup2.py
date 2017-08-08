@@ -14,7 +14,8 @@ import numpy
 
 lisasources = ['lisasim/lisasim-lisa.cpp',
                'lisasim/lisasim-signal.cpp',
-               'lisasim/lisasim-tens.cpp']
+               'lisasim/lisasim-tens.cpp',
+               'lisasim/lisasim-wave.cpp']
 
 setup(name = 'synthlisa',
       version = '2.1.0', # remember to change it in __init__.py.in
