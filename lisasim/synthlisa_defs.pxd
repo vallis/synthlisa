@@ -22,7 +22,10 @@ cdef extern from "lisasim-lisa.h":
         CircularRotating(double myL,double eta0,double xi0,double sw,double t0) except+
 
 cdef extern from "lisasim-wave.h":
-    cdef cppclass Wave:
+    cdef cppclass WaveObject:
+        pass
+
+    cdef cppclass Wave(WaveObject):
         double beta
         double lam "lambda"
         double pol
@@ -43,3 +46,22 @@ cdef extern from "lisasim-wave.h":
 
     cdef cppclass GalacticBinary(Wave):
         GalacticBinary(double, double, double, double, double, double, double, double, double, double)
+
+cdef extern from "lisasim-tdi.h":
+    cdef cppclass TDI:
+        void reset()
+
+        double Xm(double)
+        double Ym(double)
+        double Zm(double)        
+
+        double X1(double)
+        double X2(double)
+        double X3(double)
+
+        double y(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, double t)
+        double z(int send, int link, int recv, int ret1, int ret2, int ret3, int ret4, int ret5, int ret6, int ret7, int ret8, double t)
+
+cdef extern from "lisasim-tdisignal.h":
+    cdef cppclass TDIsignal(TDI):
+        TDIsignal(LISA*, WaveObject*)

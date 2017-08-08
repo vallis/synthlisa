@@ -1,12 +1,14 @@
 import numpy
 cimport numpy
 
+cimport synthlisa_defs as defs
+
+
 speedoflight = 2.99792458e8     # m/s
 year2sec = 365.25636 * 86400    # s
 
 standard_armlength = 2.5e9      # m
 
-cimport synthlisa_defs as defs
 
 cdef class LISA:
     cdef defs.LISA *lisa
@@ -23,6 +25,9 @@ cdef class LISA:
             self.lisa = new defs.EccentricInclined(armlength, 0.0, 0.0, 1, 0.0)
         else:
             self.lisa = new defs.CircularRotating(armlength, 0.0, 0.0, 1, 0.0)
+
+    def __dealloc__(self):
+        del self.lisa
 
     def p(self, int arm, double t):
         cdef defs.Vector v        
@@ -41,6 +46,7 @@ cdef class LISA:
 
     def dotarmlength(self, int arm, double t):
         return self.lisa.dotarmlength(arm, t)
+
 
 cdef class Wave:
     cdef defs.Wave *wave
@@ -93,6 +99,50 @@ cdef class SimpleBinary(Wave):
     def __cinit__(self, freq, initphi, inc, amp, b, l, p):
         self.wave = new defs.SimpleBinary(freq, initphi, inc, amp, b, l, p)
 
+    def __dealloc__(self):
+        del self.wave
+
 cdef class GalacticBinary(Wave):
     def __cinit__(self, freq, freqdot, b, l, amp, inc, p, initphi, fddot=0, epsilon=0):
         self.wave = new defs.GalacticBinary(freq, freqdot, b, l, amp, inc, p, initphi, fddot, epsilon)
+
+    def __dealloc__(self):
+        del self.wave
+
+
+cdef class TDI:
+    cdef defs.TDI *tdi
+
+    def reset(self):
+        self.tdi.reset()
+
+    def Xm(self, double t):
+        return self.tdi.Xm(t)
+
+    def Ym(self, double t):
+        return self.tdi.Ym(t)
+
+    def Zm(self, double t):
+        return self.tdi.Zm(t)
+
+    def X1(self, double t):
+        return self.tdi.X1(t)
+
+    def X2(self, double t):
+        return self.tdi.X2(t)
+
+    def X3(self, double t):
+        return self.tdi.X3(t)
+
+    def y(self, int send, int link, int recv, double t, int ret1 = 0, int ret2 = 0, int ret3 = 0, int ret4 = 0, int ret5 = 0, int ret6 = 0, int ret7 = 0):
+        return self.tdi.y(send, link, recv, ret1, ret2, ret3, ret4, ret5, ret6, ret7, t)
+
+    def z(self, int send, int link, int recv, double t, int ret1 = 0, int ret2 = 0, int ret3 = 0, int ret4 = 0, int ret5 = 0, int ret6 = 0, int ret7 = 0, int ret8 = 0):
+        return self.tdi.z(send, link, recv, ret1, ret2, ret3, ret4, ret5, ret6, ret7, ret8, t)
+
+cdef class TDIsignal(TDI):
+    def __cinit__(self, LISA lisa, Wave wave):
+        self.tdi = new defs.TDIsignal(lisa.lisa, wave.wave)
+
+    def __dealloc__(self):
+        del self.tdi
