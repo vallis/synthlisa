@@ -1,11 +1,18 @@
-from __future__ import print_function
+from __future__ import print_function, absolute_import
 
 # $Id$
 # $Date$
 # $Author$
 # $Revision$
 
-# import lisaswig
+if 'xrange' not in dir(__builtins__):
+    xrange = range
+
+try:
+    from . import lisaswig
+except:
+    pass
+
 import numpy
 import numpy
 import numpy.fft as FFT
@@ -55,7 +62,7 @@ def spect(series,sampling,patches=1,detrend=0,overlap=1,win='triangle'):
 def pdg(series):
     samples = numpy.shape(series)[0]
 
-    pdlen = samples/2
+    pdlen = int(samples/2)
 
     fourier = abs(FFT.fft(series))
 
@@ -131,7 +138,7 @@ def opwpdg(series,patches,detrend=0,win='triangle'):
     serlen = samples - (samples % (4*patches))
 
     patlen = serlen/patches
-    pdlen = patlen/2
+    pdlen = int(patlen/2)
 
     opwpdgram = numpy.zeros(pdlen+1,dtype='d')
 
@@ -211,7 +218,7 @@ def checkobs(observables):
     for obs in observables:
         if isinstance(obs,lisaswig.Signal):
             retobs.append(obs)
-        elif isinstance(obs,types.MethodType) and isinstance(obs.im_self,lisaswig.TDI):
+        elif isinstance(obs,types.MethodType) and obs.__class__ == lisaswig.TDI:
             try:
                 retobs.append(obs())
             except:

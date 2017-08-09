@@ -93,6 +93,7 @@ cdef class Wave:
                             [h[1][0],h[1][1],h[1][2]],
                             [h[2][0],h[2][1],h[2][2]]],'d')
 
+
 # TODO: may want to rationalize the argument order and names
 
 cdef class SimpleBinary(Wave):
@@ -101,6 +102,7 @@ cdef class SimpleBinary(Wave):
 
     def __dealloc__(self):
         del self.wave
+
 
 cdef class GalacticBinary(Wave):
     def __cinit__(self, freq, freqdot, b, l, amp, inc, p, initphi, fddot=0, epsilon=0):
@@ -140,9 +142,14 @@ cdef class TDI:
     def z(self, int send, int link, int recv, double t, int ret1 = 0, int ret2 = 0, int ret3 = 0, int ret4 = 0, int ret5 = 0, int ret6 = 0, int ret7 = 0, int ret8 = 0):
         return self.tdi.z(send, link, recv, ret1, ret2, ret3, ret4, ret5, ret6, ret7, ret8, t)
 
+
 cdef class TDIsignal(TDI):
     def __cinit__(self, LISA lisa, Wave wave):
+        # keep a reference to these objects so they won't be deleted
+        self.lisa, self.wave = lisa, wave
+
         self.tdi = new defs.TDIsignal(lisa.lisa, wave.wave)
 
     def __dealloc__(self):
         del self.tdi
+

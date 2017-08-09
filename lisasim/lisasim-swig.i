@@ -16,12 +16,6 @@
 
 %include lisasim-typemaps.i
 
-%define initsave(theclass)
-%feature("addtofunc") theclass::theclass {
-        self.initargs = args
-}
-%enddef
-
 %define initdoc(theclass)
 %feature("docstring") theclass::theclass "
 Constructor. See above.
@@ -140,8 +134,6 @@ p1y = 0."
 
 initdoc(OriginalLISA)
 
-initsave(OriginalLISA)
-
 class OriginalLISA : public LISA {
   public:
     OriginalLISA(double arm1 = Lstd,double arm2 = Lstd,double arm3 = Lstd);
@@ -158,8 +150,6 @@ Because of the rotation, the armlengths depend on the
 direction of light propagation."
 
 initdoc(ModifiedLISA)
-
-initsave(ModifiedLISA)
 
 class ModifiedLISA : public OriginalLISA {
   public:
@@ -193,8 +183,6 @@ velocity. The orbits follow Krolak et al, PRD 70, 022003 (2004)."
 
 initdoc(CircularRotating)
 
-initsave(CircularRotating)
-
 class CircularRotating : public LISA, public ApproxLISA {
   public:
     CircularRotating(double eta0=0.0, double xi0=0.0, double sw=0.0, double t0=0.0);
@@ -219,8 +207,6 @@ baricenter and array phase at t0=0; sw<0 swaps spacecraft); myL is
 the common armlength; if not given, it is set to Lstd."
 
 initdoc(EccentricInclined)
-
-initsave(EccentricInclined)
 
 class EccentricInclined : public LISA, public ApproxLISA {
  public:
@@ -251,7 +237,9 @@ experimental and now removed from the main distribution)."
 
 initdoc(PyLISA)
 
-initsave(PyLISA)
+%feature("addtofunc") PyLISA::PyLISA {
+        self.initargs = [base, func]
+}
 
 %apply PyObject* PYTHONFUNC { PyObject *func };
 
@@ -278,7 +266,9 @@ enclosing the AllPyLISA object in a CacheLengthLISA object."
 
 initdoc(AllPyLISA)
 
-initsave(AllPyLISA)
+%feature("addtofunc") AllPyLISA::AllPyLISA {
+        self.initargs = [sfunc, afunc]
+}
 
 %apply PyObject* PYTHONFUNC { PyObject *sfunc, PyObject *afunc };
 
@@ -301,7 +291,9 @@ performed in conjunction with PyLISA."
 
 initdoc(CacheLISA)
 
-initsave(CacheLISA)
+%feature("addtofunc") CacheLISA::CacheLISA {
+        self.initargs = [base]
+}
 
 class CacheLISA : public LISA {
   public:
@@ -336,8 +328,8 @@ solving the backward light propagation equation."
 
 initdoc(SampledLISA)
 
-/* SampledLISA makes copies of the positions arrays, so initsave is not
-   needed */
+/* SampledLISA makes copies of the positions arrays, so we do not need to
+   save them in self.initargs */
 
 class SampledLISA : public LISA {
  public:
@@ -361,7 +353,9 @@ physical LISAs."
 
 initdoc(CacheLengthLISA)
 
-initsave(CacheLengthLISA)
+%feature("addtofunc") CacheLengthLISA::CacheLengthLISA {
+        self.initargs = [lisa]
+}
 
 class CacheLengthLISA : public LISA {
  public:
@@ -410,14 +404,14 @@ class WhiteNoiseSource : public SignalSource {
     static unsigned long getglobalseed();
 };
 
-initsave(SampledSignalSource)
+%feature("addtofunc") SampledSignalSource::SampledSignalSource {
+        self.initargs = [numarray]
+}
 
 class SampledSignalSource : public SignalSource {
  public:
     SampledSignalSource(double *numarray,long length,double norm = 1.0);
 };
-
-initsave(SampledSignalSource)
 
 class FileSignalSource : public SignalSource {
  public:
@@ -459,7 +453,9 @@ class IIRFilter : public Filter {
     IIRFilter(double *doublearray,int doublenum,double *doublearray,int doublenum);
 };
 
-initsave(SignalFilter)
+%feature("addtofunc") SignalFilter::SignalFilter {
+        self.initargs = [src,flt]
+}
 
 class SignalFilter : public SignalSource {
   public:
@@ -531,14 +527,18 @@ class NoSignal : public Signal {
     NoSignal();
 };
 
-initsave(SumSignal)
+%feature("addtofunc") SumSignal::SumSignal {
+        self.initargs = [s1, s2]
+}
 
 class SumSignal : public Signal {
  public:
     SumSignal(Signal *s1,Signal *s2);
 };
 
-initsave(InterpolatedSignal)
+%feature("addtofunc") InterpolatedSignal::InterpolatedSignal {
+        self.initargs = [src,interp]
+}
 
 class InterpolatedSignal : public Signal {
  public:
@@ -562,7 +562,7 @@ def getInterpolator(interplen=1):
     elif interplen < -1:
         ret = DotLagrangeInterpolator(-interplen)
     else:
-        raise NotImplementedError, "getInterpolator: undefined interpolator length %s (lisasim-swig.i)." % interplen
+        raise NotImplementedError("getInterpolator: undefined interpolator length %s (lisasim-swig.i)." % interplen)
 
     return ret
 
@@ -570,7 +570,7 @@ def getDerivativeInterpolator(interplen=2):
     if interplen > 1:
         return DotLagrangeInterpolator(interplen)
     else:
-        raise NotImplementedError, "getDerivativeInterpolator: undefined interpolator length %s (lisasim-swig.i)." % interplen
+        raise NotImplementedError("getDerivativeInterpolator: undefined interpolator length %s (lisasim-swig.i)." % interplen)
 %}
 
 %pythoncode %{
@@ -590,7 +590,7 @@ def PowerLawNoise(deltat,prebuffer,psd,exponent,interplen=1,seed=0):
         filter = IIRFilter([1,2,1],[0,0.9999*2,-0.9999])
         normalize = math.sqrt(psd) * math.sqrt(nyquistf) * (math.pi * deltat)**2
     else:
-        raise NotImplementedError, "PowerLawNoise: undefined PowerLaw exponent %s (lisasim-swig.i)." % exponent
+        raise NotImplementedError("PowerLawNoise: undefined PowerLaw exponent %s (lisasim-swig.i)." % exponent)
 
     if seed == 0:
         seed = getcseed()
@@ -629,7 +629,7 @@ def SampledSignal(array,deltat,buffer = 136.0,norm = 1.0,filter = None,interplen
 
         samplednoise = FileSignalSource(array,readbuffer,int(buffer/deltat),endianness,norm)
     else:
-        raise NotImplementedError, "SampledSignal: need numpy array or filename as first argument (lisasim-swig.i)."
+        raise NotImplementedError("SampledSignal: need numpy array or filename as first argument (lisasim-swig.i).")
 
     if not filter:
         filteredsamples = 0
@@ -645,7 +645,9 @@ def SampledSignal(array,deltat,buffer = 136.0,norm = 1.0,filter = None,interplen
 CachedSignal(Signal,bufferlen,deltat,interplen = 4)
 "
 
-initsave(CachedSignal)
+%feature("addtofunc") CachedSignal::CachedSignal {
+        self.initargs = [s]
+}
 
 class CachedSignal : public Signal {
  public:
@@ -738,8 +740,6 @@ This Wave object is deprecated in favor of GalacticBinary."
 
 initdoc(SimpleBinary)
 
-initsave(SimpleBinary)
-
 class SimpleBinary : public Wave {
  public:
     SimpleBinary(double freq, double phi0, double inc, double amp, double elat, double elon, double pol);
@@ -765,8 +765,6 @@ with the following parameters (compatible with MLDC conventions):
   polarization pol."
 
 initdoc(GalacticBinary)
-
-initsave(GalacticBinary)
 
 class GalacticBinary : public Wave {
  public:
@@ -904,7 +902,9 @@ the effective prebuffering interval? ???"
 
 initdoc(NoiseWave)
 
-initsave(NoiseWave)
+%feature("addtofunc") NoiseWave::NoiseWave {
+        self.initargs = args
+}
 
 %apply double *NUMPY_ARRAY_DOUBLE { double *hpa };
 %apply double *NUMPY_ARRAY_DOUBLE { double *hca };
@@ -998,7 +998,9 @@ Synthetic-LISA built-in Wave objects."
 
 initdoc(PyWave)
 
-initsave(PyWave)
+%feature("addtofunc") PyWave::PyWave {
+        self.initargs = [hpf, hcf]
+}
 
 %apply PyObject* PYTHONFUNC { PyObject *hpf, PyObject *hcf };
 
@@ -1033,7 +1035,9 @@ WaveArray. After the last object, it will return None."
 
 initdoc(WaveArray)
 
-initsave(WaveArray)
+%feature("addtofunc") WaveArray::WaveArray {
+        self.initargs = [WaveSeq]
+}
 
 exceptionhandle(WaveArray::WaveArray,ExceptionOutOfBounds,PyExc_ValueError)
 
@@ -1269,7 +1273,9 @@ class TDI {
     timeobject *t();
 };
 
-initsave(SampledTDI)
+%feature("addtofunc") SampledTDI::SampledTDI {
+        self.initargs = [lisa, yijk, zijk]
+}
 
 %apply Noise *PYTHON_SEQUENCE_NOISE[ANY] {Noise *yijk[6], Noise *zijk[6]}
 
@@ -1279,17 +1285,19 @@ class SampledTDI : public TDI {
     ~SampledTDI();
 };
 
+%feature("addtofunc") SampledTDIaccurate::SampledTDIaccurate {
+        self.initargs = [lisa, yijk, zijk]
+}
+
 class SampledTDIaccurate : public SampledTDI {
  public:
     SampledTDIaccurate(LISA *lisa,Noise *yijk[6],Noise *zijk[6]);
     ~SampledTDIaccurate();
 };
 
-/* We're holding on to the constructor args so that the LISA object
-   won't get destroyed if they fall out of scope: we may still need
-   them! */
-
-initsave(TDIquantize)
+%feature("addtofunc") TDIquantize::TDIquantize {
+        self.initargs = [bt]
+}
 
 class TDIquantize : public TDI {
  public:
@@ -1331,8 +1339,6 @@ TODO: might want to allow different interpolation widths for the
 self-built pseudorandom noise objects."
 
 initdoc(TDInoise)
-
-initsave(TDInoise)
 
 // not so sure about this...
 
@@ -1384,10 +1390,8 @@ initsave(TDInoise)
         return PowerLawNoise(stlaser,pbtlaser,sdlaser,0.0,interp,seed)
 %}
 
-%feature("pythonprepend") TDInoise::TDInoise %{
-        self.lisa = args[0]
-        args = args[1:]
-
+%pythoncode %{
+    def TDInoise(lisa,*args):
         # if no parameters are passed, used default value
         # if only one parameter is passed, use it as stime
 
@@ -1400,39 +1404,45 @@ initsave(TDInoise)
         # six Noise objects otherwise
 
         if type(args[0]) in (int,float):
-            self.pm = [stdproofnoise(self.lisa,args[0],args[1]) for i in range(6)]
+            pm = [stdproofnoise(lisa,args[0],args[1]) for i in range(6)]
             args = args[2:]
         else:
-            self.pm = args[0]
+            pm = args[0]
             args = args[1:]
 
         # shot noise: same story
 
         if type(args[0]) in (int,float):
-            self.pd = [stdopticalnoise(self.lisa,args[0],args[1]) for i in range(6)]
+            pd = [stdopticalnoise(lisa,args[0],args[1]) for i in range(6)]
             args = args[2:]
         else:
-            self.pd = args[0]
+            pd = args[0]
             args = args[1:]
 
         # laser noise may not be passed: if so, set it to zero
 
         if len(args) > 0:
             if type(args[0]) in (int,float):
-                self.c = [stdlasernoise(self.lisa,args[0],args[1]) for i in range(6)]
+                c = [stdlasernoise(lisa,args[0],args[1]) for i in range(6)]
                 args = args[2:]
             else:
-                self.c = args[0]
+                c = args[0]
                 args = args[1:]
         else:
-            self.c = [NoSignal() for i in range(6)]
+            c = [NoSignal() for i in range(6)]
 
-        args = (self.lisa,self.pm,self.pd,self.c)
+        return _TDInoise(lisa,pm,pd,c)
 %}
 
 %apply Noise *PYTHON_SEQUENCE_NOISE[ANY] {Noise *proofnoise[6], Noise *shotnoise[6], Noise *lasernoise[6]}
 
 %apply double PYTHON_SEQUENCE_DOUBLE[ANY] {double stproof[6], double sdproof[6], double stshot[6], double sdshot[6], double stlaser[6], double sdlaser[6], double claser[6]}
+
+%rename(_TDInoise) TDInoise;
+
+%feature("addtofunc") TDInoise::TDInoise {
+        self.initargs = [mylisa, proofnoise, shotnoise, lasernoise]
+}
 
 class TDInoise : public TDI {
  public:
@@ -1451,7 +1461,9 @@ class TDInoise : public TDI {
    objects won't get destroyed if they fall out of scope: we may still
    need them! */
 
-initsave(TDIaccurate)
+%feature("addtofunc") TDIaccurate::TDIaccurate {
+        self.initargs = [mylisa, proofnoise, shotnoise, lasernoise]
+}
 
 class TDIaccurate : public TDInoise {
  public:
@@ -1463,7 +1475,9 @@ class TDIaccurate : public TDInoise {
    objects won't get destroyed if they fall out of scope: we may still
    need them for TDInoise! */
 
-initsave(TDIdoppler)
+%feature("addtofunc") TDIdoppler::TDIdoppler {
+        self.initargs = [mylisa, proofnoise, shotnoise, lasernoise]
+}
 
 class TDIdoppler : public TDInoise {
  public:
@@ -1477,7 +1491,9 @@ class TDIdoppler : public TDInoise {
 
 %apply double PYTHON_SEQUENCE_DOUBLE[ANY] {double laserfreqs[6]}
 
-initsave(TDIcarrier)
+%feature("addtofunc") TDIcarrier::TDIcarrier {
+        self.initargs = [mylisa]
+}
 
 class TDIcarrier : public TDInoise {
  public:
@@ -1492,7 +1508,9 @@ class TDIcarrier : public TDInoise {
    objects won't get destroyed if they fall out of scope: we may still
    need them for TDInoise! */
 
-initsave(TDIsignal)
+%feature("addtofunc") TDIsignal::TDIsignal {
+        self.initargs = [mylisa, mywave]
+}
 
 class TDIsignal : public TDI {
  public:

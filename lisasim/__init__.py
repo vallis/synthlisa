@@ -1,10 +1,10 @@
 from __future__ import absolute_import
 
 # Cython interface
-from .synthlisa import *
+# from .synthlisa import *
 
-# disabled SWIG interface
-# from lisaswig import *
+# SWIG interface
+from .lisaswig import *
 
 from .lisautils import *
 from .lisaxml import *
