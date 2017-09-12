@@ -38,6 +38,7 @@ RUN update-alternatives --set python /usr/bin/python2.7
 
 # Install python modules
 RUN pip install numpy
+RUN pip install pyRXP
 
 # Give NB_USER sudo rights (and reset user password to user-name)
 RUN echo "$NB_USER:$NB_USER" | chpasswd
