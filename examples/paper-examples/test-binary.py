@@ -64,13 +64,13 @@ noiseTDI =  TDInoise(lisa,stime,2.5e-48,
 samples = int(2**25/stime)
 patches = 256
  
-[alphas,betas,gammas] = transpose(getobsc(samples,stime,[signalTDI.alpha,
-                                                         signalTDI.beta,
-                                                         signalTDI.gamma]))
+[alphas,betas,gammas] = transpose(getobsc(samples,stime,[signalTDI.alpham,
+                                                         signalTDI.betam,
+                                                         signalTDI.gammam]))
 
-[alphan,betan,gamman] = transpose(getobsc(samples,stime,[noiseTDI.alpha,
-                                                         noiseTDI.beta,
-                                                         noiseTDI.gamma]))
+[alphan,betan,gamman] = transpose(getobsc(samples,stime,[noiseTDI.alpham,
+                                                         noiseTDI.betam,
+                                                         noiseTDI.gammam]))
 
 # form the optimal TDI observables
 
