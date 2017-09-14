@@ -91,6 +91,11 @@ print "S/N = ", math.sqrt(sn(signalA,noiseA,stime,patches)**2 +
 
 # output signal+noise time series and spectra to disk
 
+import os
+
+if not os.path.exists('data'):
+    os.makedirs('data')
+
 outputXML = lisaXML('data/binary',
                     author='Michele Vallisneri',
                     comments='EccentricInclined 1st-gen. optimal-TDI observables for 1 mHz binary')
